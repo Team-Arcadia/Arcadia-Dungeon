@@ -39,6 +39,7 @@ public final class CombatTuning {
     private static final String TAG_DODGE_CHANCE = "DodgeChance";
     private static final String TAG_DODGE_COOLDOWN_MS = "DodgeCooldownMs";
     private static final String TAG_DODGE_PROJECTILES_ONLY = "DodgeProjectilesOnly";
+    private static final String TAG_DODGE_MESSAGE = "DodgeMessage";
     private static final String TAG_LAST_MELEE_ATTACK_MS = "LastMeleeAttackMs";
     private static final String TAG_LAST_PROJECTILE_MS = "LastProjectileMs";
     private static final String TAG_LAST_DODGE_MS = "LastDodgeMs";
@@ -86,6 +87,47 @@ public final class CombatTuning {
             default -> {
                 return false;
             }
+        }
+    }
+
+    public static void applyConfiguredCombat(LivingEntity living,
+                                             double attackRange,
+                                             int attackCooldownMs,
+                                             double aggroRange,
+                                             int projectileCooldownMs,
+                                             double dodgeChance,
+                                             int dodgeCooldownMs,
+                                             boolean dodgeProjectilesOnly,
+                                             String dodgeMessage) {
+        CompoundTag data = getCombatData(living);
+
+        if (attackRange > 0.0D) {
+            data.putDouble(TAG_ATTACK_RANGE, attackRange);
+        }
+        if (attackCooldownMs > 0) {
+            data.putLong(TAG_ATTACK_COOLDOWN_MS, attackCooldownMs);
+        }
+        if (aggroRange > 0.0D) {
+            data.putDouble(TAG_AGGRO_RANGE, aggroRange);
+            var attr = living.getAttribute(Attributes.FOLLOW_RANGE);
+            if (attr != null) {
+                attr.setBaseValue(aggroRange);
+            }
+        }
+        if (projectileCooldownMs > 0) {
+            data.putLong(TAG_PROJECTILE_COOLDOWN_MS, projectileCooldownMs);
+        }
+        if (dodgeChance > 0.0D) {
+            data.putDouble(TAG_DODGE_CHANCE, Mth.clamp(dodgeChance, 0.0D, 1.0D));
+        }
+        if (dodgeCooldownMs > 0) {
+            data.putLong(TAG_DODGE_COOLDOWN_MS, dodgeCooldownMs);
+        }
+        if (dodgeProjectilesOnly) {
+            data.putBoolean(TAG_DODGE_PROJECTILES_ONLY, true);
+        }
+        if (dodgeMessage != null && !dodgeMessage.isEmpty()) {
+            data.putString(TAG_DODGE_MESSAGE, dodgeMessage);
         }
     }
 
@@ -172,6 +214,11 @@ public final class CombatTuning {
 
     public static List<String> getSpecialKeys() {
         return SPECIAL_KEYS;
+    }
+
+    public static String getDodgeMessage(LivingEntity living) {
+        CompoundTag data = getCombatData(living);
+        return data.contains(TAG_DODGE_MESSAGE) ? data.getString(TAG_DODGE_MESSAGE) : "";
     }
 
     private static long getAttackCooldownMs(LivingEntity living) {

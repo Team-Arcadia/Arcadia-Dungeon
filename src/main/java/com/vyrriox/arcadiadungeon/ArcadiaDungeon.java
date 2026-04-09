@@ -2,6 +2,8 @@ package com.vyrriox.arcadiadungeon;
 
 import com.mojang.logging.LogUtils;
 import com.vyrriox.arcadiadungeon.command.ArcadiaCommands;
+import com.vyrriox.arcadiadungeon.util.ModCompat;
+import com.vyrriox.arcadiadungeon.util.SparkUtil;
 import com.vyrriox.arcadiadungeon.config.ConfigManager;
 import com.vyrriox.arcadiadungeon.dungeon.DungeonManager;
 import com.vyrriox.arcadiadungeon.event.DungeonEventHandler;
@@ -44,6 +46,7 @@ public class ArcadiaDungeon {
 
     private void onCommonSetup(final FMLCommonSetupEvent event) {
         LOGGER.info("Arcadia Dungeon initializing...");
+        LOGGER.info("ModCompat: HAS_LUCKPERMS={}, HAS_SPARK={}", ModCompat.HAS_LUCKPERMS, ModCompat.HAS_SPARK);
     }
 
     @SubscribeEvent
@@ -54,6 +57,7 @@ public class ArcadiaDungeon {
 
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
+        SparkUtil.setServer(event.getServer());
         ConfigManager.getInstance().loadAll();
         DungeonManager.getInstance().setServer(event.getServer());
         com.vyrriox.arcadiadungeon.dungeon.WeeklyLeaderboard.getInstance().load();
@@ -65,6 +69,7 @@ public class ArcadiaDungeon {
         DungeonManager.getInstance().stopAllDungeons();
         com.vyrriox.arcadiadungeon.dungeon.PlayerProgressManager.getInstance().flushDirty();
         DungeonManager.getInstance().setServer(null);
+        SparkUtil.clearServer();
     }
 
     @SubscribeEvent

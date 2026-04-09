@@ -16,15 +16,19 @@ import java.nio.file.Path;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class WeeklyLeaderboard {
     private static final WeeklyLeaderboard INSTANCE = new WeeklyLeaderboard();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
-    private final Path dataFile;
     private WeeklyData data = new WeeklyData();
     private boolean announcedThisWeek = false;
     private volatile boolean dirty = false;
@@ -33,6 +37,16 @@ public class WeeklyLeaderboard {
         public String weekId = "";
         public Map<String, Integer> playerCompletions = new ConcurrentHashMap<>();
         public Map<String, String> playerNames = new ConcurrentHashMap<>();
+        public Map<String, Map<String, Long>> dungeonBestTimes = new ConcurrentHashMap<>();
+        public Map<String, ArchivedWeek> history = new LinkedHashMap<>();
+        public boolean rewarded = false;
+    }
+
+    public static class ArchivedWeek {
+        public String weekId = "";
+        public Map<String, Integer> playerCompletions = new LinkedHashMap<>();
+        public Map<String, String> playerNames = new LinkedHashMap<>();
+        public Map<String, Map<String, Long>> dungeonBestTimes = new LinkedHashMap<>();
         public boolean rewarded = false;
     }
 
@@ -48,7 +62,6 @@ public class WeeklyLeaderboard {
     private WeeklyConfig config = new WeeklyConfig();
 
     private WeeklyLeaderboard() {
-        this.dataFile = FMLPaths.CONFIGDIR.get().resolve("arcadia").resolve("dungeon").resolve("weekly_leaderboard.json");
     }
 
     public static WeeklyLeaderboard getInstance() {
@@ -56,27 +69,30 @@ public class WeeklyLeaderboard {
     }
 
     public void load() {
-        // Load weekly data
+        Path dataFile = getDataFile();
         try {
             if (Files.exists(dataFile)) {
                 String json = Files.readString(dataFile);
                 data = GSON.fromJson(json, WeeklyData.class);
-                if (data == null) data = new WeeklyData();
+                if (data == null) {
+                    data = new WeeklyData();
+                }
             }
+            normalizeData();
         } catch (Exception e) {
             ArcadiaDungeon.LOGGER.error("Failed to load weekly leaderboard", e);
             data = new WeeklyData();
         }
 
-        // Load config
-        Path configFile = FMLPaths.CONFIGDIR.get().resolve("arcadia").resolve("dungeon").resolve("weekly_config.json");
+        Path configFile = getConfigFile();
         try {
             if (Files.exists(configFile)) {
                 String json = Files.readString(configFile);
                 config = GSON.fromJson(json, WeeklyConfig.class);
-                if (config == null) config = new WeeklyConfig();
+                if (config == null) {
+                    config = new WeeklyConfig();
+                }
             } else {
-                // Create default config with example rewards
                 config = new WeeklyConfig();
                 config.top1Rewards.add(new RewardConfig("minecraft:netherite_ingot", 3, 1.0));
                 config.top2Rewards.add(new RewardConfig("minecraft:diamond", 10, 1.0));
@@ -88,17 +104,16 @@ public class WeeklyLeaderboard {
             ArcadiaDungeon.LOGGER.error("Failed to load weekly config", e);
         }
 
-        // Check if we need a new week
         String currentWeek = getCurrentWeekId();
         if (!currentWeek.equals(data.weekId)) {
-            data = new WeeklyData();
-            data.weekId = currentWeek;
-            announcedThisWeek = false;
+            archiveCurrentWeek();
+            startFreshWeek(currentWeek);
             save();
         }
     }
 
     public void save() {
+        Path dataFile = getDataFile();
         try {
             Files.createDirectories(dataFile.getParent());
             Files.writeString(dataFile, GSON.toJson(data));
@@ -108,9 +123,13 @@ public class WeeklyLeaderboard {
         }
     }
 
-    public void recordCompletion(String uuid, String playerName) {
+    public void recordCompletion(String uuid, String playerName, String dungeonId, long timeSeconds) {
         data.playerCompletions.merge(uuid, 1, Integer::sum);
         data.playerNames.put(uuid, playerName);
+        if (dungeonId != null && !dungeonId.isBlank() && timeSeconds > 0) {
+            Map<String, Long> dungeonTimes = data.dungeonBestTimes.computeIfAbsent(dungeonId, ignored -> new ConcurrentHashMap<>());
+            dungeonTimes.merge(uuid, timeSeconds, Math::min);
+        }
         dirty = true;
     }
 
@@ -120,20 +139,15 @@ public class WeeklyLeaderboard {
         LocalDateTime now = LocalDateTime.now();
         String currentWeek = getCurrentWeekId();
 
-        // Check for weekly reset
         if (!currentWeek.equals(data.weekId)) {
-            // New week - announce results and give rewards
             if (!data.rewarded && !data.playerCompletions.isEmpty()) {
                 announceAndReward(server);
             }
-            data = new WeeklyData();
-            data.weekId = currentWeek;
-            announcedThisWeek = false;
-            dirty = true;
+            archiveCurrentWeek();
+            startFreshWeek(currentWeek);
             return;
         }
 
-        // Check for announcement at configured hour (range-based: within 2 minutes to avoid missing on lag)
         if (!announcedThisWeek && now.getHour() == config.announceHour && now.getMinute() <= 2) {
             if (now.getDayOfWeek() == config.resetDay && !data.rewarded) {
                 announceAndReward(server);
@@ -149,7 +163,6 @@ public class WeeklyLeaderboard {
         List<Map.Entry<String, Integer>> sorted = new ArrayList<>(data.playerCompletions.entrySet());
         sorted.sort((a, b) -> Integer.compare(b.getValue(), a.getValue()));
 
-        // Announce
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             player.sendSystemMessage(Component.literal("").withStyle(ChatFormatting.RESET));
             player.sendSystemMessage(Component.literal("======= Top Joueurs de la Semaine =======").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
@@ -174,7 +187,6 @@ public class WeeklyLeaderboard {
             player.sendSystemMessage(Component.literal("==========================================").withStyle(ChatFormatting.GOLD));
         }
 
-        // Give rewards to top 3
         for (int i = 0; i < Math.min(3, sorted.size()); i++) {
             String uuid = sorted.get(i).getKey();
             ServerPlayer player = null;
@@ -190,7 +202,6 @@ public class WeeklyLeaderboard {
                     default -> List.of();
                 };
 
-                // Use DungeonInstance reward system - create a temporary helper
                 for (RewardConfig reward : rewards) {
                     if (reward.item != null && !reward.item.isEmpty()) {
                         net.minecraft.resources.ResourceLocation loc = net.minecraft.resources.ResourceLocation.tryParse(reward.item);
@@ -223,6 +234,17 @@ public class WeeklyLeaderboard {
     public List<Map.Entry<String, Integer>> getTop(int limit) {
         List<Map.Entry<String, Integer>> sorted = new ArrayList<>(data.playerCompletions.entrySet());
         sorted.sort((a, b) -> Integer.compare(b.getValue(), a.getValue()));
+        return sorted.subList(0, Math.min(limit, sorted.size()));
+    }
+
+    public List<Map.Entry<String, Long>> getTopForDungeon(String dungeonId, int limit) {
+        Map<String, Long> dungeonTimes = data.dungeonBestTimes.get(dungeonId);
+        if (dungeonTimes == null || dungeonTimes.isEmpty()) {
+            return List.of();
+        }
+
+        List<Map.Entry<String, Long>> sorted = new ArrayList<>(dungeonTimes.entrySet());
+        sorted.sort(Comparator.comparingLong(Map.Entry::getValue));
         return sorted.subList(0, Math.min(limit, sorted.size()));
     }
 
@@ -264,23 +286,86 @@ public class WeeklyLeaderboard {
     }
 
     public void forceReset(MinecraftServer server) {
-        if (!data.playerCompletions.isEmpty()) {
+        if (!data.rewarded && !data.playerCompletions.isEmpty()) {
             announceAndReward(server);
         }
-        data = new WeeklyData();
-        data.weekId = getCurrentWeekId();
-        dirty = true;
+        archiveCurrentWeek();
+        startFreshWeek(getCurrentWeekId());
         save();
+    }
+
+    private void normalizeData() {
+        if (data.playerCompletions == null) data.playerCompletions = new ConcurrentHashMap<>();
+        if (data.playerNames == null) data.playerNames = new ConcurrentHashMap<>();
+        if (data.dungeonBestTimes == null) data.dungeonBestTimes = new ConcurrentHashMap<>();
+        if (data.history == null) data.history = new LinkedHashMap<>();
+        for (Map.Entry<String, Map<String, Long>> entry : new ArrayList<>(data.dungeonBestTimes.entrySet())) {
+            if (entry.getValue() == null) {
+                data.dungeonBestTimes.put(entry.getKey(), new ConcurrentHashMap<>());
+            }
+        }
+    }
+
+    private void archiveCurrentWeek() {
+        normalizeData();
+        if (data.weekId == null || data.weekId.isEmpty()) {
+            return;
+        }
+        if (data.playerCompletions.isEmpty() && data.dungeonBestTimes.isEmpty()) {
+            return;
+        }
+
+        ArchivedWeek archived = new ArchivedWeek();
+        archived.weekId = data.weekId;
+        archived.playerCompletions.putAll(data.playerCompletions);
+        archived.playerNames.putAll(data.playerNames);
+        for (Map.Entry<String, Map<String, Long>> entry : data.dungeonBestTimes.entrySet()) {
+            archived.dungeonBestTimes.put(entry.getKey(), new LinkedHashMap<>(entry.getValue()));
+        }
+        archived.rewarded = data.rewarded;
+        data.history.put(data.weekId, archived);
+
+        while (data.history.size() > 12) {
+            String oldest = data.history.keySet().iterator().next();
+            data.history.remove(oldest);
+        }
+    }
+
+    private void startFreshWeek(String weekId) {
+        WeeklyData next = new WeeklyData();
+        next.weekId = weekId;
+        if (data != null && data.history != null) {
+            next.history.putAll(data.history);
+        }
+        data = next;
+        announcedThisWeek = false;
+        dirty = true;
     }
 
     private void saveConfig() {
         try {
-            Path configFile = FMLPaths.CONFIGDIR.get().resolve("arcadia").resolve("dungeon").resolve("weekly_config.json");
+            Path configFile = getConfigFile();
             Files.createDirectories(configFile.getParent());
             Files.writeString(configFile, GSON.toJson(config));
         } catch (IOException e) {
             ArcadiaDungeon.LOGGER.error("Failed to save weekly config", e);
         }
+    }
+
+    private Path getDataFile() {
+        return getBaseDirectory().resolve("weekly_leaderboard.json");
+    }
+
+    private Path getConfigFile() {
+        return getBaseDirectory().resolve("weekly_config.json");
+    }
+
+    private Path getBaseDirectory() {
+        Path configDir = FMLPaths.CONFIGDIR.get();
+        if (configDir == null) {
+            return Path.of("config", "arcadia", "dungeon");
+        }
+        return configDir.resolve("arcadia").resolve("dungeon");
     }
 
     private String getCurrentWeekId() {

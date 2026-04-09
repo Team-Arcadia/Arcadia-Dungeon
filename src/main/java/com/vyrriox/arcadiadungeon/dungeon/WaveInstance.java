@@ -130,6 +130,17 @@ public class WaveInstance {
 
                 // Custom attributes
                 BossInstance.applyCustomAttributes(living, mobConfig.customAttributes);
+                CombatTuning.applyConfiguredCombat(
+                        living,
+                        mobConfig.attackRange,
+                        mobConfig.attackCooldownMs,
+                        mobConfig.aggroRange,
+                        mobConfig.projectileCooldownMs,
+                        mobConfig.dodgeChance,
+                        mobConfig.dodgeCooldownMs,
+                        mobConfig.dodgeProjectilesOnly,
+                        mobConfig.dodgeMessage
+                );
 
                 // Prevent despawn
                 if (living instanceof Mob mob) {

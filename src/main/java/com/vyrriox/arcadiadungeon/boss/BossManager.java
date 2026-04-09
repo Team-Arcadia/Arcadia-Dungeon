@@ -1,6 +1,8 @@
 package com.vyrriox.arcadiadungeon.boss;
 
 import com.vyrriox.arcadiadungeon.ArcadiaDungeon;
+import com.vyrriox.arcadiadungeon.util.MessageUtil;
+import com.vyrriox.arcadiadungeon.util.SparkUtil;
 import com.vyrriox.arcadiadungeon.config.BossConfig;
 import com.vyrriox.arcadiadungeon.dungeon.DungeonInstance;
 import com.vyrriox.arcadiadungeon.dungeon.DungeonManager;
@@ -25,92 +27,91 @@ public class BossManager {
     }
 
     public boolean spawnNextBoss(DungeonInstance instance) {
-        MinecraftServer server = DungeonManager.getInstance().getServer();
-        if (server == null) return false;
+        boolean sparkSectionStarted = SparkUtil.startSection("arcadia.boss.spawn");
+        try {
+            MinecraftServer server = DungeonManager.getInstance().getServer();
+            if (server == null) return false;
 
-        // Find next end-of-waves boss to spawn, skipping inter-wave bosses and optional misses
-        while (instance.hasNextBoss()) {
-            int bossIndex = instance.getCurrentBossIndex();
-            BossConfig bossConfig = instance.getConfig().bosses.get(bossIndex);
+            // Find next end-of-waves boss to spawn, skipping inter-wave bosses and optional misses
+            while (instance.hasNextBoss()) {
+                int bossIndex = instance.getCurrentBossIndex();
+                BossConfig bossConfig = instance.getConfig().bosses.get(bossIndex);
 
-            // Skip inter-wave bosses (handled by spawnBossesForWave)
-            if (bossConfig.spawnAfterWave > 0) {
-                instance.incrementBossIndex();
-                continue;
-            }
-
-            // Skip bosses that spawn at dungeon start (already spawned)
-            if (bossConfig.spawnAtStart) {
-                instance.incrementBossIndex();
-                continue;
-            }
-
-            // Optional boss: roll for spawn chance
-            if (bossConfig.optional && bossConfig.spawnChance < 1.0) {
-                double roll = server.overworld().getRandom().nextDouble();
-                if (roll > bossConfig.spawnChance) {
-                    ArcadiaDungeon.LOGGER.info("Optional boss {} skipped (roll: {}, chance: {})",
-                            bossConfig.id, String.format("%.2f", roll), bossConfig.spawnChance);
+                // Skip inter-wave bosses (handled by spawnBossesForWave)
+                if (bossConfig.spawnAfterWave > 0) {
                     instance.incrementBossIndex();
-
-                    // Notify players with custom or default skip message
-                    String skipMsg = (bossConfig.skipMessage != null && !bossConfig.skipMessage.isEmpty())
-                            ? bossConfig.skipMessage.replace("%boss%", bossConfig.customName)
-                            : "[Arcadia] Le " + bossConfig.customName + " n'est pas apparu cette fois...";
-                    net.minecraft.network.chat.Component skipComponent = DungeonManager.parseColorCodes(skipMsg);
-                    for (UUID playerId : instance.getPlayers()) {
-                        ServerPlayer player = server.getPlayerList().getPlayer(playerId);
-                        if (player != null) player.sendSystemMessage(skipComponent);
-                    }
                     continue;
                 }
-            }
 
-            // Spawn this boss
-            ResourceLocation dimLoc = ResourceLocation.tryParse(bossConfig.spawnPoint.dimension);
-            if (dimLoc == null) {
-                ArcadiaDungeon.LOGGER.error("Invalid dimension: {}", bossConfig.spawnPoint.dimension);
-                instance.incrementBossIndex();
-                continue;
-            }
-
-            ResourceKey<Level> dimKey = ResourceKey.create(Registries.DIMENSION, dimLoc);
-            ServerLevel level = server.getLevel(dimKey);
-            if (level == null) {
-                ArcadiaDungeon.LOGGER.error("Could not find dimension: {}", bossConfig.spawnPoint.dimension);
-                instance.incrementBossIndex();
-                continue;
-            }
-
-            BossInstance bossInstance = new BossInstance(bossConfig, level, instance.getPlayerCount());
-            if (!bossInstance.spawn()) {
-                instance.incrementBossIndex();
-                continue;
-            }
-
-            // Armor analysis
-            if (instance.getConfig().settings.difficultyScaling) {
-                adaptBossDamageToArmor(bossInstance, instance, server);
-            }
-
-            instance.addBossInstance(bossConfig.id, bossInstance);
-            instance.incrementBossIndex();
-
-            // Notify players with custom or default spawn message
-            if (bossConfig.spawnMessage != null && !bossConfig.spawnMessage.isEmpty()) {
-                String spawnMsg = bossConfig.spawnMessage.replace("%boss%", bossConfig.customName);
-                net.minecraft.network.chat.Component spawnComponent = DungeonManager.parseColorCodes(spawnMsg);
-                for (UUID playerId : instance.getPlayers()) {
-                    ServerPlayer player = server.getPlayerList().getPlayer(playerId);
-                    if (player != null) player.sendSystemMessage(spawnComponent);
+                // Skip bosses that spawn at dungeon start (already spawned)
+                if (bossConfig.spawnAtStart) {
+                    instance.incrementBossIndex();
+                    continue;
                 }
+
+                // Optional boss: roll for spawn chance
+                if (bossConfig.optional && bossConfig.spawnChance < 1.0) {
+                    double roll = server.overworld().getRandom().nextDouble();
+                    if (roll > bossConfig.spawnChance) {
+                        ArcadiaDungeon.LOGGER.info("Optional boss {} skipped (roll: {}, chance: {})",
+                                bossConfig.id, String.format("%.2f", roll), bossConfig.spawnChance);
+                        instance.incrementBossIndex();
+
+                        // Notify players with custom or default skip message
+                        String skipMsg = (bossConfig.skipMessage != null && !bossConfig.skipMessage.isEmpty())
+                                ? bossConfig.skipMessage.replace("%boss%", bossConfig.customName)
+                                : "[Arcadia] Le " + bossConfig.customName + " n'est pas apparu cette fois...";
+                        MessageUtil.broadcast(instance, skipMsg);
+                        continue;
+                    }
+                }
+
+                // Spawn this boss
+                ResourceLocation dimLoc = ResourceLocation.tryParse(bossConfig.spawnPoint.dimension);
+                if (dimLoc == null) {
+                    ArcadiaDungeon.LOGGER.error("Invalid dimension: {}", bossConfig.spawnPoint.dimension);
+                    instance.incrementBossIndex();
+                    continue;
+                }
+
+                ResourceKey<Level> dimKey = ResourceKey.create(Registries.DIMENSION, dimLoc);
+                ServerLevel level = server.getLevel(dimKey);
+                if (level == null) {
+                    ArcadiaDungeon.LOGGER.error("Could not find dimension: {}", bossConfig.spawnPoint.dimension);
+                    instance.incrementBossIndex();
+                    continue;
+                }
+
+                BossInstance bossInstance = new BossInstance(bossConfig, level, instance.getPlayerCount());
+                if (!bossInstance.spawn()) {
+                    instance.incrementBossIndex();
+                    continue;
+                }
+
+                // Armor analysis
+                if (instance.getConfig().settings.difficultyScaling) {
+                    adaptBossDamageToArmor(bossInstance, instance, server);
+                }
+
+                instance.addBossInstance(bossConfig.id, bossInstance);
+                instance.incrementBossIndex();
+
+                // Notify players with custom or default spawn message
+                if (bossConfig.spawnMessage != null && !bossConfig.spawnMessage.isEmpty()) {
+                    String spawnMsg = bossConfig.spawnMessage.replace("%boss%", bossConfig.customName);
+                    MessageUtil.broadcast(instance, spawnMsg);
+                }
+
+                return true;
             }
 
-            return true;
+            // All remaining bosses were skipped (optional)
+            return false;
+        } finally {
+            if (sparkSectionStarted) {
+                SparkUtil.endSection();
+            }
         }
-
-        // All remaining bosses were skipped (optional)
-        return false;
     }
 
     private void adaptBossDamageToArmor(BossInstance boss, DungeonInstance instance, MinecraftServer server) {
@@ -162,11 +163,7 @@ public class BossManager {
                     String skipMsg = (bossConfig.skipMessage != null && !bossConfig.skipMessage.isEmpty())
                             ? bossConfig.skipMessage.replace("%boss%", bossConfig.customName)
                             : "[Arcadia] Le " + bossConfig.customName + " n'est pas apparu cette fois...";
-                    net.minecraft.network.chat.Component skipComponent = DungeonManager.parseColorCodes(skipMsg);
-                    for (UUID playerId : instance.getPlayers()) {
-                        ServerPlayer player = server.getPlayerList().getPlayer(playerId);
-                        if (player != null) player.sendSystemMessage(skipComponent);
-                    }
+                    MessageUtil.broadcast(instance, skipMsg);
                     continue;
                 }
             }
@@ -190,11 +187,7 @@ public class BossManager {
             // Notify players with custom or default spawn message
             if (bossConfig.spawnMessage != null && !bossConfig.spawnMessage.isEmpty()) {
                 String spawnMsg = bossConfig.spawnMessage.replace("%boss%", bossConfig.customName);
-                net.minecraft.network.chat.Component spawnComponent = DungeonManager.parseColorCodes(spawnMsg);
-                for (UUID playerId : instance.getPlayers()) {
-                    ServerPlayer player = server.getPlayerList().getPlayer(playerId);
-                    if (player != null) player.sendSystemMessage(spawnComponent);
-                }
+                MessageUtil.broadcast(instance, spawnMsg);
             }
         }
         return spawned;

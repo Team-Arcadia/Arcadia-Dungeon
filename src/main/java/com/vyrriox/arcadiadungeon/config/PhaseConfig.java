@@ -14,6 +14,7 @@ public class PhaseConfig {
     public String phaseStartMessage = "";
     public boolean invulnerableDuringTransition = false;
     public double transitionDurationSeconds = 2.0;
+    public double immunityDuration = 0.0;
 
     // Potion effects applied to players when phase starts
     public List<PhaseEffect> playerEffects = new ArrayList<>();

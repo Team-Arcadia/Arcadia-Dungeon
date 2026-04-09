@@ -9,6 +9,7 @@ public class SummonConfig {
     public String customName = "";
     public double health = 20;
     public double damage = 3;
+    public SpawnPointConfig spawnPoint = null;
 
     // Equipment
     public String mainHand = "";
@@ -20,6 +21,16 @@ public class SummonConfig {
 
     // Custom attributes (e.g. "minecraft:generic.armor" -> 10.0)
     public Map<String, Double> customAttributes = new HashMap<>();
+
+    // Direct combat tuning fields mirrored into ArcadiaCombat runtime data
+    public double attackRange = 0.0;
+    public int attackCooldownMs = 0;
+    public double aggroRange = 0.0;
+    public int projectileCooldownMs = 0;
+    public double dodgeChance = 0.0;
+    public int dodgeCooldownMs = 0;
+    public boolean dodgeProjectilesOnly = false;
+    public String dodgeMessage = "";
 
     public SummonConfig() {}
 

@@ -22,7 +22,13 @@ import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -1076,10 +1082,15 @@ public class ArcadiaCommands {
                         )
                 )
 
+                // === RELOAD ===
+                .then(Commands.literal("reload")
+                        .executes(ArcadiaCommands::reloadConfigs)
+                )
+
                 // === DEBUG ===
                 .then(Commands.literal("debug")
                         .then(Commands.literal("reload")
-                                .executes(ArcadiaCommands::debugReload)
+                                .executes(ArcadiaCommands::reloadConfigs)
                         )
                         .then(Commands.literal("info")
                                 .then(Commands.argument("dungeon", StringArgumentType.word())
@@ -1480,6 +1491,50 @@ public class ArcadiaCommands {
                         .executes(ArcadiaCommands::showStatus)
                 )
         );
+
+        dispatcher.register(Commands.literal("arcadia")
+                .requires(source -> source.hasPermission(2))
+                .then(Commands.literal("status")
+                        .executes(ArcadiaCommands::showAdminStatus)
+                )
+                .then(Commands.literal("stop")
+                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                .suggests(SUGGEST_DUNGEONS)
+                                .executes(ArcadiaCommands::stopDungeon)
+                        )
+                )
+                .then(Commands.literal("cuboid")
+                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                .suggests(SUGGEST_DUNGEONS)
+                                .then(Commands.argument("x1", IntegerArgumentType.integer())
+                                        .then(Commands.argument("y1", IntegerArgumentType.integer())
+                                                .then(Commands.argument("z1", IntegerArgumentType.integer())
+                                                        .then(Commands.argument("x2", IntegerArgumentType.integer())
+                                                                .then(Commands.argument("y2", IntegerArgumentType.integer())
+                                                                        .then(Commands.argument("z2", IntegerArgumentType.integer())
+                                                                                .executes(ArcadiaCommands::setDungeonCuboid)
+                                                                        )
+                                                                )
+                                                        )
+                                                )
+                                        )
+                                )
+                        )
+                )
+                .then(Commands.literal("tuning")
+                        .then(Commands.argument("entityId", IntegerArgumentType.integer(0))
+                                .then(Commands.argument("key", StringArgumentType.word())
+                                        .suggests(SUGGEST_ATTRIBUTES)
+                                        .then(Commands.argument("value", DoubleArgumentType.doubleArg())
+                                                .executes(ArcadiaCommands::applyRuntimeTuning)
+                                        )
+                                )
+                        )
+                )
+                .then(Commands.literal("reload")
+                        .executes(ArcadiaCommands::reloadConfigs)
+                )
+        );
     }
 
     // === COMMAND IMPLEMENTATIONS ===
@@ -1554,6 +1609,7 @@ public class ArcadiaCommands {
         ctx.getSource().sendSuccess(() -> Component.literal("ID: " + config.id).withStyle(ChatFormatting.GRAY), false);
         ctx.getSource().sendSuccess(() -> Component.literal("Cooldown: " + config.cooldownSeconds + "s").withStyle(ChatFormatting.GRAY), false);
         ctx.getSource().sendSuccess(() -> Component.literal("Disponible toutes les: " + (config.availableEverySeconds > 0 ? config.availableEverySeconds + "s" : "toujours")).withStyle(ChatFormatting.GRAY), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("Annonce periodique: " + (config.announceIntervalMinutes > 0 ? config.announceIntervalMinutes + " min" : "desactivee")).withStyle(ChatFormatting.GRAY), false);
         ctx.getSource().sendSuccess(() -> Component.literal("TP retour: " + (config.teleportBackOnComplete ? "Oui" : "Non")).withStyle(ChatFormatting.GRAY), false);
         ctx.getSource().sendSuccess(() -> Component.literal("Annonce debut: " + (config.announceStart ? "Oui" : "Non")).withStyle(ChatFormatting.GRAY), false);
         ctx.getSource().sendSuccess(() -> Component.literal("Annonce fin: " + (config.announceCompletion ? "Oui" : "Non")).withStyle(ChatFormatting.GRAY), false);
@@ -2282,6 +2338,10 @@ public class ArcadiaCommands {
 
     private static int stopDungeon(CommandContext<CommandSourceStack> ctx) {
         String dungeonId = StringArgumentType.getString(ctx, "dungeon");
+        if (DungeonManager.getInstance().getInstance(dungeonId) == null) {
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Aucune instance active: " + dungeonId));
+            return 0;
+        }
         DungeonManager.getInstance().stopDungeon(dungeonId);
         ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Donjon '" + dungeonId + "' arrete.")
                 .withStyle(ChatFormatting.YELLOW), true);
@@ -2469,6 +2529,40 @@ public class ArcadiaCommands {
         return 1;
     }
 
+    private static int showAdminStatus(CommandContext<CommandSourceStack> ctx) {
+        Map<String, DungeonInstance> active = DungeonManager.getInstance().getActiveInstances();
+        if (active.isEmpty()) {
+            ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Aucun donjon actif.")
+                    .withStyle(ChatFormatting.YELLOW), false);
+            return 1;
+        }
+
+        ctx.getSource().sendSuccess(() -> Component.literal("=== Donjons Actifs ===").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), false);
+        for (Map.Entry<String, DungeonInstance> entry : new ArrayList<>(active.entrySet())) {
+            DungeonInstance instance = entry.getValue();
+            DungeonConfig config = instance.getConfig();
+            String state = instance.getState().toString();
+            String players = instance.getPlayerNames(ctx.getSource().getServer());
+            String phase = "Aucune";
+
+            if (!instance.getActiveBosses().isEmpty()) {
+                BossInstance boss = instance.getActiveBosses().values().iterator().next();
+                phase = "Boss phase " + (boss.getCurrentPhase() + 1);
+            } else if (instance.getCurrentWave() != null) {
+                phase = "Vague " + instance.getCurrentWave().getConfig().waveNumber;
+            } else if (instance.getState() == DungeonState.RECRUITING) {
+                phase = "Recrutement " + instance.getRecruitmentRemainingSeconds() + "s";
+            }
+
+            String line = config.name + " (" + config.id + ") | Etat: " + state
+                    + " | Phase: " + phase
+                    + " | Joueurs: " + instance.getPlayerCount()
+                    + " [" + players + "]";
+            ctx.getSource().sendSuccess(() -> Component.literal(line).withStyle(ChatFormatting.AQUA), false);
+        }
+        return 1;
+    }
+
     // === FORCERESET ===
 
     private static int forceReset(CommandContext<CommandSourceStack> ctx) {
@@ -2552,13 +2646,87 @@ public class ArcadiaCommands {
 
     // === DEBUG COMMANDS ===
 
-    private static int debugReload(CommandContext<CommandSourceStack> ctx) {
+    private static int reloadConfigs(CommandContext<CommandSourceStack> ctx) {
         ConfigManager.getInstance().loadAll();
         PlayerProgressManager.getInstance().loadAll();
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia Debug] Configs rechargees! " +
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Configs rechargees! " +
                 ConfigManager.getInstance().getDungeonConfigs().size() + " donjon(s), " +
                 PlayerProgressManager.getInstance().getAll().size() + " joueur(s).")
                 .withStyle(ChatFormatting.AQUA), true);
+        return 1;
+    }
+
+    private static int setDungeonCuboid(CommandContext<CommandSourceStack> ctx) {
+        String dungeonId = StringArgumentType.getString(ctx, "dungeon");
+        DungeonConfig config = ConfigManager.getInstance().getDungeon(dungeonId);
+        if (config == null) {
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + dungeonId));
+            return 0;
+        }
+
+        String dimension = ctx.getSource().getLevel().dimension().location().toString();
+        config.areaPos1 = new DungeonConfig.AreaPos(
+                dimension,
+                IntegerArgumentType.getInteger(ctx, "x1"),
+                IntegerArgumentType.getInteger(ctx, "y1"),
+                IntegerArgumentType.getInteger(ctx, "z1")
+        );
+        config.areaPos2 = new DungeonConfig.AreaPos(
+                dimension,
+                IntegerArgumentType.getInteger(ctx, "x2"),
+                IntegerArgumentType.getInteger(ctx, "y2"),
+                IntegerArgumentType.getInteger(ctx, "z2")
+        );
+        ConfigManager.getInstance().saveDungeon(config);
+
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Cuboid defini pour " + config.name + " en " + dimension + ".")
+                .withStyle(ChatFormatting.GREEN), true);
+        return 1;
+    }
+
+    private static int applyRuntimeTuning(CommandContext<CommandSourceStack> ctx) {
+        int entityId = IntegerArgumentType.getInteger(ctx, "entityId");
+        String key = StringArgumentType.getString(ctx, "key");
+        double requestedValue = DoubleArgumentType.getDouble(ctx, "value");
+
+        Entity entity = findEntityById(ctx.getSource().getServer(), entityId);
+        if (!(entity instanceof LivingEntity living)) {
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Entite introuvable ou non-vivante: " + entityId));
+            return 0;
+        }
+
+        Double specialValue = clampSpecialValue(key, requestedValue);
+        if (specialValue != null) {
+            CombatTuning.applySpecialAttribute(living, key, specialValue);
+            warnIfClamped(key, requestedValue, specialValue);
+            ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Tuning runtime " + entityId + " : " + key + " = " + specialValue)
+                    .withStyle(ChatFormatting.GREEN), true);
+            return 1;
+        }
+
+        net.minecraft.resources.ResourceLocation attrLoc = net.minecraft.resources.ResourceLocation.tryParse(key);
+        if (attrLoc == null) {
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Cle invalide. Cles speciales: " + String.join(", ", CombatTuning.getSpecialKeys()) + " ou attribut vanilla namespace:path."));
+            return 0;
+        }
+
+        Attribute attribute = net.minecraft.core.registries.BuiltInRegistries.ATTRIBUTE.getOptional(attrLoc).orElse(null);
+        if (attribute == null) {
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Cle invalide. Cles speciales: " + String.join(", ", CombatTuning.getSpecialKeys()) + " ou attribut vanilla namespace:path."));
+            return 0;
+        }
+
+        AttributeInstance attributeInstance = living.getAttribute(net.minecraft.core.registries.BuiltInRegistries.ATTRIBUTE.wrapAsHolder(attribute));
+        if (attributeInstance == null) {
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] L'entite ne supporte pas l'attribut: " + key));
+            return 0;
+        }
+
+        double clampedValue = Math.max(0.0D, requestedValue);
+        warnIfClamped(key, requestedValue, clampedValue);
+        attributeInstance.setBaseValue(clampedValue);
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Tuning runtime " + entityId + " : " + key + " = " + clampedValue)
+                .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
 
@@ -2857,30 +3025,28 @@ public class ArcadiaCommands {
                 return 0;
             }
 
-            List<Map.Entry<PlayerProgress, PlayerProgress.DungeonProgress>> top =
-                    PlayerProgressManager.getInstance().getTopForDungeon(dungeonId, 10);
+            List<Map.Entry<String, Long>> top = WeeklyLeaderboard.getInstance().getTopForDungeon(dungeonId, 10);
 
-            ctx.getSource().sendSuccess(() -> Component.literal("=== Top " + config.name + " ===").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), false);
+            ctx.getSource().sendSuccess(() -> Component.literal("=== Top hebdo " + config.name + " ===").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), false);
 
             if (top.isEmpty()) {
-                ctx.getSource().sendSuccess(() -> Component.literal("Aucune completion enregistree.").withStyle(ChatFormatting.GRAY), false);
+                ctx.getSource().sendSuccess(() -> Component.literal("Aucun temps hebdo enregistre.").withStyle(ChatFormatting.GRAY), false);
                 return 1;
             }
 
             for (int i = 0; i < top.size(); i++) {
                 final int rank = i + 1;
-                Map.Entry<PlayerProgress, PlayerProgress.DungeonProgress> entry = top.get(i);
-                PlayerProgress pp = entry.getKey();
-                PlayerProgress.DungeonProgress dp = entry.getValue();
+                Map.Entry<String, Long> entry = top.get(i);
+                String playerName = WeeklyLeaderboard.getInstance().getPlayerName(entry.getKey());
+                long bestTime = entry.getValue();
 
                 ChatFormatting rankColor = rank <= 3 ? (rank == 1 ? ChatFormatting.GOLD : rank == 2 ? ChatFormatting.GRAY : ChatFormatting.RED) : ChatFormatting.WHITE;
 
                 ctx.getSource().sendSuccess(() -> Component.literal(" " + rank + ". ")
                         .withStyle(rankColor, ChatFormatting.BOLD)
-                        .append(Component.literal(pp.playerName).withStyle(ChatFormatting.WHITE))
+                        .append(Component.literal(playerName).withStyle(ChatFormatting.WHITE))
                         .append(Component.literal(" - ").withStyle(ChatFormatting.GRAY))
-                        .append(Component.literal(formatTime(dp.bestTimeSeconds)).withStyle(ChatFormatting.YELLOW))
-                        .append(Component.literal(" (" + dp.completions + "x)").withStyle(ChatFormatting.GRAY))
+                        .append(Component.literal(formatTime(bestTime)).withStyle(ChatFormatting.YELLOW))
                 , false);
             }
         } else {
@@ -4001,6 +4167,7 @@ public class ArcadiaCommands {
         ctx.getSource().sendSuccess(() -> Component.literal("  Semaine: " + data.weekId).withStyle(ChatFormatting.WHITE), false);
         ctx.getSource().sendSuccess(() -> Component.literal("  Reset: " + config.resetDay + " a " + config.announceHour + "h").withStyle(ChatFormatting.WHITE), false);
         ctx.getSource().sendSuccess(() -> Component.literal("  Joueurs: " + data.playerCompletions.size()).withStyle(ChatFormatting.WHITE), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("  Donjons suivis: " + data.dungeonBestTimes.size()).withStyle(ChatFormatting.WHITE), false);
         ctx.getSource().sendSuccess(() -> Component.literal("  Recompenses:").withStyle(ChatFormatting.YELLOW), false);
 
         for (int i = 1; i <= 3; i++) {
@@ -4158,5 +4325,32 @@ public class ArcadiaCommands {
             return (seconds / 60) + "m " + (seconds % 60) + "s";
         }
         return seconds + "s";
+    }
+
+    private static Entity findEntityById(MinecraftServer server, int entityId) {
+        if (server == null) return null;
+        for (ServerLevel level : server.getAllLevels()) {
+            Entity entity = level.getEntity(entityId);
+            if (entity != null) {
+                return entity;
+            }
+        }
+        return null;
+    }
+
+    private static Double clampSpecialValue(String key, double value) {
+        return switch (key) {
+            case CombatTuning.KEY_ATTACK_RANGE, CombatTuning.KEY_AGGRO_RANGE -> Math.max(0.0D, value);
+            case CombatTuning.KEY_ATTACK_COOLDOWN_MS, CombatTuning.KEY_PROJECTILE_COOLDOWN_MS, CombatTuning.KEY_DODGE_COOLDOWN_MS -> Math.max(0.0D, Math.round(value));
+            case CombatTuning.KEY_DODGE_CHANCE -> Math.max(0.0D, Math.min(1.0D, value));
+            case CombatTuning.KEY_DODGE_PROJECTILES_ONLY -> value >= 0.5D ? 1.0D : 0.0D;
+            default -> null;
+        };
+    }
+
+    private static void warnIfClamped(String key, double requested, double applied) {
+        if (Double.compare(requested, applied) != 0) {
+            com.vyrriox.arcadiadungeon.ArcadiaDungeon.LOGGER.warn("Combat tuning value clamped for {}: requested={}, applied={}", key, requested, applied);
+        }
     }
 }

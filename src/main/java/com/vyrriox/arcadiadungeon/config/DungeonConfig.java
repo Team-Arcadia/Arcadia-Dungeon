@@ -20,10 +20,12 @@ public class DungeonConfig {
     public boolean enabled = true;
     public int availableEverySeconds = 0;
     public boolean announceAvailability = true;
+    public int announceIntervalMinutes = 0;
     public String availabilityMessage = "&6[Donjon] &e%dungeon% &7est de nouveau accessible! &fLancez avec &e/arcadia_dungeon start %id%";
     public String requiredPermission = "";
     public int order = 0;
     public String requiredDungeon = "";
+    public boolean debugMode = false;
     public List<WaveConfig> waves = new ArrayList<>();
 
     // Recruitment / group system

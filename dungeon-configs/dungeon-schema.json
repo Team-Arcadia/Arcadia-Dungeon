@@ -1,0 +1,968 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Arcadia Dungeon Config",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "default": "example_dungeon",
+      "description": "Unique dungeon identifier."
+    },
+    "name": {
+      "type": "string",
+      "default": "Donjon Exemple",
+      "description": "Display name."
+    },
+    "cooldownSeconds": {
+      "type": "integer",
+      "default": 3600,
+      "description": "Cooldown after completion."
+    },
+    "announceStart": {
+      "type": "boolean",
+      "default": true,
+      "description": "Broadcast the start message."
+    },
+    "announceCompletion": {
+      "type": "boolean",
+      "default": true,
+      "description": "Broadcast completion/fail messages."
+    },
+    "startMessage": {
+      "type": "string",
+      "default": "&6[Donjon] ...",
+      "description": "Global start announcement."
+    },
+    "completionMessage": {
+      "type": "string",
+      "default": "&6[Donjon] ...",
+      "description": "Global completion announcement."
+    },
+    "failMessage": {
+      "type": "string",
+      "default": "&6[Donjon] ...",
+      "description": "Global fail announcement."
+    },
+    "teleportBackOnComplete": {
+      "type": "boolean",
+      "default": true,
+      "description": "Teleport players back on completion/fail."
+    },
+    "spawnPoint": {
+      "$ref": "#/$defs/spawnPoint"
+    },
+    "bosses": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/boss"
+      },
+      "description": "Configured bosses."
+    },
+    "completionRewards": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/reward"
+      },
+      "description": "Rewards granted on completion."
+    },
+    "settings": {
+      "$ref": "#/$defs/settings"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether the dungeon can be started or joined."
+    },
+    "availableEverySeconds": {
+      "type": "integer",
+      "default": 0,
+      "description": "Availability timer after a run."
+    },
+    "announceAvailability": {
+      "type": "boolean",
+      "default": true,
+      "description": "Broadcast availability announcements."
+    },
+    "availabilityMessage": {
+      "type": "string",
+      "default": "&6[Donjon] ...",
+      "description": "Availability announcement."
+    },
+    "requiredPermission": {
+      "type": "string",
+      "default": "",
+      "description": "Optional permission node."
+    },
+    "order": {
+      "type": "integer",
+      "default": 0,
+      "description": "Display order."
+    },
+    "requiredDungeon": {
+      "type": "string",
+      "default": "",
+      "description": "Required dungeon id to unlock this dungeon."
+    },
+    "debugMode": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable verbose DEBUG logs for this dungeon."
+    },
+    "waves": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/wave"
+      },
+      "description": "Configured waves."
+    },
+    "recruitmentDurationSeconds": {
+      "type": "integer",
+      "default": 90,
+      "description": "Recruitment duration before the run starts."
+    },
+    "recruitmentMessage": {
+      "type": "string",
+      "default": "&6[Donjon] ...",
+      "description": "Recruitment announcement."
+    },
+    "areaPos1": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/areaPos"
+        },
+        "null"
+      ]
+    },
+    "areaPos2": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/areaPos"
+        },
+        "null"
+      ]
+    },
+    "scriptedWalls": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/scriptedWall"
+      },
+      "description": "Scripted walls in the dungeon area."
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "spawnPoint"
+  ],
+  "additionalProperties": true,
+  "$defs": {
+    "spawnPoint": {
+      "type": "object",
+      "description": "Spawn point for dungeon, boss, or mob.",
+      "properties": {
+        "dimension": {
+          "type": "string",
+          "default": "minecraft:overworld",
+          "description": "Dimension id."
+        },
+        "x": {
+          "type": "number",
+          "default": 0.0,
+          "description": "X coordinate."
+        },
+        "y": {
+          "type": "number",
+          "default": 64.0,
+          "description": "Y coordinate."
+        },
+        "z": {
+          "type": "number",
+          "default": 0.0,
+          "description": "Z coordinate."
+        },
+        "yaw": {
+          "type": "number",
+          "default": 0.0,
+          "description": "Yaw."
+        },
+        "pitch": {
+          "type": "number",
+          "default": 0.0,
+          "description": "Pitch."
+        }
+      },
+      "additionalProperties": true
+    },
+    "reward": {
+      "type": "object",
+      "description": "Reward definition.",
+      "properties": {
+        "item": {
+          "type": "string",
+          "default": "minecraft:diamond",
+          "description": "Reward item id."
+        },
+        "count": {
+          "type": "integer",
+          "default": 1,
+          "description": "Item count."
+        },
+        "chance": {
+          "type": "number",
+          "default": 1.0,
+          "description": "Reward drop chance."
+        },
+        "command": {
+          "type": "string",
+          "default": "",
+          "description": "Command reward."
+        },
+        "experience": {
+          "type": "integer",
+          "default": 0,
+          "description": "Experience reward."
+        }
+      },
+      "additionalProperties": true
+    },
+    "phaseEffect": {
+      "type": "object",
+      "description": "Potion effect applied during a phase transition.",
+      "properties": {
+        "effect": {
+          "type": "string",
+          "default": "minecraft:slowness",
+          "description": "Effect id."
+        },
+        "durationSeconds": {
+          "type": "integer",
+          "default": 10,
+          "description": "Duration in seconds."
+        },
+        "amplifier": {
+          "type": "integer",
+          "default": 0,
+          "description": "Amplifier."
+        }
+      },
+      "additionalProperties": true
+    },
+    "summon": {
+      "type": "object",
+      "description": "Summoned mob during a boss phase.",
+      "properties": {
+        "entityType": {
+          "type": "string",
+          "default": "minecraft:zombie",
+          "description": "Minecraft entity id."
+        },
+        "count": {
+          "type": "integer",
+          "default": 1,
+          "description": "Summoned mob count."
+        },
+        "customName": {
+          "type": "string",
+          "default": "",
+          "description": "Displayed custom name."
+        },
+        "health": {
+          "type": "number",
+          "default": 20.0,
+          "description": "Base health."
+        },
+        "damage": {
+          "type": "number",
+          "default": 3.0,
+          "description": "Base damage."
+        },
+        "spawnPoint": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/spawnPoint"
+            },
+            "null"
+          ]
+        },
+        "mainHand": {
+          "type": "string",
+          "default": "",
+          "description": "Main hand item id."
+        },
+        "offHand": {
+          "type": "string",
+          "default": "",
+          "description": "Off hand item id."
+        },
+        "helmet": {
+          "type": "string",
+          "default": "",
+          "description": "Helmet item id."
+        },
+        "chestplate": {
+          "type": "string",
+          "default": "",
+          "description": "Chestplate item id."
+        },
+        "leggings": {
+          "type": "string",
+          "default": "",
+          "description": "Leggings item id."
+        },
+        "boots": {
+          "type": "string",
+          "default": "",
+          "description": "Boots item id."
+        },
+        "customAttributes": {
+          "type": "object",
+          "description": "Custom attributes map.",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "attackRange": {
+          "type": "number",
+          "default": 0.0,
+          "description": "Extended melee range stored in ArcadiaCombat."
+        },
+        "attackCooldownMs": {
+          "type": "integer",
+          "default": 0,
+          "description": "Melee attack cooldown in milliseconds."
+        },
+        "aggroRange": {
+          "type": "number",
+          "default": 0.0,
+          "description": "Follow range override stored in ArcadiaCombat."
+        },
+        "projectileCooldownMs": {
+          "type": "integer",
+          "default": 0,
+          "description": "Projectile cooldown in milliseconds."
+        },
+        "dodgeChance": {
+          "type": "number",
+          "default": 0.0,
+          "description": "Dodge chance between 0.0 and 1.0."
+        },
+        "dodgeCooldownMs": {
+          "type": "integer",
+          "default": 0,
+          "description": "Minimum delay between dodges in milliseconds."
+        },
+        "dodgeProjectilesOnly": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, dodge only against projectiles."
+        },
+        "dodgeMessage": {
+          "type": "string",
+          "default": "",
+          "description": "Broadcast message when a dodge succeeds."
+        }
+      },
+      "additionalProperties": true
+    },
+    "phase": {
+      "type": "object",
+      "description": "Boss phase definition.",
+      "properties": {
+        "phase": {
+          "type": "integer",
+          "default": 1,
+          "description": "Phase index."
+        },
+        "healthThreshold": {
+          "type": "number",
+          "default": 1.0,
+          "description": "Threshold ratio triggering the phase."
+        },
+        "damageMultiplier": {
+          "type": "number",
+          "default": 1.0,
+          "description": "Damage multiplier for this phase."
+        },
+        "speedMultiplier": {
+          "type": "number",
+          "default": 1.0,
+          "description": "Speed multiplier for this phase."
+        },
+        "description": {
+          "type": "string",
+          "default": "",
+          "description": "Description for admins."
+        },
+        "summonMobs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/summon"
+          },
+          "description": "Summoned mobs during the phase."
+        },
+        "requiredAction": {
+          "type": "string",
+          "default": "NONE",
+          "description": "Special action required to continue."
+        },
+        "phaseStartMessage": {
+          "type": "string",
+          "default": "",
+          "description": "Message sent when the phase starts."
+        },
+        "invulnerableDuringTransition": {
+          "type": "boolean",
+          "default": false,
+          "description": "Make the boss invulnerable during transition."
+        },
+        "transitionDurationSeconds": {
+          "type": "number",
+          "default": 2.0,
+          "description": "Transition duration."
+        },
+        "immunityDuration": {
+          "type": "number",
+          "default": 0.0,
+          "description": "Alias for transition invulnerability duration in seconds."
+        },
+        "playerEffects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/phaseEffect"
+          },
+          "description": "Effects applied to players."
+        },
+        "phaseCommands": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": "",
+            "description": "Command"
+          },
+          "description": "Commands executed when the phase starts."
+        }
+      },
+      "additionalProperties": true
+    },
+    "boss": {
+      "type": "object",
+      "description": "Boss definition.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "default": "guardian",
+          "description": "Boss identifier."
+        },
+        "entityType": {
+          "type": "string",
+          "default": "minecraft:zombie",
+          "description": "Minecraft entity id."
+        },
+        "customName": {
+          "type": "string",
+          "default": "Boss",
+          "description": "Displayed custom name."
+        },
+        "baseHealth": {
+          "type": "number",
+          "default": 100.0,
+          "description": "Base health."
+        },
+        "baseDamage": {
+          "type": "number",
+          "default": 10.0,
+          "description": "Base damage."
+        },
+        "adaptivePower": {
+          "type": "boolean",
+          "default": true,
+          "description": "Scale boss with player count."
+        },
+        "healthMultiplierPerPlayer": {
+          "type": "number",
+          "default": 0.5,
+          "description": "Extra health per additional player."
+        },
+        "damageMultiplierPerPlayer": {
+          "type": "number",
+          "default": 0.1,
+          "description": "Extra damage per additional player."
+        },
+        "spawnPoint": {
+          "$ref": "#/$defs/spawnPoint"
+        },
+        "areaPos1": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/areaPos"
+            },
+            "null"
+          ]
+        },
+        "areaPos2": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/areaPos"
+            },
+            "null"
+          ]
+        },
+        "phases": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/phase"
+          },
+          "description": "Boss phases."
+        },
+        "rewards": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/reward"
+          },
+          "description": "Boss rewards."
+        },
+        "showBossBar": {
+          "type": "boolean",
+          "default": true,
+          "description": "Display the boss bar."
+        },
+        "bossBarColor": {
+          "type": "string",
+          "default": "RED",
+          "description": "Boss bar color."
+        },
+        "optional": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether the boss may be skipped."
+        },
+        "spawnChance": {
+          "type": "number",
+          "default": 1.0,
+          "description": "Chance for optional bosses."
+        },
+        "spawnMessage": {
+          "type": "string",
+          "default": "",
+          "description": "Message when the boss spawns."
+        },
+        "skipMessage": {
+          "type": "string",
+          "default": "",
+          "description": "Message when an optional boss is skipped."
+        },
+        "spawnAfterWave": {
+          "type": "integer",
+          "default": 0,
+          "description": "0 = after all waves, N = after wave N."
+        },
+        "spawnAtStart": {
+          "type": "boolean",
+          "default": false,
+          "description": "Spawn when the dungeon starts."
+        },
+        "requiredKill": {
+          "type": "boolean",
+          "default": true,
+          "description": "Must be killed to complete the dungeon."
+        },
+        "mainHand": {
+          "type": "string",
+          "default": "",
+          "description": "Main hand item id."
+        },
+        "offHand": {
+          "type": "string",
+          "default": "",
+          "description": "Off hand item id."
+        },
+        "helmet": {
+          "type": "string",
+          "default": "",
+          "description": "Helmet item id."
+        },
+        "chestplate": {
+          "type": "string",
+          "default": "",
+          "description": "Chestplate item id."
+        },
+        "leggings": {
+          "type": "string",
+          "default": "",
+          "description": "Leggings item id."
+        },
+        "boots": {
+          "type": "string",
+          "default": "",
+          "description": "Boots item id."
+        },
+        "customAttributes": {
+          "type": "object",
+          "description": "Custom attributes map.",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "attackRange": {
+          "type": "number",
+          "default": 0.0,
+          "description": "Extended melee range stored in ArcadiaCombat."
+        },
+        "attackCooldownMs": {
+          "type": "integer",
+          "default": 0,
+          "description": "Melee attack cooldown in milliseconds."
+        },
+        "aggroRange": {
+          "type": "number",
+          "default": 0.0,
+          "description": "Follow range override stored in ArcadiaCombat."
+        },
+        "projectileCooldownMs": {
+          "type": "integer",
+          "default": 0,
+          "description": "Projectile cooldown in milliseconds."
+        },
+        "dodgeChance": {
+          "type": "number",
+          "default": 0.0,
+          "description": "Dodge chance between 0.0 and 1.0."
+        },
+        "dodgeCooldownMs": {
+          "type": "integer",
+          "default": 0,
+          "description": "Minimum delay between dodges in milliseconds."
+        },
+        "dodgeProjectilesOnly": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, dodge only against projectiles."
+        },
+        "dodgeMessage": {
+          "type": "string",
+          "default": "",
+          "description": "Broadcast message when a dodge succeeds."
+        }
+      },
+      "additionalProperties": true
+    },
+    "mobSpawn": {
+      "type": "object",
+      "description": "Wave mob definition.",
+      "properties": {
+        "entityType": {
+          "type": "string",
+          "default": "minecraft:zombie",
+          "description": "Minecraft entity id."
+        },
+        "count": {
+          "type": "integer",
+          "default": 1,
+          "description": "Base mob count."
+        },
+        "customName": {
+          "type": "string",
+          "default": "",
+          "description": "Displayed custom name."
+        },
+        "health": {
+          "type": "number",
+          "default": 20.0,
+          "description": "Base health."
+        },
+        "damage": {
+          "type": "number",
+          "default": 3.0,
+          "description": "Base damage."
+        },
+        "speed": {
+          "type": "number",
+          "default": 0.0,
+          "description": "Movement speed override."
+        },
+        "spawnPoint": {
+          "$ref": "#/$defs/spawnPoint"
+        },
+        "areaPos1": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/areaPos"
+            },
+            "null"
+          ]
+        },
+        "areaPos2": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/areaPos"
+            },
+            "null"
+          ]
+        },
+        "mainHand": {
+          "type": "string",
+          "default": "",
+          "description": "Main hand item id."
+        },
+        "offHand": {
+          "type": "string",
+          "default": "",
+          "description": "Off hand item id."
+        },
+        "helmet": {
+          "type": "string",
+          "default": "",
+          "description": "Helmet item id."
+        },
+        "chestplate": {
+          "type": "string",
+          "default": "",
+          "description": "Chestplate item id."
+        },
+        "leggings": {
+          "type": "string",
+          "default": "",
+          "description": "Leggings item id."
+        },
+        "boots": {
+          "type": "string",
+          "default": "",
+          "description": "Boots item id."
+        },
+        "customAttributes": {
+          "type": "object",
+          "description": "Custom attributes map.",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "attackRange": {
+          "type": "number",
+          "default": 0.0,
+          "description": "Extended melee range stored in ArcadiaCombat."
+        },
+        "attackCooldownMs": {
+          "type": "integer",
+          "default": 0,
+          "description": "Melee attack cooldown in milliseconds."
+        },
+        "aggroRange": {
+          "type": "number",
+          "default": 0.0,
+          "description": "Follow range override stored in ArcadiaCombat."
+        },
+        "projectileCooldownMs": {
+          "type": "integer",
+          "default": 0,
+          "description": "Projectile cooldown in milliseconds."
+        },
+        "dodgeChance": {
+          "type": "number",
+          "default": 0.0,
+          "description": "Dodge chance between 0.0 and 1.0."
+        },
+        "dodgeCooldownMs": {
+          "type": "integer",
+          "default": 0,
+          "description": "Minimum delay between dodges in milliseconds."
+        },
+        "dodgeProjectilesOnly": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, dodge only against projectiles."
+        },
+        "dodgeMessage": {
+          "type": "string",
+          "default": "",
+          "description": "Broadcast message when a dodge succeeds."
+        }
+      },
+      "additionalProperties": true
+    },
+    "wave": {
+      "type": "object",
+      "description": "Wave definition.",
+      "properties": {
+        "waveNumber": {
+          "type": "integer",
+          "default": 1,
+          "description": "Wave index."
+        },
+        "name": {
+          "type": "string",
+          "default": "Vague 1",
+          "description": "Wave display name."
+        },
+        "delayBeforeSeconds": {
+          "type": "integer",
+          "default": 0,
+          "description": "Delay before the wave spawns."
+        },
+        "mobs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/mobSpawn"
+          },
+          "description": "Mob spawn entries."
+        },
+        "startMessage": {
+          "type": "string",
+          "default": "",
+          "description": "Message when the wave starts."
+        },
+        "glowingAfterDelay": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable delayed glowing."
+        },
+        "glowingDelaySeconds": {
+          "type": "integer",
+          "default": 60,
+          "description": "Delay before glowing is applied."
+        }
+      },
+      "additionalProperties": true
+    },
+    "areaPos": {
+      "type": "object",
+      "description": "Area corner position.",
+      "properties": {
+        "dimension": {
+          "type": "string",
+          "default": "minecraft:overworld",
+          "description": "Dimension id."
+        },
+        "x": {
+          "type": "integer",
+          "default": 0,
+          "description": "Block X."
+        },
+        "y": {
+          "type": "integer",
+          "default": 0,
+          "description": "Block Y."
+        },
+        "z": {
+          "type": "integer",
+          "default": 0,
+          "description": "Block Z."
+        }
+      },
+      "additionalProperties": true
+    },
+    "scriptedWall": {
+      "type": "object",
+      "description": "Scripted wall definition.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "default": "",
+          "description": "Wall identifier."
+        },
+        "blocks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/areaPos"
+          },
+          "description": "Wall blocks."
+        },
+        "activationCondition": {
+          "type": "string",
+          "default": "",
+          "description": "Supported conditions: DUNGEON_START, WAVE_START:N, WAVE_COMPLETE:N, PHASE_START:N."
+        },
+        "action": {
+          "type": "string",
+          "default": "TOGGLE",
+          "description": "Action type. TOGGLE/PLACE places barrier blocks, REMOVE deletes them."
+        }
+      },
+      "additionalProperties": true
+    },
+    "settings": {
+      "type": "object",
+      "description": "Dungeon runtime settings.",
+      "properties": {
+        "maxPlayers": {
+          "type": "integer",
+          "default": 4,
+          "description": "Maximum players."
+        },
+        "minPlayers": {
+          "type": "integer",
+          "default": 1,
+          "description": "Minimum players."
+        },
+        "timeLimitSeconds": {
+          "type": "integer",
+          "default": 1800,
+          "description": "Time limit in seconds."
+        },
+        "pvp": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allow PVP."
+        },
+        "difficultyScaling": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable adaptive scaling."
+        },
+        "waveHealthMultiplierPerPlayer": {
+          "type": "number",
+          "default": 0.3,
+          "description": "Health scaling per extra player."
+        },
+        "waveDamageMultiplierPerPlayer": {
+          "type": "number",
+          "default": 0.1,
+          "description": "Damage scaling per extra player."
+        },
+        "waveCountMultiplierPerPlayer": {
+          "type": "number",
+          "default": 0.2,
+          "description": "Mob count scaling per extra player."
+        },
+        "maxDeaths": {
+          "type": "integer",
+          "default": 3,
+          "description": "Maximum deaths before ejection."
+        },
+        "antiMonopole": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable anti-monopoly join rules."
+        },
+        "antiMonopoleThreshold": {
+          "type": "integer",
+          "default": 5,
+          "description": "Weekly completion threshold."
+        },
+        "timerWarnings": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "default": 300,
+            "description": "Warning seconds"
+          },
+          "description": "Timer warning milestones."
+        },
+        "blockTeleportCommands": {
+          "type": "boolean",
+          "default": true,
+          "description": "Block teleport commands in dungeon."
+        },
+        "blockedCommands": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": "tpa",
+            "description": "Blocked command root"
+          },
+          "description": "Blocked command list."
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}
