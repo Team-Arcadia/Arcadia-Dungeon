@@ -5,7 +5,10 @@ import com.vyrriox.arcadiadungeon.config.BossConfig;
 import com.vyrriox.arcadiadungeon.config.MobSpawnConfig;
 import com.vyrriox.arcadiadungeon.config.PhaseConfig;
 import com.vyrriox.arcadiadungeon.config.SummonConfig;
+import com.vyrriox.arcadiadungeon.dungeon.CombatTuning;
 import com.vyrriox.arcadiadungeon.dungeon.DungeonManager;
+import com.vyrriox.arcadiadungeon.dungeon.SpawnSafety;
+import com.vyrriox.arcadiadungeon.util.MessageUtil;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -79,7 +82,7 @@ public class BossInstance {
         }
 
         bossEntity = living;
-        bossEntity.setPos(config.spawnPoint.x, config.spawnPoint.y, config.spawnPoint.z);
+        SpawnSafety.placeAtSafeSpawn(bossEntity, config.spawnPoint, config.spawnPoint.x, config.spawnPoint.y, config.spawnPoint.z, 4);
 
         if (config.customName != null && !config.customName.isEmpty()) {
             bossEntity.setCustomName(DungeonManager.parseColorCodes(config.customName));
@@ -106,6 +109,17 @@ public class BossInstance {
 
         // Custom attributes
         BossInstance.applyCustomAttributes(bossEntity, config.customAttributes);
+        CombatTuning.applyConfiguredCombat(
+                bossEntity,
+                config.attackRange,
+                config.attackCooldownMs,
+                config.aggroRange,
+                config.projectileCooldownMs,
+                config.dodgeChance,
+                config.dodgeCooldownMs,
+                config.dodgeProjectilesOnly,
+                config.dodgeMessage
+        );
 
         if (bossEntity instanceof Mob mob) {
             mob.setPersistenceRequired();
@@ -113,6 +127,7 @@ public class BossInstance {
 
         bossEntity.addTag("arcadia_boss");
         bossEntity.addTag("arcadia_boss_" + config.id);
+        bossEntity.addTag("arcadia_managed");
         bossEntity.addTag("arcadia_no_loot");
 
         // Temporary invulnerability to prevent boss being killed before players arrive
@@ -196,6 +211,12 @@ public class BossInstance {
         if (config.phases.isEmpty() || bossEntity == null || !bossEntity.isAlive()) return;
 
         float healthPercent = bossEntity.getHealth() / bossEntity.getMaxHealth();
+        checkPhaseTransition(healthPercent, dungeonPlayers);
+    }
+
+    public void checkPhaseTransition(float healthPercent, Collection<UUID> dungeonPlayers) {
+        if (config.phases.isEmpty() || bossEntity == null || !bossEntity.isAlive()) return;
+        if (transitioning) return;
 
         // Find the LOWEST phase we should be at (skip intermediate phases if HP dropped fast)
         int targetPhase = -1;
@@ -215,6 +236,10 @@ public class BossInstance {
         currentPhase = phaseIndex;
 
         ArcadiaDungeon.LOGGER.info("Boss {} transitioning to phase {}", config.id, phase.phase);
+        String dungeonId = DungeonManager.getInstance().findDungeonIdByBossEntity(bossEntity);
+        if (dungeonId != null) {
+            DungeonManager.getInstance().triggerScriptedWalls(dungeonId, "PHASE_START:" + phase.phase);
+        }
 
         // Apply phase multipliers using ORIGINAL values (not stacking)
         if (bossEntity.getAttribute(Attributes.ATTACK_DAMAGE) != null) {
@@ -225,9 +250,11 @@ public class BossInstance {
         }
 
         // Handle transition invulnerability (seconds -> ticks)
-        if (phase.invulnerableDuringTransition && phase.transitionDurationSeconds > 0) {
+        double immunityDuration = phase.immunityDuration > 0 ? phase.immunityDuration
+                : (phase.invulnerableDuringTransition ? phase.transitionDurationSeconds : 0.0);
+        if (immunityDuration > 0) {
             transitioning = true;
-            transitionTicks = (int) (phase.transitionDurationSeconds * 20);
+            transitionTicks = (int) Math.round(immunityDuration * 20.0);
             bossEntity.setInvulnerable(true);
         }
 
@@ -238,12 +265,9 @@ public class BossInstance {
 
         // Send phase message to dungeon players
         if (phase.phaseStartMessage != null && !phase.phaseStartMessage.isEmpty()) {
-            Component msg = DungeonManager.parseColorCodes(phase.phaseStartMessage);
             for (UUID playerId : dungeonPlayers) {
                 ServerPlayer player = level.getServer().getPlayerList().getPlayer(playerId);
-                if (player != null) {
-                    player.sendSystemMessage(msg);
-                }
+                MessageUtil.send(player, phase.phaseStartMessage);
             }
         }
 
@@ -257,6 +281,7 @@ public class BossInstance {
             for (UUID playerId : dungeonPlayers) {
                 ServerPlayer player = level.getServer().getPlayerList().getPlayer(playerId);
                 if (player != null) {
+                    DungeonManager.getInstance().allowBeneficialEffect(player, holder, fx.amplifier, fx.durationSeconds * 20);
                     player.addEffect(new net.minecraft.world.effect.MobEffectInstance(holder, fx.durationSeconds * 20, fx.amplifier, false, true, true));
                 }
             }
@@ -289,16 +314,22 @@ public class BossInstance {
             if (entity == null) continue;
 
             if (entity instanceof LivingEntity living) {
-                double offsetX = (level.getRandom().nextDouble() - 0.5) * 6;
-                double offsetZ = (level.getRandom().nextDouble() - 0.5) * 6;
-                living.setPos(
-                        bossEntity.getX() + offsetX,
-                        bossEntity.getY(),
-                        bossEntity.getZ() + offsetZ
-                );
+                if (summon.spawnPoint != null) {
+                    SpawnSafety.placeAtSafeSpawn(
+                            living,
+                            summon.spawnPoint,
+                            summon.spawnPoint.x,
+                            summon.spawnPoint.y,
+                            summon.spawnPoint.z,
+                            4
+                    );
+                } else {
+                    // Legacy fallback when no summon spawn is configured.
+                    living.setPos(bossEntity.getX(), bossEntity.getY(), bossEntity.getZ());
+                }
 
                 if (summon.customName != null && !summon.customName.isEmpty()) {
-                    living.setCustomName(Component.literal(summon.customName));
+                    living.setCustomName(DungeonManager.parseColorCodes(summon.customName));
                     living.setCustomNameVisible(true);
                 }
 
@@ -317,6 +348,17 @@ public class BossInstance {
 
                 // Custom attributes
                 BossInstance.applyCustomAttributes(living, summon.customAttributes);
+                CombatTuning.applyConfiguredCombat(
+                        living,
+                        summon.attackRange,
+                        summon.attackCooldownMs,
+                        summon.aggroRange,
+                        summon.projectileCooldownMs,
+                        summon.dodgeChance,
+                        summon.dodgeCooldownMs,
+                        summon.dodgeProjectilesOnly,
+                        summon.dodgeMessage
+                );
 
                 if (living instanceof Mob mob) {
                     mob.setPersistenceRequired();
@@ -324,6 +366,7 @@ public class BossInstance {
 
                 living.addTag("arcadia_summon");
                 living.addTag("arcadia_summon_" + config.id);
+                living.addTag("arcadia_managed");
                 living.addTag("arcadia_no_loot");
 
                 level.addFreshEntity(living);
@@ -341,10 +384,7 @@ public class BossInstance {
 
         for (UUID playerId : dungeonPlayers) {
             ServerPlayer player = level.getServer().getPlayerList().getPlayer(playerId);
-            if (player != null) {
-                player.sendSystemMessage(Component.literal("[Boss] Eliminez les sbires d'abord!")
-                        .withStyle(net.minecraft.ChatFormatting.RED));
-            }
+            MessageUtil.send(player, "&c[Boss] Eliminez les sbires d'abord!");
         }
     }
 
@@ -360,17 +400,19 @@ public class BossInstance {
         return false;
     }
 
+    public boolean shouldBlockDamageWhileSummonsAlive() {
+        return areSummonsAlive();
+    }
+
     // Prune dead summons (called from tick, not from damage events)
     public void pruneSummons() {
         summonedMobs.removeIf(mob -> !mob.isAlive());
     }
 
     public boolean requiresKillSummons() {
-        if (currentPhase < config.phases.size()) {
-            PhaseConfig phase = config.phases.get(currentPhase);
-            return "KILL_SUMMONS".equals(phase.requiredAction) && areSummonsAlive();
-        }
-        return false;
+        if (currentPhase >= config.phases.size()) return false;
+        PhaseConfig phase = config.phases.get(currentPhase);
+        return "KILL_SUMMONS".equals(phase.requiredAction) && areSummonsAlive();
     }
 
     public void revealBossBar() {
@@ -378,6 +420,10 @@ public class BossInstance {
             bossBarRevealed = true;
             bossBar.setVisible(true);
         }
+    }
+
+    public List<LivingEntity> getSummonedMobs() {
+        return summonedMobs;
     }
 
     public void removePlayerFromBossBar(ServerPlayer player) {
@@ -464,6 +510,9 @@ public class BossInstance {
     public static void applyCustomAttributes(LivingEntity living, Map<String, Double> customAttributes) {
         if (customAttributes == null || customAttributes.isEmpty()) return;
         for (Map.Entry<String, Double> entry : customAttributes.entrySet()) {
+            if (CombatTuning.applySpecialAttribute(living, entry.getKey(), entry.getValue())) {
+                continue;
+            }
             ResourceLocation attrLoc = ResourceLocation.tryParse(entry.getKey());
             if (attrLoc == null) {
                 ArcadiaDungeon.LOGGER.warn("Invalid attribute key: {}", entry.getKey());

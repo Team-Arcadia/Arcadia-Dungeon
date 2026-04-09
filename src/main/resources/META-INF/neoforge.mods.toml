@@ -23,3 +23,17 @@ description='''${mod_description}'''
     versionRange="${minecraft_version_range}"
     ordering="NONE"
     side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="luckperms"
+    type="optional"
+    versionRange="*"
+    ordering="NONE"
+    side="SERVER"
+
+[[dependencies.${mod_id}]]
+    modId="spark"
+    type="optional"
+    versionRange="*"
+    ordering="NONE"
+    side="SERVER"

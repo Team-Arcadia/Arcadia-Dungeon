@@ -90,6 +90,22 @@ public class PlayerProgressManager {
         dirtyPlayers.add(uuid); // Fix #8: mark dirty instead of saving immediately
     }
 
+    public void recordCompletionAndSave(String uuid, String playerName, String dungeonId, long timeSeconds) {
+        PlayerProgress progress = getOrCreate(uuid, playerName);
+        progress.recordCompletion(dungeonId, timeSeconds);
+        save(progress);
+        dirtyPlayers.remove(uuid);
+    }
+
+    public void saveNow(String uuid) {
+        if (uuid == null || uuid.isEmpty()) return;
+        PlayerProgress progress = playerData.get(uuid);
+        if (progress != null) {
+            save(progress);
+            dirtyPlayers.remove(uuid);
+        }
+    }
+
     public void flushDirty() {
         if (dirtyPlayers.isEmpty()) return;
         for (String uuid : new ArrayList<>(dirtyPlayers)) {

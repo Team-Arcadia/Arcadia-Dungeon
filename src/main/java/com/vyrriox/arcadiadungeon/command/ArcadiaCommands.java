@@ -7,9 +7,11 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.vyrriox.arcadiadungeon.boss.BossInstance;
 import com.vyrriox.arcadiadungeon.boss.BossManager;
 import com.vyrriox.arcadiadungeon.config.*;
+import com.vyrriox.arcadiadungeon.dungeon.CombatTuning;
 import com.vyrriox.arcadiadungeon.dungeon.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
@@ -20,7 +22,13 @@ import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -78,7 +86,11 @@ public class ArcadiaCommands {
 
     private static final SuggestionProvider<CommandSourceStack> SUGGEST_ATTRIBUTES = (ctx, builder) ->
             SharedSuggestionProvider.suggest(
-                    net.minecraft.core.registries.BuiltInRegistries.ATTRIBUTE.keySet().stream().map(net.minecraft.resources.ResourceLocation::toString), builder
+                    java.util.stream.Stream.concat(
+                            net.minecraft.core.registries.BuiltInRegistries.ATTRIBUTE.keySet().stream().map(net.minecraft.resources.ResourceLocation::toString),
+                            CombatTuning.getSpecialKeys().stream()
+                    ),
+                    builder
             );
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -544,6 +556,85 @@ public class ArcadiaCommands {
                                         )
                                 )
                         )
+                        .then(Commands.literal("combat")
+                                .then(Commands.literal("attackrange")
+                                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                                .suggests(SUGGEST_DUNGEONS)
+                                                .then(Commands.argument("bossId", StringArgumentType.word())
+                                                        .suggests(SUGGEST_BOSS_IDS)
+                                                        .then(Commands.argument("value", DoubleArgumentType.doubleArg(0))
+                                                                .executes(ctx -> setBossCombatValue(ctx, CombatTuning.KEY_ATTACK_RANGE))
+                                                        )
+                                                )
+                                        )
+                                )
+                                .then(Commands.literal("attackcooldown")
+                                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                                .suggests(SUGGEST_DUNGEONS)
+                                                .then(Commands.argument("bossId", StringArgumentType.word())
+                                                        .suggests(SUGGEST_BOSS_IDS)
+                                                        .then(Commands.argument("value", IntegerArgumentType.integer(0))
+                                                                .executes(ctx -> setBossCombatValue(ctx, CombatTuning.KEY_ATTACK_COOLDOWN_MS))
+                                                        )
+                                                )
+                                        )
+                                )
+                                .then(Commands.literal("aggrorange")
+                                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                                .suggests(SUGGEST_DUNGEONS)
+                                                .then(Commands.argument("bossId", StringArgumentType.word())
+                                                        .suggests(SUGGEST_BOSS_IDS)
+                                                        .then(Commands.argument("value", DoubleArgumentType.doubleArg(0))
+                                                                .executes(ctx -> setBossCombatValue(ctx, CombatTuning.KEY_AGGRO_RANGE))
+                                                        )
+                                                )
+                                        )
+                                )
+                                .then(Commands.literal("projectilecooldown")
+                                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                                .suggests(SUGGEST_DUNGEONS)
+                                                .then(Commands.argument("bossId", StringArgumentType.word())
+                                                        .suggests(SUGGEST_BOSS_IDS)
+                                                        .then(Commands.argument("value", IntegerArgumentType.integer(0))
+                                                                .executes(ctx -> setBossCombatValue(ctx, CombatTuning.KEY_PROJECTILE_COOLDOWN_MS))
+                                                        )
+                                                )
+                                        )
+                                )
+                                .then(Commands.literal("dodgechance")
+                                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                                .suggests(SUGGEST_DUNGEONS)
+                                                .then(Commands.argument("bossId", StringArgumentType.word())
+                                                        .suggests(SUGGEST_BOSS_IDS)
+                                                        .then(Commands.argument("value", DoubleArgumentType.doubleArg(0, 1))
+                                                                .executes(ctx -> setBossCombatValue(ctx, CombatTuning.KEY_DODGE_CHANCE))
+                                                        )
+                                                )
+                                        )
+                                )
+                                .then(Commands.literal("dodgecooldown")
+                                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                                .suggests(SUGGEST_DUNGEONS)
+                                                .then(Commands.argument("bossId", StringArgumentType.word())
+                                                        .suggests(SUGGEST_BOSS_IDS)
+                                                        .then(Commands.argument("value", IntegerArgumentType.integer(0))
+                                                                .executes(ctx -> setBossCombatValue(ctx, CombatTuning.KEY_DODGE_COOLDOWN_MS))
+                                                        )
+                                                )
+                                        )
+                                )
+                                .then(Commands.literal("dodgeprojectilesonly")
+                                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                                .suggests(SUGGEST_DUNGEONS)
+                                                .then(Commands.argument("bossId", StringArgumentType.word())
+                                                        .suggests(SUGGEST_BOSS_IDS)
+                                                        .then(Commands.argument("value", BoolArgumentType.bool())
+                                                                .executes(ctx -> setBossCombatBool(ctx, CombatTuning.KEY_DODGE_PROJECTILES_ONLY))
+                                                        )
+                                                )
+                                        )
+                                )
+                        )
 
                         // === BOSS PHASE ===
                         .then(Commands.literal("phase")
@@ -640,8 +731,8 @@ public class ArcadiaCommands {
                                                 )
                                         )
                                 )
-                                .then(Commands.literal("summonattribute")
-                                        .then(Commands.literal("set")
+                        .then(Commands.literal("summonattribute")
+                                .then(Commands.literal("set")
                                                 .then(Commands.argument("dungeon", StringArgumentType.word())
                                                         .suggests(SUGGEST_DUNGEONS)
                                                         .then(Commands.argument("bossId", StringArgumentType.word())
@@ -683,6 +774,113 @@ public class ArcadiaCommands {
                                                                 .then(Commands.argument("phaseNum", IntegerArgumentType.integer(1))
                                                                         .then(Commands.argument("summonIndex", IntegerArgumentType.integer(0))
                                                                                 .executes(ArcadiaCommands::listSummonAttributes)
+                                                                        )
+                                                                )
+                                                        )
+                                                )
+                                        )
+                                )
+                        )
+                        .then(Commands.literal("combat")
+                                .then(Commands.literal("attackrange")
+                                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                                .suggests(SUGGEST_DUNGEONS)
+                                                .then(Commands.argument("bossId", StringArgumentType.word())
+                                                        .suggests(SUGGEST_BOSS_IDS)
+                                                        .then(Commands.argument("phaseNum", IntegerArgumentType.integer(1))
+                                                                .then(Commands.argument("summonIndex", IntegerArgumentType.integer(0))
+                                                                        .then(Commands.argument("value", DoubleArgumentType.doubleArg(0))
+                                                                                .executes(ctx -> setSummonCombatValue(ctx, CombatTuning.KEY_ATTACK_RANGE))
+                                                                        )
+                                                                )
+                                                        )
+                                                )
+                                        )
+                                )
+                                .then(Commands.literal("attackcooldown")
+                                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                                .suggests(SUGGEST_DUNGEONS)
+                                                .then(Commands.argument("bossId", StringArgumentType.word())
+                                                        .suggests(SUGGEST_BOSS_IDS)
+                                                        .then(Commands.argument("phaseNum", IntegerArgumentType.integer(1))
+                                                                .then(Commands.argument("summonIndex", IntegerArgumentType.integer(0))
+                                                                        .then(Commands.argument("value", IntegerArgumentType.integer(0))
+                                                                                .executes(ctx -> setSummonCombatValue(ctx, CombatTuning.KEY_ATTACK_COOLDOWN_MS))
+                                                                        )
+                                                                )
+                                                        )
+                                                )
+                                        )
+                                )
+                                .then(Commands.literal("aggrorange")
+                                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                                .suggests(SUGGEST_DUNGEONS)
+                                                .then(Commands.argument("bossId", StringArgumentType.word())
+                                                        .suggests(SUGGEST_BOSS_IDS)
+                                                        .then(Commands.argument("phaseNum", IntegerArgumentType.integer(1))
+                                                                .then(Commands.argument("summonIndex", IntegerArgumentType.integer(0))
+                                                                        .then(Commands.argument("value", DoubleArgumentType.doubleArg(0))
+                                                                                .executes(ctx -> setSummonCombatValue(ctx, CombatTuning.KEY_AGGRO_RANGE))
+                                                                        )
+                                                                )
+                                                        )
+                                                )
+                                        )
+                                )
+                                .then(Commands.literal("projectilecooldown")
+                                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                                .suggests(SUGGEST_DUNGEONS)
+                                                .then(Commands.argument("bossId", StringArgumentType.word())
+                                                        .suggests(SUGGEST_BOSS_IDS)
+                                                        .then(Commands.argument("phaseNum", IntegerArgumentType.integer(1))
+                                                                .then(Commands.argument("summonIndex", IntegerArgumentType.integer(0))
+                                                                        .then(Commands.argument("value", IntegerArgumentType.integer(0))
+                                                                                .executes(ctx -> setSummonCombatValue(ctx, CombatTuning.KEY_PROJECTILE_COOLDOWN_MS))
+                                                                        )
+                                                                )
+                                                        )
+                                                )
+                                        )
+                                )
+                                .then(Commands.literal("dodgechance")
+                                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                                .suggests(SUGGEST_DUNGEONS)
+                                                .then(Commands.argument("bossId", StringArgumentType.word())
+                                                        .suggests(SUGGEST_BOSS_IDS)
+                                                        .then(Commands.argument("phaseNum", IntegerArgumentType.integer(1))
+                                                                .then(Commands.argument("summonIndex", IntegerArgumentType.integer(0))
+                                                                        .then(Commands.argument("value", DoubleArgumentType.doubleArg(0, 1))
+                                                                                .executes(ctx -> setSummonCombatValue(ctx, CombatTuning.KEY_DODGE_CHANCE))
+                                                                        )
+                                                                )
+                                                        )
+                                                )
+                                        )
+                                )
+                                .then(Commands.literal("dodgecooldown")
+                                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                                .suggests(SUGGEST_DUNGEONS)
+                                                .then(Commands.argument("bossId", StringArgumentType.word())
+                                                        .suggests(SUGGEST_BOSS_IDS)
+                                                        .then(Commands.argument("phaseNum", IntegerArgumentType.integer(1))
+                                                                .then(Commands.argument("summonIndex", IntegerArgumentType.integer(0))
+                                                                        .then(Commands.argument("value", IntegerArgumentType.integer(0))
+                                                                                .executes(ctx -> setSummonCombatValue(ctx, CombatTuning.KEY_DODGE_COOLDOWN_MS))
+                                                                        )
+                                                                )
+                                                        )
+                                                )
+                                        )
+                                )
+                                .then(Commands.literal("dodgeprojectilesonly")
+                                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                                .suggests(SUGGEST_DUNGEONS)
+                                                .then(Commands.argument("bossId", StringArgumentType.word())
+                                                        .suggests(SUGGEST_BOSS_IDS)
+                                                        .then(Commands.argument("phaseNum", IntegerArgumentType.integer(1))
+                                                                .then(Commands.argument("summonIndex", IntegerArgumentType.integer(0))
+                                                                        .then(Commands.argument("value", BoolArgumentType.bool())
+                                                                                .executes(ctx -> setSummonCombatBool(ctx, CombatTuning.KEY_DODGE_PROJECTILES_ONLY))
                                                                         )
                                                                 )
                                                         )
@@ -815,12 +1013,23 @@ public class ArcadiaCommands {
 
                 // === WAND ===
                 .then(Commands.literal("wand")
-                        .executes(ArcadiaCommands::giveWand)
+                        .executes(ArcadiaCommands::giveAreaWand)
+                )
+                .then(Commands.literal("wallwand")
+                        .executes(ArcadiaCommands::giveWallWand)
                 )
                 .then(Commands.literal("wand_select")
                         .then(Commands.argument("dungeon", StringArgumentType.word())
                                 .suggests(SUGGEST_DUNGEONS)
                                 .executes(ArcadiaCommands::wandSelect)
+                        )
+                )
+                .then(Commands.literal("wall_select")
+                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                .suggests(SUGGEST_DUNGEONS)
+                                .then(Commands.argument("wallId", StringArgumentType.word())
+                                        .executes(ArcadiaCommands::wallSelect)
+                                )
                         )
                 )
 
@@ -873,10 +1082,15 @@ public class ArcadiaCommands {
                         )
                 )
 
+                // === RELOAD ===
+                .then(Commands.literal("reload")
+                        .executes(ArcadiaCommands::reloadConfigs)
+                )
+
                 // === DEBUG ===
                 .then(Commands.literal("debug")
                         .then(Commands.literal("reload")
-                                .executes(ArcadiaCommands::debugReload)
+                                .executes(ArcadiaCommands::reloadConfigs)
                         )
                         .then(Commands.literal("info")
                                 .then(Commands.argument("dungeon", StringArgumentType.word())
@@ -1148,6 +1362,92 @@ public class ArcadiaCommands {
                                         )
                                 )
                         )
+                        .then(Commands.literal("combat")
+                                .then(Commands.literal("attackrange")
+                                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                                .suggests(SUGGEST_DUNGEONS)
+                                                .then(Commands.argument("waveNum", IntegerArgumentType.integer(1))
+                                                        .then(Commands.argument("mobIndex", IntegerArgumentType.integer(0))
+                                                                .then(Commands.argument("value", DoubleArgumentType.doubleArg(0))
+                                                                        .executes(ctx -> setWaveCombatValue(ctx, CombatTuning.KEY_ATTACK_RANGE))
+                                                                )
+                                                        )
+                                                )
+                                        )
+                                )
+                                .then(Commands.literal("attackcooldown")
+                                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                                .suggests(SUGGEST_DUNGEONS)
+                                                .then(Commands.argument("waveNum", IntegerArgumentType.integer(1))
+                                                        .then(Commands.argument("mobIndex", IntegerArgumentType.integer(0))
+                                                                .then(Commands.argument("value", IntegerArgumentType.integer(0))
+                                                                        .executes(ctx -> setWaveCombatValue(ctx, CombatTuning.KEY_ATTACK_COOLDOWN_MS))
+                                                                )
+                                                        )
+                                                )
+                                        )
+                                )
+                                .then(Commands.literal("aggrorange")
+                                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                                .suggests(SUGGEST_DUNGEONS)
+                                                .then(Commands.argument("waveNum", IntegerArgumentType.integer(1))
+                                                        .then(Commands.argument("mobIndex", IntegerArgumentType.integer(0))
+                                                                .then(Commands.argument("value", DoubleArgumentType.doubleArg(0))
+                                                                        .executes(ctx -> setWaveCombatValue(ctx, CombatTuning.KEY_AGGRO_RANGE))
+                                                                )
+                                                        )
+                                                )
+                                        )
+                                )
+                                .then(Commands.literal("projectilecooldown")
+                                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                                .suggests(SUGGEST_DUNGEONS)
+                                                .then(Commands.argument("waveNum", IntegerArgumentType.integer(1))
+                                                        .then(Commands.argument("mobIndex", IntegerArgumentType.integer(0))
+                                                                .then(Commands.argument("value", IntegerArgumentType.integer(0))
+                                                                        .executes(ctx -> setWaveCombatValue(ctx, CombatTuning.KEY_PROJECTILE_COOLDOWN_MS))
+                                                                )
+                                                        )
+                                                )
+                                        )
+                                )
+                                .then(Commands.literal("dodgechance")
+                                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                                .suggests(SUGGEST_DUNGEONS)
+                                                .then(Commands.argument("waveNum", IntegerArgumentType.integer(1))
+                                                        .then(Commands.argument("mobIndex", IntegerArgumentType.integer(0))
+                                                                .then(Commands.argument("value", DoubleArgumentType.doubleArg(0, 1))
+                                                                        .executes(ctx -> setWaveCombatValue(ctx, CombatTuning.KEY_DODGE_CHANCE))
+                                                                )
+                                                        )
+                                                )
+                                        )
+                                )
+                                .then(Commands.literal("dodgecooldown")
+                                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                                .suggests(SUGGEST_DUNGEONS)
+                                                .then(Commands.argument("waveNum", IntegerArgumentType.integer(1))
+                                                        .then(Commands.argument("mobIndex", IntegerArgumentType.integer(0))
+                                                                .then(Commands.argument("value", IntegerArgumentType.integer(0))
+                                                                        .executes(ctx -> setWaveCombatValue(ctx, CombatTuning.KEY_DODGE_COOLDOWN_MS))
+                                                                )
+                                                        )
+                                                )
+                                        )
+                                )
+                                .then(Commands.literal("dodgeprojectilesonly")
+                                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                                .suggests(SUGGEST_DUNGEONS)
+                                                .then(Commands.argument("waveNum", IntegerArgumentType.integer(1))
+                                                        .then(Commands.argument("mobIndex", IntegerArgumentType.integer(0))
+                                                                .then(Commands.argument("value", BoolArgumentType.bool())
+                                                                        .executes(ctx -> setWaveCombatBool(ctx, CombatTuning.KEY_DODGE_PROJECTILES_ONLY))
+                                                                )
+                                                        )
+                                                )
+                                        )
+                                )
+                        )
                 )
         ));
 
@@ -1189,6 +1489,50 @@ public class ArcadiaCommands {
                 )
                 .then(Commands.literal("status")
                         .executes(ArcadiaCommands::showStatus)
+                )
+        );
+
+        dispatcher.register(Commands.literal("arcadia")
+                .requires(source -> source.hasPermission(2))
+                .then(Commands.literal("status")
+                        .executes(ArcadiaCommands::showAdminStatus)
+                )
+                .then(Commands.literal("stop")
+                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                .suggests(SUGGEST_DUNGEONS)
+                                .executes(ArcadiaCommands::stopDungeon)
+                        )
+                )
+                .then(Commands.literal("cuboid")
+                        .then(Commands.argument("dungeon", StringArgumentType.word())
+                                .suggests(SUGGEST_DUNGEONS)
+                                .then(Commands.argument("x1", IntegerArgumentType.integer())
+                                        .then(Commands.argument("y1", IntegerArgumentType.integer())
+                                                .then(Commands.argument("z1", IntegerArgumentType.integer())
+                                                        .then(Commands.argument("x2", IntegerArgumentType.integer())
+                                                                .then(Commands.argument("y2", IntegerArgumentType.integer())
+                                                                        .then(Commands.argument("z2", IntegerArgumentType.integer())
+                                                                                .executes(ArcadiaCommands::setDungeonCuboid)
+                                                                        )
+                                                                )
+                                                        )
+                                                )
+                                        )
+                                )
+                        )
+                )
+                .then(Commands.literal("tuning")
+                        .then(Commands.argument("entityId", IntegerArgumentType.integer(0))
+                                .then(Commands.argument("key", StringArgumentType.word())
+                                        .suggests(SUGGEST_ATTRIBUTES)
+                                        .then(Commands.argument("value", DoubleArgumentType.doubleArg())
+                                                .executes(ArcadiaCommands::applyRuntimeTuning)
+                                        )
+                                )
+                        )
+                )
+                .then(Commands.literal("reload")
+                        .executes(ArcadiaCommands::reloadConfigs)
                 )
         );
     }
@@ -1265,6 +1609,7 @@ public class ArcadiaCommands {
         ctx.getSource().sendSuccess(() -> Component.literal("ID: " + config.id).withStyle(ChatFormatting.GRAY), false);
         ctx.getSource().sendSuccess(() -> Component.literal("Cooldown: " + config.cooldownSeconds + "s").withStyle(ChatFormatting.GRAY), false);
         ctx.getSource().sendSuccess(() -> Component.literal("Disponible toutes les: " + (config.availableEverySeconds > 0 ? config.availableEverySeconds + "s" : "toujours")).withStyle(ChatFormatting.GRAY), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("Annonce periodique: " + (config.announceIntervalMinutes > 0 ? config.announceIntervalMinutes + " min" : "desactivee")).withStyle(ChatFormatting.GRAY), false);
         ctx.getSource().sendSuccess(() -> Component.literal("TP retour: " + (config.teleportBackOnComplete ? "Oui" : "Non")).withStyle(ChatFormatting.GRAY), false);
         ctx.getSource().sendSuccess(() -> Component.literal("Annonce debut: " + (config.announceStart ? "Oui" : "Non")).withStyle(ChatFormatting.GRAY), false);
         ctx.getSource().sendSuccess(() -> Component.literal("Annonce fin: " + (config.announceCompletion ? "Oui" : "Non")).withStyle(ChatFormatting.GRAY), false);
@@ -1993,6 +2338,10 @@ public class ArcadiaCommands {
 
     private static int stopDungeon(CommandContext<CommandSourceStack> ctx) {
         String dungeonId = StringArgumentType.getString(ctx, "dungeon");
+        if (DungeonManager.getInstance().getInstance(dungeonId) == null) {
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Aucune instance active: " + dungeonId));
+            return 0;
+        }
         DungeonManager.getInstance().stopDungeon(dungeonId);
         ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Donjon '" + dungeonId + "' arrete.")
                 .withStyle(ChatFormatting.YELLOW), true);
@@ -2180,6 +2529,40 @@ public class ArcadiaCommands {
         return 1;
     }
 
+    private static int showAdminStatus(CommandContext<CommandSourceStack> ctx) {
+        Map<String, DungeonInstance> active = DungeonManager.getInstance().getActiveInstances();
+        if (active.isEmpty()) {
+            ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Aucun donjon actif.")
+                    .withStyle(ChatFormatting.YELLOW), false);
+            return 1;
+        }
+
+        ctx.getSource().sendSuccess(() -> Component.literal("=== Donjons Actifs ===").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), false);
+        for (Map.Entry<String, DungeonInstance> entry : new ArrayList<>(active.entrySet())) {
+            DungeonInstance instance = entry.getValue();
+            DungeonConfig config = instance.getConfig();
+            String state = instance.getState().toString();
+            String players = instance.getPlayerNames(ctx.getSource().getServer());
+            String phase = "Aucune";
+
+            if (!instance.getActiveBosses().isEmpty()) {
+                BossInstance boss = instance.getActiveBosses().values().iterator().next();
+                phase = "Boss phase " + (boss.getCurrentPhase() + 1);
+            } else if (instance.getCurrentWave() != null) {
+                phase = "Vague " + instance.getCurrentWave().getConfig().waveNumber;
+            } else if (instance.getState() == DungeonState.RECRUITING) {
+                phase = "Recrutement " + instance.getRecruitmentRemainingSeconds() + "s";
+            }
+
+            String line = config.name + " (" + config.id + ") | Etat: " + state
+                    + " | Phase: " + phase
+                    + " | Joueurs: " + instance.getPlayerCount()
+                    + " [" + players + "]";
+            ctx.getSource().sendSuccess(() -> Component.literal(line).withStyle(ChatFormatting.AQUA), false);
+        }
+        return 1;
+    }
+
     // === FORCERESET ===
 
     private static int forceReset(CommandContext<CommandSourceStack> ctx) {
@@ -2263,13 +2646,87 @@ public class ArcadiaCommands {
 
     // === DEBUG COMMANDS ===
 
-    private static int debugReload(CommandContext<CommandSourceStack> ctx) {
+    private static int reloadConfigs(CommandContext<CommandSourceStack> ctx) {
         ConfigManager.getInstance().loadAll();
         PlayerProgressManager.getInstance().loadAll();
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia Debug] Configs rechargees! " +
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Configs rechargees! " +
                 ConfigManager.getInstance().getDungeonConfigs().size() + " donjon(s), " +
                 PlayerProgressManager.getInstance().getAll().size() + " joueur(s).")
                 .withStyle(ChatFormatting.AQUA), true);
+        return 1;
+    }
+
+    private static int setDungeonCuboid(CommandContext<CommandSourceStack> ctx) {
+        String dungeonId = StringArgumentType.getString(ctx, "dungeon");
+        DungeonConfig config = ConfigManager.getInstance().getDungeon(dungeonId);
+        if (config == null) {
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + dungeonId));
+            return 0;
+        }
+
+        String dimension = ctx.getSource().getLevel().dimension().location().toString();
+        config.areaPos1 = new DungeonConfig.AreaPos(
+                dimension,
+                IntegerArgumentType.getInteger(ctx, "x1"),
+                IntegerArgumentType.getInteger(ctx, "y1"),
+                IntegerArgumentType.getInteger(ctx, "z1")
+        );
+        config.areaPos2 = new DungeonConfig.AreaPos(
+                dimension,
+                IntegerArgumentType.getInteger(ctx, "x2"),
+                IntegerArgumentType.getInteger(ctx, "y2"),
+                IntegerArgumentType.getInteger(ctx, "z2")
+        );
+        ConfigManager.getInstance().saveDungeon(config);
+
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Cuboid defini pour " + config.name + " en " + dimension + ".")
+                .withStyle(ChatFormatting.GREEN), true);
+        return 1;
+    }
+
+    private static int applyRuntimeTuning(CommandContext<CommandSourceStack> ctx) {
+        int entityId = IntegerArgumentType.getInteger(ctx, "entityId");
+        String key = StringArgumentType.getString(ctx, "key");
+        double requestedValue = DoubleArgumentType.getDouble(ctx, "value");
+
+        Entity entity = findEntityById(ctx.getSource().getServer(), entityId);
+        if (!(entity instanceof LivingEntity living)) {
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Entite introuvable ou non-vivante: " + entityId));
+            return 0;
+        }
+
+        Double specialValue = clampSpecialValue(key, requestedValue);
+        if (specialValue != null) {
+            CombatTuning.applySpecialAttribute(living, key, specialValue);
+            warnIfClamped(key, requestedValue, specialValue);
+            ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Tuning runtime " + entityId + " : " + key + " = " + specialValue)
+                    .withStyle(ChatFormatting.GREEN), true);
+            return 1;
+        }
+
+        net.minecraft.resources.ResourceLocation attrLoc = net.minecraft.resources.ResourceLocation.tryParse(key);
+        if (attrLoc == null) {
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Cle invalide. Cles speciales: " + String.join(", ", CombatTuning.getSpecialKeys()) + " ou attribut vanilla namespace:path."));
+            return 0;
+        }
+
+        Attribute attribute = net.minecraft.core.registries.BuiltInRegistries.ATTRIBUTE.getOptional(attrLoc).orElse(null);
+        if (attribute == null) {
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Cle invalide. Cles speciales: " + String.join(", ", CombatTuning.getSpecialKeys()) + " ou attribut vanilla namespace:path."));
+            return 0;
+        }
+
+        AttributeInstance attributeInstance = living.getAttribute(net.minecraft.core.registries.BuiltInRegistries.ATTRIBUTE.wrapAsHolder(attribute));
+        if (attributeInstance == null) {
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] L'entite ne supporte pas l'attribut: " + key));
+            return 0;
+        }
+
+        double clampedValue = Math.max(0.0D, requestedValue);
+        warnIfClamped(key, requestedValue, clampedValue);
+        attributeInstance.setBaseValue(clampedValue);
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Tuning runtime " + entityId + " : " + key + " = " + clampedValue)
+                .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
 
@@ -2384,7 +2841,8 @@ public class ArcadiaCommands {
             return 0;
         }
 
-        // Kill all active bosses and trigger rewards as if they died normally
+        boolean skippedInterWaveBoss = instance.isWaitingForInterWaveBoss();
+
         for (Map.Entry<String, BossInstance> entry : new ArrayList<>(instance.getActiveBosses().entrySet())) {
             BossInstance boss = entry.getValue();
             String bossId = entry.getKey();
@@ -2403,14 +2861,34 @@ public class ArcadiaCommands {
             instance.removeBossInstance(bossId);
         }
 
-        // Check next boss or complete
-        if (instance.hasNextBoss()) {
+        if (skippedInterWaveBoss) {
+            instance.setWaitingForInterWaveBoss(false);
+            instance.setState(DungeonState.ACTIVE);
+            if (instance.areWavesCompleted()) {
+                if (instance.hasNextBoss()) {
+                    BossManager.getInstance().spawnNextBoss(instance);
+                    ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia Debug] Boss inter-vague skip, progression reprise.")
+                            .withStyle(ChatFormatting.AQUA), false);
+                } else if (instance.allRequiredBossesDefeated()) {
+                    DungeonManager.getInstance().completeDungeon(dungeonId);
+                    ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia Debug] Boss inter-vague skip, donjon termine!")
+                            .withStyle(ChatFormatting.AQUA), false);
+                }
+            } else {
+                ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia Debug] Boss inter-vague skip, vague suivante reprise.")
+                        .withStyle(ChatFormatting.AQUA), false);
+            }
+        } else if (instance.hasNextBoss()) {
             BossManager.getInstance().spawnNextBoss(instance);
             ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia Debug] Boss skip, prochain boss spawn!")
                     .withStyle(ChatFormatting.AQUA), false);
-        } else if (instance.allBossesDefeated()) {
+        } else if (instance.allRequiredBossesDefeated() && (!instance.hasWaves() || instance.areWavesCompleted())) {
             DungeonManager.getInstance().completeDungeon(dungeonId);
             ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia Debug] Boss skip, donjon termine!")
+                    .withStyle(ChatFormatting.AQUA), false);
+        } else {
+            instance.setState(DungeonState.ACTIVE);
+            ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia Debug] Boss skip, progression du donjon reprise.")
                     .withStyle(ChatFormatting.AQUA), false);
         }
 
@@ -2547,30 +3025,28 @@ public class ArcadiaCommands {
                 return 0;
             }
 
-            List<Map.Entry<PlayerProgress, PlayerProgress.DungeonProgress>> top =
-                    PlayerProgressManager.getInstance().getTopForDungeon(dungeonId, 10);
+            List<Map.Entry<String, Long>> top = WeeklyLeaderboard.getInstance().getTopForDungeon(dungeonId, 10);
 
-            ctx.getSource().sendSuccess(() -> Component.literal("=== Top " + config.name + " ===").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), false);
+            ctx.getSource().sendSuccess(() -> Component.literal("=== Top hebdo " + config.name + " ===").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), false);
 
             if (top.isEmpty()) {
-                ctx.getSource().sendSuccess(() -> Component.literal("Aucune completion enregistree.").withStyle(ChatFormatting.GRAY), false);
+                ctx.getSource().sendSuccess(() -> Component.literal("Aucun temps hebdo enregistre.").withStyle(ChatFormatting.GRAY), false);
                 return 1;
             }
 
             for (int i = 0; i < top.size(); i++) {
                 final int rank = i + 1;
-                Map.Entry<PlayerProgress, PlayerProgress.DungeonProgress> entry = top.get(i);
-                PlayerProgress pp = entry.getKey();
-                PlayerProgress.DungeonProgress dp = entry.getValue();
+                Map.Entry<String, Long> entry = top.get(i);
+                String playerName = WeeklyLeaderboard.getInstance().getPlayerName(entry.getKey());
+                long bestTime = entry.getValue();
 
                 ChatFormatting rankColor = rank <= 3 ? (rank == 1 ? ChatFormatting.GOLD : rank == 2 ? ChatFormatting.GRAY : ChatFormatting.RED) : ChatFormatting.WHITE;
 
                 ctx.getSource().sendSuccess(() -> Component.literal(" " + rank + ". ")
                         .withStyle(rankColor, ChatFormatting.BOLD)
-                        .append(Component.literal(pp.playerName).withStyle(ChatFormatting.WHITE))
+                        .append(Component.literal(playerName).withStyle(ChatFormatting.WHITE))
                         .append(Component.literal(" - ").withStyle(ChatFormatting.GRAY))
-                        .append(Component.literal(formatTime(dp.bestTimeSeconds)).withStyle(ChatFormatting.YELLOW))
-                        .append(Component.literal(" (" + dp.completions + "x)").withStyle(ChatFormatting.GRAY))
+                        .append(Component.literal(formatTime(bestTime)).withStyle(ChatFormatting.YELLOW))
                 , false);
             }
         } else {
@@ -3135,6 +3611,36 @@ public class ArcadiaCommands {
         return 1;
     }
 
+    private static int setBossCombatValue(CommandContext<CommandSourceStack> ctx, String key) {
+        String dungeonId = StringArgumentType.getString(ctx, "dungeon");
+        String bossId = StringArgumentType.getString(ctx, "bossId");
+        double value = readNumericCombatValue(ctx);
+
+        BossConfig boss = findBoss(ctx, dungeonId, bossId);
+        if (boss == null) return 0;
+
+        boss.customAttributes.put(key, value);
+        ConfigManager.getInstance().saveDungeon(ConfigManager.getInstance().getDungeon(dungeonId));
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Boss " + bossId + " : " + key + " = " + value)
+                .withStyle(ChatFormatting.GREEN), true);
+        return 1;
+    }
+
+    private static int setBossCombatBool(CommandContext<CommandSourceStack> ctx, String key) {
+        String dungeonId = StringArgumentType.getString(ctx, "dungeon");
+        String bossId = StringArgumentType.getString(ctx, "bossId");
+        boolean value = BoolArgumentType.getBool(ctx, "value");
+
+        BossConfig boss = findBoss(ctx, dungeonId, bossId);
+        if (boss == null) return 0;
+
+        boss.customAttributes.put(key, value ? 1.0D : 0.0D);
+        ConfigManager.getInstance().saveDungeon(ConfigManager.getInstance().getDungeon(dungeonId));
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Boss " + bossId + " : " + key + " = " + value)
+                .withStyle(ChatFormatting.GREEN), true);
+        return 1;
+    }
+
     // === WAVE MOB ATTRIBUTE ===
 
     private static int setWaveMobAttribute(CommandContext<CommandSourceStack> ctx) {
@@ -3237,6 +3743,64 @@ public class ArcadiaCommands {
         return 1;
     }
 
+    private static int setWaveCombatValue(CommandContext<CommandSourceStack> ctx, String key) {
+        String dungeonId = StringArgumentType.getString(ctx, "dungeon");
+        int waveNum = IntegerArgumentType.getInteger(ctx, "waveNum");
+        int mobIndex = IntegerArgumentType.getInteger(ctx, "mobIndex");
+        double value = readNumericCombatValue(ctx);
+
+        DungeonConfig config = ConfigManager.getInstance().getDungeon(dungeonId);
+        if (config == null) {
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + dungeonId));
+            return 0;
+        }
+
+        WaveConfig wave = config.waves.stream().filter(w -> w.waveNumber == waveNum).findFirst().orElse(null);
+        if (wave == null) {
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Vague introuvable: " + waveNum));
+            return 0;
+        }
+        if (mobIndex < 0 || mobIndex >= wave.mobs.size()) {
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Index mob invalide: " + mobIndex));
+            return 0;
+        }
+
+        wave.mobs.get(mobIndex).customAttributes.put(key, value);
+        ConfigManager.getInstance().saveDungeon(config);
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Mob " + mobIndex + " (vague " + waveNum + ") : " + key + " = " + value)
+                .withStyle(ChatFormatting.GREEN), true);
+        return 1;
+    }
+
+    private static int setWaveCombatBool(CommandContext<CommandSourceStack> ctx, String key) {
+        String dungeonId = StringArgumentType.getString(ctx, "dungeon");
+        int waveNum = IntegerArgumentType.getInteger(ctx, "waveNum");
+        int mobIndex = IntegerArgumentType.getInteger(ctx, "mobIndex");
+        boolean value = BoolArgumentType.getBool(ctx, "value");
+
+        DungeonConfig config = ConfigManager.getInstance().getDungeon(dungeonId);
+        if (config == null) {
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + dungeonId));
+            return 0;
+        }
+
+        WaveConfig wave = config.waves.stream().filter(w -> w.waveNumber == waveNum).findFirst().orElse(null);
+        if (wave == null) {
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Vague introuvable: " + waveNum));
+            return 0;
+        }
+        if (mobIndex < 0 || mobIndex >= wave.mobs.size()) {
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Index mob invalide: " + mobIndex));
+            return 0;
+        }
+
+        wave.mobs.get(mobIndex).customAttributes.put(key, value ? 1.0D : 0.0D);
+        ConfigManager.getInstance().saveDungeon(config);
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Mob " + mobIndex + " (vague " + waveNum + ") : " + key + " = " + value)
+                .withStyle(ChatFormatting.GREEN), true);
+        return 1;
+    }
+
     // === SUMMON ATTRIBUTE ===
 
     private static int setSummonAttribute(CommandContext<CommandSourceStack> ctx) {
@@ -3333,9 +3897,71 @@ public class ArcadiaCommands {
         return 1;
     }
 
+    private static int setSummonCombatValue(CommandContext<CommandSourceStack> ctx, String key) {
+        String dungeonId = StringArgumentType.getString(ctx, "dungeon");
+        String bossId = StringArgumentType.getString(ctx, "bossId");
+        int phaseNum = IntegerArgumentType.getInteger(ctx, "phaseNum");
+        int summonIndex = IntegerArgumentType.getInteger(ctx, "summonIndex");
+        double value = readNumericCombatValue(ctx);
+
+        BossConfig boss = findBoss(ctx, dungeonId, bossId);
+        if (boss == null) return 0;
+
+        PhaseConfig phase = boss.phases.stream().filter(p -> p.phase == phaseNum).findFirst().orElse(null);
+        if (phase == null) {
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Phase introuvable: " + phaseNum));
+            return 0;
+        }
+        if (summonIndex < 0 || summonIndex >= phase.summonMobs.size()) {
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Index invocation invalide: " + summonIndex));
+            return 0;
+        }
+
+        phase.summonMobs.get(summonIndex).customAttributes.put(key, value);
+        ConfigManager.getInstance().saveDungeon(ConfigManager.getInstance().getDungeon(dungeonId));
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Sbire " + summonIndex + " (phase " + phaseNum + ") : " + key + " = " + value)
+                .withStyle(ChatFormatting.GREEN), true);
+        return 1;
+    }
+
+    private static int setSummonCombatBool(CommandContext<CommandSourceStack> ctx, String key) {
+        String dungeonId = StringArgumentType.getString(ctx, "dungeon");
+        String bossId = StringArgumentType.getString(ctx, "bossId");
+        int phaseNum = IntegerArgumentType.getInteger(ctx, "phaseNum");
+        int summonIndex = IntegerArgumentType.getInteger(ctx, "summonIndex");
+        boolean value = BoolArgumentType.getBool(ctx, "value");
+
+        BossConfig boss = findBoss(ctx, dungeonId, bossId);
+        if (boss == null) return 0;
+
+        PhaseConfig phase = boss.phases.stream().filter(p -> p.phase == phaseNum).findFirst().orElse(null);
+        if (phase == null) {
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Phase introuvable: " + phaseNum));
+            return 0;
+        }
+        if (summonIndex < 0 || summonIndex >= phase.summonMobs.size()) {
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Index invocation invalide: " + summonIndex));
+            return 0;
+        }
+
+        phase.summonMobs.get(summonIndex).customAttributes.put(key, value ? 1.0D : 0.0D);
+        ConfigManager.getInstance().saveDungeon(ConfigManager.getInstance().getDungeon(dungeonId));
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Sbire " + summonIndex + " (phase " + phaseNum + ") : " + key + " = " + value)
+                .withStyle(ChatFormatting.GREEN), true);
+        return 1;
+    }
+
+    private static double readNumericCombatValue(CommandContext<CommandSourceStack> ctx) {
+        try {
+            return DoubleArgumentType.getDouble(ctx, "value");
+        } catch (IllegalArgumentException ignored) {
+            return IntegerArgumentType.getInteger(ctx, "value");
+        }
+    }
+
     // === WAND ===
 
-    private static int giveWand(CommandContext<CommandSourceStack> ctx) {
+    private static int giveAreaWand(CommandContext<CommandSourceStack> ctx) {
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
             ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
@@ -3344,7 +3970,7 @@ public class ArcadiaCommands {
 
         net.minecraft.world.item.ItemStack wand = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.GOLDEN_SHOVEL);
         wand.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,
-                Component.literal(com.vyrriox.arcadiadungeon.event.DungeonEventHandler.WAND_TAG + " - Arcadia Dungeon Wand").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
+                Component.literal(com.vyrriox.arcadiadungeon.event.DungeonEventHandler.AREA_WAND_TAG + " - Arcadia Dungeon Area Wand").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
 
         // Ask which dungeon
         Map<String, DungeonConfig> dungeons = ConfigManager.getInstance().getDungeonConfigs();
@@ -3364,6 +3990,9 @@ public class ArcadiaCommands {
 
         ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Wand recue! Donjon: " + firstId).withStyle(ChatFormatting.GOLD), false);
         ctx.getSource().sendSuccess(() -> Component.literal("  Clic gauche = Pos1 | Clic droit = Pos2").withStyle(ChatFormatting.GRAY), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("  /arcadia_dungeon admin wand_select <dungeon> pour la zone du donjon").withStyle(ChatFormatting.GRAY), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("  La pelle en or sert uniquement a la zone globale du donjon").withStyle(ChatFormatting.GRAY), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("  Les zones de boss/vagues ont ete retirees pour ne plus casser l'IA").withStyle(ChatFormatting.GRAY), false);
         ctx.getSource().sendSuccess(() -> Component.literal("  Changer de donjon:").withStyle(ChatFormatting.GRAY), false);
 
         for (DungeonConfig cfg : dungeons.values()) {
@@ -3390,11 +4019,66 @@ public class ArcadiaCommands {
         if (config == null) { ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + dungeonId)); return 0; }
 
         com.vyrriox.arcadiadungeon.event.DungeonEventHandler.wandDungeon.put(player.getUUID(), dungeonId);
+        com.vyrriox.arcadiadungeon.event.DungeonEventHandler.wandWall.remove(player.getUUID());
         com.vyrriox.arcadiadungeon.event.DungeonEventHandler.wandPos1.remove(player.getUUID());
         com.vyrriox.arcadiadungeon.event.DungeonEventHandler.wandPos2.remove(player.getUUID());
 
         ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia Wand] Donjon selectionne: " + config.name)
                 .withStyle(ChatFormatting.GOLD), false);
+        return 1;
+    }
+
+    private static int giveWallWand(CommandContext<CommandSourceStack> ctx) {
+        ServerPlayer player = ctx.getSource().getPlayer();
+        if (player == null) {
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            return 0;
+        }
+
+        net.minecraft.world.item.ItemStack wand = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.GOLDEN_HOE);
+        wand.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,
+                Component.literal(com.vyrriox.arcadiadungeon.event.DungeonEventHandler.WALL_WAND_TAG + " - Arcadia Scripted Wall Wand").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
+
+        if (!player.getInventory().add(wand)) {
+            player.drop(wand, false);
+        }
+
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Hoe recue! Selectionnez un mur avec /arcadia_dungeon admin wall_select <dungeon> <wallId>, puis cliquez sur les blocs.")
+                .withStyle(ChatFormatting.GOLD), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] TODO: systeme de conditions/activation des murs scriptes a venir.")
+                .withStyle(ChatFormatting.YELLOW), false);
+        return 1;
+    }
+
+    private static int wallSelect(CommandContext<CommandSourceStack> ctx) {
+        ServerPlayer player = ctx.getSource().getPlayer();
+        if (player == null) { ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!")); return 0; }
+
+        String dungeonId = StringArgumentType.getString(ctx, "dungeon");
+        String wallId = StringArgumentType.getString(ctx, "wallId");
+        DungeonConfig config = ConfigManager.getInstance().getDungeon(dungeonId);
+        if (config == null) { ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + dungeonId)); return 0; }
+
+        var wall = config.scriptedWalls.stream().filter(w -> w.id.equals(wallId)).findFirst().orElse(null);
+        if (wall == null) {
+            wall = new DungeonConfig.ScriptedWallConfig();
+            wall.id = wallId;
+            config.scriptedWalls.add(wall);
+            ConfigManager.getInstance().saveDungeon(config);
+        }
+
+        com.vyrriox.arcadiadungeon.event.DungeonEventHandler.wandDungeon.put(player.getUUID(), dungeonId);
+        com.vyrriox.arcadiadungeon.event.DungeonEventHandler.wandWall.put(player.getUUID(), wallId);
+        com.vyrriox.arcadiadungeon.event.DungeonEventHandler.wandPos1.remove(player.getUUID());
+        com.vyrriox.arcadiadungeon.event.DungeonEventHandler.wandPos2.remove(player.getUUID());
+
+        int count = wall.blocks == null ? 0 : wall.blocks.size();
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia Wall] Mur scripté selectionne: " + wallId + " (" + count + " bloc(s))")
+                .withStyle(ChatFormatting.GOLD), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia Wall] Cliquez sur les blocs avec la hoe en or pour les ajouter/retirer.")
+                .withStyle(ChatFormatting.GRAY), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia Wall] TODO: conditions d'activation et logique runtime.")
+                .withStyle(ChatFormatting.YELLOW), false);
         return 1;
     }
 
@@ -3483,6 +4167,7 @@ public class ArcadiaCommands {
         ctx.getSource().sendSuccess(() -> Component.literal("  Semaine: " + data.weekId).withStyle(ChatFormatting.WHITE), false);
         ctx.getSource().sendSuccess(() -> Component.literal("  Reset: " + config.resetDay + " a " + config.announceHour + "h").withStyle(ChatFormatting.WHITE), false);
         ctx.getSource().sendSuccess(() -> Component.literal("  Joueurs: " + data.playerCompletions.size()).withStyle(ChatFormatting.WHITE), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("  Donjons suivis: " + data.dungeonBestTimes.size()).withStyle(ChatFormatting.WHITE), false);
         ctx.getSource().sendSuccess(() -> Component.literal("  Recompenses:").withStyle(ChatFormatting.YELLOW), false);
 
         for (int i = 1; i <= 3; i++) {
@@ -3640,5 +4325,32 @@ public class ArcadiaCommands {
             return (seconds / 60) + "m " + (seconds % 60) + "s";
         }
         return seconds + "s";
+    }
+
+    private static Entity findEntityById(MinecraftServer server, int entityId) {
+        if (server == null) return null;
+        for (ServerLevel level : server.getAllLevels()) {
+            Entity entity = level.getEntity(entityId);
+            if (entity != null) {
+                return entity;
+            }
+        }
+        return null;
+    }
+
+    private static Double clampSpecialValue(String key, double value) {
+        return switch (key) {
+            case CombatTuning.KEY_ATTACK_RANGE, CombatTuning.KEY_AGGRO_RANGE -> Math.max(0.0D, value);
+            case CombatTuning.KEY_ATTACK_COOLDOWN_MS, CombatTuning.KEY_PROJECTILE_COOLDOWN_MS, CombatTuning.KEY_DODGE_COOLDOWN_MS -> Math.max(0.0D, Math.round(value));
+            case CombatTuning.KEY_DODGE_CHANCE -> Math.max(0.0D, Math.min(1.0D, value));
+            case CombatTuning.KEY_DODGE_PROJECTILES_ONLY -> value >= 0.5D ? 1.0D : 0.0D;
+            default -> null;
+        };
+    }
+
+    private static void warnIfClamped(String key, double requested, double applied) {
+        if (Double.compare(requested, applied) != 0) {
+            com.vyrriox.arcadiadungeon.ArcadiaDungeon.LOGGER.warn("Combat tuning value clamped for {}: requested={}, applied={}", key, requested, applied);
+        }
     }
 }

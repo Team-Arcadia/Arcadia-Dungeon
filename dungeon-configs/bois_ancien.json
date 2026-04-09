@@ -1,0 +1,662 @@
+{
+  "id": "bois_ancien",
+  "name": "Le Bois Ancien",
+  "cooldownSeconds": 3600,
+  "announceStart": true,
+  "announceCompletion": true,
+  "startMessage": "&2[Donjon] &a%player% &7s'enfonce dans &2%dungeon%&7! Rejoignez avec &f/arcadia_dungeon join %id%&7!",
+  "completionMessage": "&2[Donjon] &a%player% &7a survécu aux ténèbres de &2%dungeon%&7!",
+  "failMessage": "&2[Donjon] &c%player% &7a été englouti par &2%dungeon%&7...",
+  "teleportBackOnComplete": true,
+  "spawnPoint": {
+    "dimension": "arcadia:spawn",
+    "x": 0.0,
+    "y": 64.0,
+    "z": 0.0,
+    "yaw": 0.0,
+    "pitch": 0.0
+  },
+  "bosses": [
+    {
+      "id": "gardien_bois",
+      "entityType": "minecraft:vindicator",
+      "customName": "Le Gardien des Bois",
+      "baseHealth": 200.0,
+      "baseDamage": 18.0,
+      "adaptivePower": true,
+      "healthMultiplierPerPlayer": 0.5,
+      "damageMultiplierPerPlayer": 0.1,
+      "spawnPoint": {
+        "dimension": "arcadia:spawn",
+        "x": 0.0,
+        "y": 64.0,
+        "z": 0.0,
+        "yaw": 0.0,
+        "pitch": 0.0
+      },
+      "phases": [
+        {
+          "phase": 1,
+          "healthThreshold": 1.0,
+          "damageMultiplier": 1.0,
+          "speedMultiplier": 1.0,
+          "description": "Le Gardien patrouille la forêt",
+          "summonMobs": [],
+          "requiredAction": "NONE",
+          "phaseStartMessage": "",
+          "invulnerableDuringTransition": false,
+          "transitionDurationSeconds": 2.0,
+          "playerEffects": [],
+          "phaseCommands": []
+        },
+        {
+          "phase": 2,
+          "healthThreshold": 0.5,
+          "damageMultiplier": 1.5,
+          "speedMultiplier": 1.3,
+          "description": "Le Gardien appelle ses sbires",
+          "summonMobs": [
+            {
+              "entityType": "minecraft:spider",
+              "count": 4,
+              "customName": "Araignée du Gardien",
+              "health": 30.0,
+              "spawnPoint": null
+            }
+          ],
+          "requiredAction": "KILL_SUMMONS",
+          "phaseStartMessage": "&2[Boss] &aLe Gardien des Bois rugit et appelle la forêt à son secours!",
+          "invulnerableDuringTransition": true,
+          "transitionDurationSeconds": 3.0,
+          "playerEffects": [
+            {
+              "effect": "minecraft:slowness",
+              "durationSeconds": 5,
+              "amplifier": 1
+            }
+          ],
+          "phaseCommands": []
+        }
+      ],
+      "rewards": [
+        {
+          "item": "minecraft:emerald",
+          "count": 3,
+          "chance": 1.0,
+          "command": "",
+          "experience": 0
+        },
+        {
+          "item": "minecraft:iron_sword",
+          "count": 1,
+          "chance": 0.5,
+          "command": "",
+          "experience": 300
+        }
+      ],
+      "showBossBar": true,
+      "bossBarColor": "GREEN",
+      "optional": false,
+      "spawnChance": 1.0,
+      "spawnAfterWave": 3,
+      "spawnAtStart": false,
+      "requiredKill": true,
+      "mainHand": "minecraft:iron_axe",
+      "offHand": "",
+      "helmet": "",
+      "chestplate": "",
+      "leggings": "",
+      "boots": "",
+      "customAttributes": {
+        "minecraft:generic.armor": 8.0
+      }
+    },
+    {
+      "id": "lancien",
+      "entityType": "minecraft:wither_skeleton",
+      "customName": "L'Ancien",
+      "baseHealth": 400.0,
+      "baseDamage": 22.0,
+      "adaptivePower": true,
+      "healthMultiplierPerPlayer": 0.5,
+      "damageMultiplierPerPlayer": 0.1,
+      "spawnPoint": {
+        "dimension": "arcadia:spawn",
+        "x": 0.0,
+        "y": 64.0,
+        "z": 0.0,
+        "yaw": 0.0,
+        "pitch": 0.0
+      },
+      "phases": [
+        {
+          "phase": 1,
+          "healthThreshold": 1.0,
+          "damageMultiplier": 1.0,
+          "speedMultiplier": 1.0,
+          "description": "L'Ancien s'éveille",
+          "summonMobs": [],
+          "requiredAction": "NONE",
+          "phaseStartMessage": "&0[Boss] &8L'Ancien ouvre les yeux... La forêt se fige.",
+          "invulnerableDuringTransition": false,
+          "transitionDurationSeconds": 2.0,
+          "playerEffects": [],
+          "phaseCommands": []
+        },
+        {
+          "phase": 2,
+          "healthThreshold": 0.6,
+          "damageMultiplier": 1.4,
+          "speedMultiplier": 1.2,
+          "description": "L'Ancien entre en colère et corrompt la forêt",
+          "summonMobs": [
+            {
+              "entityType": "minecraft:enderman",
+              "count": 3,
+              "customName": "Ombre de l'Ancien",
+              "health": 50.0,
+              "spawnPoint": null
+            }
+          ],
+          "requiredAction": "NONE",
+          "phaseStartMessage": "&0[Boss] &8Les arbres se tordent... &cL'Ancien convoque les Ombres!",
+          "invulnerableDuringTransition": true,
+          "transitionDurationSeconds": 3.0,
+          "playerEffects": [
+            {
+              "effect": "minecraft:wither",
+              "durationSeconds": 6,
+              "amplifier": 0
+            },
+            {
+              "effect": "minecraft:blindness",
+              "durationSeconds": 4,
+              "amplifier": 0
+            }
+          ],
+          "phaseCommands": []
+        },
+        {
+          "phase": 3,
+          "healthThreshold": 0.25,
+          "damageMultiplier": 1.9,
+          "speedMultiplier": 1.5,
+          "description": "Dernier souffle — L'Ancien se déchaîne",
+          "summonMobs": [
+            {
+              "entityType": "minecraft:cave_spider",
+              "count": 5,
+              "customName": "Venin Ancien",
+              "health": 20.0,
+              "spawnPoint": null
+            },
+            {
+              "entityType": "minecraft:enderman",
+              "count": 2,
+              "customName": "Ombre Corrompue",
+              "health": 60.0,
+              "spawnPoint": null
+            }
+          ],
+          "requiredAction": "NONE",
+          "phaseStartMessage": "&0[Boss] &4L'ANCIEN RUGIT! &cLa forêt tout entière se réveille contre vous!",
+          "invulnerableDuringTransition": true,
+          "transitionDurationSeconds": 4.0,
+          "playerEffects": [
+            {
+              "effect": "minecraft:wither",
+              "durationSeconds": 8,
+              "amplifier": 1
+            },
+            {
+              "effect": "minecraft:slowness",
+              "durationSeconds": 6,
+              "amplifier": 2
+            }
+          ],
+          "phaseCommands": []
+        }
+      ],
+      "rewards": [
+        {
+          "item": "minecraft:netherite_ingot",
+          "count": 1,
+          "chance": 0.7,
+          "command": "",
+          "experience": 0
+        },
+        {
+          "item": "minecraft:diamond",
+          "count": 5,
+          "chance": 1.0,
+          "command": "",
+          "experience": 0
+        },
+        {
+          "item": "",
+          "count": 0,
+          "chance": 1.0,
+          "command": "",
+          "experience": 1000
+        }
+      ],
+      "showBossBar": true,
+      "bossBarColor": "PURPLE",
+      "optional": false,
+      "spawnChance": 1.0,
+      "spawnAfterWave": 0,
+      "spawnAtStart": false,
+      "requiredKill": true,
+      "mainHand": "minecraft:netherite_sword",
+      "offHand": "",
+      "helmet": "minecraft:netherite_helmet",
+      "chestplate": "",
+      "leggings": "",
+      "boots": "",
+      "customAttributes": {
+        "minecraft:generic.armor": 12.0,
+        "minecraft:generic.armor_toughness": 4.0,
+        "minecraft:generic.knockback_resistance": 0.5
+      }
+    }
+  ],
+  "completionRewards": [
+    {
+      "item": "minecraft:diamond",
+      "count": 3,
+      "chance": 1.0,
+      "command": "",
+      "experience": 0
+    },
+    {
+      "item": "minecraft:emerald",
+      "count": 5,
+      "chance": 0.8,
+      "command": "",
+      "experience": 0
+    },
+    {
+      "item": "",
+      "count": 0,
+      "chance": 1.0,
+      "command": "",
+      "experience": 500
+    }
+  ],
+  "settings": {
+    "maxPlayers": 6,
+    "minPlayers": 1,
+    "timeLimitSeconds": 2400,
+    "pvp": false,
+    "difficultyScaling": true,
+    "waveHealthMultiplierPerPlayer": 0.3,
+    "waveDamageMultiplierPerPlayer": 0.1,
+    "maxDeaths": 3,
+    "antiMonopole": true,
+    "antiMonopoleThreshold": 5,
+    "timerWarnings": [300, 60, 30, 10],
+    "blockTeleportCommands": true,
+    "blockedCommands": [
+      "tpa", "tpaccept", "tpahere", "tpadeny",
+      "spawn", "home", "sethome", "lobby", "hub",
+      "warp", "back", "rtp", "arcadiartp",
+      "tpask", "tpacancel", "tptoggle",
+      "tp", "teleport"
+    ]
+  },
+  "enabled": true,
+  "availableEverySeconds": 3600,
+  "announceAvailability": true,
+  "availabilityMessage": "&2[Donjon] &aLe Bois Ancien s'ouvre de nouveau... Qui osera l'affronter?",
+  "requiredPermission": "",
+  "order": 1,
+  "requiredDungeon": "",
+  "waves": [
+    {
+      "waveNumber": 1,
+      "name": "Vague 1 — Les Tisseurs d'Ombres",
+      "delayBeforeSeconds": 0,
+      "mobs": [
+        {
+          "entityType": "minecraft:spider",
+          "count": 8,
+          "customName": "Araignée du Bois",
+          "health": 25.0,
+          "damage": 4.0,
+          "speed": 0.0,
+          "spawnPoint": {
+            "dimension": "arcadia:spawn",
+            "x": 0.0,
+            "y": 64.0,
+            "z": 0.0,
+            "yaw": 0.0,
+            "pitch": 0.0
+          },
+          "mainHand": "",
+          "offHand": "",
+          "helmet": "",
+          "chestplate": "",
+          "leggings": "",
+          "boots": "",
+          "customAttributes": {}
+        }
+      ],
+      "startMessage": "&2[Donjon] &7Des araignées émergent de l'obscurité...",
+      "glowingAfterDelay": true,
+      "glowingDelaySeconds": 60
+    },
+    {
+      "waveNumber": 2,
+      "name": "Vague 2 — Les Rôdeurs Verts",
+      "delayBeforeSeconds": 0,
+      "mobs": [
+        {
+          "entityType": "minecraft:creeper",
+          "count": 4,
+          "customName": "Creeper Ancien",
+          "health": 30.0,
+          "damage": 6.0,
+          "speed": 0.0,
+          "spawnPoint": {
+            "dimension": "arcadia:spawn",
+            "x": 0.0,
+            "y": 64.0,
+            "z": 0.0,
+            "yaw": 0.0,
+            "pitch": 0.0
+          },
+          "mainHand": "",
+          "offHand": "",
+          "helmet": "",
+          "chestplate": "",
+          "leggings": "",
+          "boots": "",
+          "customAttributes": {}
+        },
+        {
+          "entityType": "minecraft:spider",
+          "count": 5,
+          "customName": "Araignée du Bois",
+          "health": 28.0,
+          "damage": 5.0,
+          "speed": 0.0,
+          "spawnPoint": {
+            "dimension": "arcadia:spawn",
+            "x": 0.0,
+            "y": 64.0,
+            "z": 0.0,
+            "yaw": 0.0,
+            "pitch": 0.0
+          },
+          "mainHand": "",
+          "offHand": "",
+          "helmet": "",
+          "chestplate": "",
+          "leggings": "",
+          "boots": "",
+          "customAttributes": {}
+        }
+      ],
+      "startMessage": "&2[Donjon] &7Des explosions dans les buissons... Attention!",
+      "glowingAfterDelay": true,
+      "glowingDelaySeconds": 60
+    },
+    {
+      "waveNumber": 3,
+      "name": "Vague 3 — Les Maraudeurs de l'Ombre",
+      "delayBeforeSeconds": 0,
+      "mobs": [
+        {
+          "entityType": "minecraft:enderman",
+          "count": 3,
+          "customName": "Enderman de la Forêt",
+          "health": 60.0,
+          "damage": 8.0,
+          "speed": 0.0,
+          "spawnPoint": {
+            "dimension": "arcadia:spawn",
+            "x": 0.0,
+            "y": 64.0,
+            "z": 0.0,
+            "yaw": 0.0,
+            "pitch": 0.0
+          },
+          "mainHand": "",
+          "offHand": "",
+          "helmet": "",
+          "chestplate": "",
+          "leggings": "",
+          "boots": "",
+          "customAttributes": {}
+        },
+        {
+          "entityType": "minecraft:cave_spider",
+          "count": 6,
+          "customName": "Cave Spider Vénéneux",
+          "health": 20.0,
+          "damage": 5.0,
+          "speed": 0.0,
+          "spawnPoint": {
+            "dimension": "arcadia:spawn",
+            "x": 0.0,
+            "y": 64.0,
+            "z": 0.0,
+            "yaw": 0.0,
+            "pitch": 0.0
+          },
+          "mainHand": "",
+          "offHand": "",
+          "helmet": "",
+          "chestplate": "",
+          "leggings": "",
+          "boots": "",
+          "customAttributes": {}
+        }
+      ],
+      "startMessage": "&2[Donjon] &7Quelque chose vous observe depuis les arbres...",
+      "glowingAfterDelay": true,
+      "glowingDelaySeconds": 60
+    },
+    {
+      "waveNumber": 4,
+      "name": "Vague 4 — Les Spectres Nocturnes",
+      "delayBeforeSeconds": 0,
+      "mobs": [
+        {
+          "entityType": "minecraft:phantom",
+          "count": 6,
+          "customName": "Spectre Ancien",
+          "health": 35.0,
+          "damage": 7.0,
+          "speed": 0.0,
+          "spawnPoint": {
+            "dimension": "arcadia:spawn",
+            "x": 0.0,
+            "y": 64.0,
+            "z": 0.0,
+            "yaw": 0.0,
+            "pitch": 0.0
+          },
+          "mainHand": "",
+          "offHand": "",
+          "helmet": "",
+          "chestplate": "",
+          "leggings": "",
+          "boots": "",
+          "customAttributes": {}
+        },
+        {
+          "entityType": "minecraft:spider",
+          "count": 4,
+          "customName": "Araignée Géante",
+          "health": 35.0,
+          "damage": 6.0,
+          "speed": 0.0,
+          "spawnPoint": {
+            "dimension": "arcadia:spawn",
+            "x": 0.0,
+            "y": 64.0,
+            "z": 0.0,
+            "yaw": 0.0,
+            "pitch": 0.0
+          },
+          "mainHand": "",
+          "offHand": "",
+          "helmet": "",
+          "chestplate": "",
+          "leggings": "",
+          "boots": "",
+          "customAttributes": {
+            "minecraft:generic.armor": 4.0
+          }
+        }
+      ],
+      "startMessage": "&2[Donjon] &7Le ciel s'obscurcit... Des ombres fondent sur vous!",
+      "glowingAfterDelay": true,
+      "glowingDelaySeconds": 60
+    },
+    {
+      "waveNumber": 5,
+      "name": "Vague 5 — La Colère de la Forêt",
+      "delayBeforeSeconds": 0,
+      "mobs": [
+        {
+          "entityType": "minecraft:enderman",
+          "count": 5,
+          "customName": "Enderman Furieux",
+          "health": 70.0,
+          "damage": 10.0,
+          "speed": 0.0,
+          "spawnPoint": {
+            "dimension": "arcadia:spawn",
+            "x": 0.0,
+            "y": 64.0,
+            "z": 0.0,
+            "yaw": 0.0,
+            "pitch": 0.0
+          },
+          "mainHand": "",
+          "offHand": "",
+          "helmet": "",
+          "chestplate": "",
+          "leggings": "",
+          "boots": "",
+          "customAttributes": {
+            "minecraft:generic.armor": 6.0
+          }
+        },
+        {
+          "entityType": "minecraft:creeper",
+          "count": 4,
+          "customName": "Creeper Chargé",
+          "health": 35.0,
+          "damage": 8.0,
+          "speed": 0.0,
+          "spawnPoint": {
+            "dimension": "arcadia:spawn",
+            "x": 0.0,
+            "y": 64.0,
+            "z": 0.0,
+            "yaw": 0.0,
+            "pitch": 0.0
+          },
+          "mainHand": "",
+          "offHand": "",
+          "helmet": "",
+          "chestplate": "",
+          "leggings": "",
+          "boots": "",
+          "customAttributes": {}
+        }
+      ],
+      "startMessage": "&2[Donjon] &cLa forêt elle-même se dresse contre vous!",
+      "glowingAfterDelay": true,
+      "glowingDelaySeconds": 60
+    },
+    {
+      "waveNumber": 6,
+      "name": "Vague 6 — L'Assaut Final",
+      "delayBeforeSeconds": 0,
+      "mobs": [
+        {
+          "entityType": "minecraft:enderman",
+          "count": 4,
+          "customName": "Enderman Corrompu",
+          "health": 80.0,
+          "damage": 12.0,
+          "speed": 0.0,
+          "spawnPoint": {
+            "dimension": "arcadia:spawn",
+            "x": 0.0,
+            "y": 64.0,
+            "z": 0.0,
+            "yaw": 0.0,
+            "pitch": 0.0
+          },
+          "mainHand": "",
+          "offHand": "",
+          "helmet": "",
+          "chestplate": "",
+          "leggings": "",
+          "boots": "",
+          "customAttributes": {
+            "minecraft:generic.armor": 8.0
+          }
+        },
+        {
+          "entityType": "minecraft:phantom",
+          "count": 4,
+          "customName": "Grand Spectre",
+          "health": 45.0,
+          "damage": 9.0,
+          "speed": 0.0,
+          "spawnPoint": {
+            "dimension": "arcadia:spawn",
+            "x": 0.0,
+            "y": 64.0,
+            "z": 0.0,
+            "yaw": 0.0,
+            "pitch": 0.0
+          },
+          "mainHand": "",
+          "offHand": "",
+          "helmet": "",
+          "chestplate": "",
+          "leggings": "",
+          "boots": "",
+          "customAttributes": {}
+        },
+        {
+          "entityType": "minecraft:cave_spider",
+          "count": 8,
+          "customName": "Essaim Vénéneux",
+          "health": 22.0,
+          "damage": 6.0,
+          "speed": 0.0,
+          "spawnPoint": {
+            "dimension": "arcadia:spawn",
+            "x": 0.0,
+            "y": 64.0,
+            "z": 0.0,
+            "yaw": 0.0,
+            "pitch": 0.0
+          },
+          "mainHand": "",
+          "offHand": "",
+          "helmet": "",
+          "chestplate": "",
+          "leggings": "",
+          "boots": "",
+          "customAttributes": {}
+        }
+      ],
+      "startMessage": "&2[Donjon] &4Tout ce que la forêt a de sombre converge sur vous... Tenez bon!",
+      "glowingAfterDelay": true,
+      "glowingDelaySeconds": 60
+    }
+  ],
+  "recruitmentDurationSeconds": 30,
+  "recruitmentMessage": "&2[Donjon] &a%player% &7pénètre dans &2%dungeon%&7! &fRejoignez dans les %time%s &7avec &f/arcadia_dungeon join %id%",
+  "areaPos1": null,
+  "areaPos2": null
+}

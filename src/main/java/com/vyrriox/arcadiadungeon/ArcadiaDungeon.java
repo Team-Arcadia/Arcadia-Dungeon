@@ -2,6 +2,8 @@ package com.vyrriox.arcadiadungeon;
 
 import com.mojang.logging.LogUtils;
 import com.vyrriox.arcadiadungeon.command.ArcadiaCommands;
+import com.vyrriox.arcadiadungeon.util.ModCompat;
+import com.vyrriox.arcadiadungeon.util.SparkUtil;
 import com.vyrriox.arcadiadungeon.config.ConfigManager;
 import com.vyrriox.arcadiadungeon.dungeon.DungeonManager;
 import com.vyrriox.arcadiadungeon.event.DungeonEventHandler;
@@ -13,7 +15,6 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
-import net.neoforged.neoforge.server.permission.PermissionAPI;
 import net.neoforged.neoforge.server.permission.events.PermissionGatherEvent;
 import net.neoforged.neoforge.server.permission.nodes.PermissionNode;
 import net.neoforged.neoforge.server.permission.nodes.PermissionTypes;
@@ -31,6 +32,12 @@ public class ArcadiaDungeon {
             (player, uuid, ctx) -> false // default: no bypass
     );
 
+    public static final PermissionNode<Boolean> BYPASS_ANTIFLY = new PermissionNode<>(
+            MODID, "bypass.antifly",
+            PermissionTypes.BOOLEAN,
+            (player, uuid, ctx) -> false
+    );
+
     public ArcadiaDungeon(IEventBus modEventBus) {
         modEventBus.addListener(this::onCommonSetup);
         NeoForge.EVENT_BUS.register(this);
@@ -39,15 +46,18 @@ public class ArcadiaDungeon {
 
     private void onCommonSetup(final FMLCommonSetupEvent event) {
         LOGGER.info("Arcadia Dungeon initializing...");
+        LOGGER.info("ModCompat: HAS_LUCKPERMS={}, HAS_SPARK={}", ModCompat.HAS_LUCKPERMS, ModCompat.HAS_SPARK);
     }
 
     @SubscribeEvent
     public void onPermissionGather(PermissionGatherEvent.Nodes event) {
         event.addNodes(BYPASS_ANTIPARASITE);
+        event.addNodes(BYPASS_ANTIFLY);
     }
 
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
+        SparkUtil.setServer(event.getServer());
         ConfigManager.getInstance().loadAll();
         DungeonManager.getInstance().setServer(event.getServer());
         com.vyrriox.arcadiadungeon.dungeon.WeeklyLeaderboard.getInstance().load();
@@ -59,6 +69,7 @@ public class ArcadiaDungeon {
         DungeonManager.getInstance().stopAllDungeons();
         com.vyrriox.arcadiadungeon.dungeon.PlayerProgressManager.getInstance().flushDirty();
         DungeonManager.getInstance().setServer(null);
+        SparkUtil.clearServer();
     }
 
     @SubscribeEvent

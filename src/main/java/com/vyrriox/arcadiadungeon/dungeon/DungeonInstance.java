@@ -1,5 +1,6 @@
 package com.vyrriox.arcadiadungeon.dungeon;
 
+import com.vyrriox.arcadiadungeon.ArcadiaDungeon;
 import com.vyrriox.arcadiadungeon.boss.BossInstance;
 import com.vyrriox.arcadiadungeon.config.DungeonConfig;
 import com.vyrriox.arcadiadungeon.config.RewardConfig;
@@ -27,6 +28,7 @@ public class DungeonInstance {
     private boolean wavesCompleted = false;
     private final Map<UUID, Integer> playerDeaths = new LinkedHashMap<>();
     private boolean waitingForInterWaveBoss = false;
+    private final Set<String> triggeredWallConditions = new HashSet<>();
 
     public DungeonInstance(DungeonConfig config, MinecraftServer server) {
         this.config = config;
@@ -195,6 +197,10 @@ public class DungeonInstance {
         return !waveInstances.isEmpty();
     }
 
+    public boolean markWallConditionTriggered(String conditionKey) {
+        return triggeredWallConditions.add(conditionKey);
+    }
+
     // === INTER-WAVE BOSS ===
 
     public boolean isWaitingForInterWaveBoss() {
@@ -232,12 +238,16 @@ public class DungeonInstance {
                     ResourceLocation loc = ResourceLocation.tryParse(reward.item);
                     if (loc != null) {
                         Optional<Item> itemOpt = BuiltInRegistries.ITEM.getOptional(loc);
-                        itemOpt.ifPresent(item -> {
-                            ItemStack stack = new ItemStack(item, reward.count);
+                        if (itemOpt.isPresent()) {
+                            ItemStack stack = new ItemStack(itemOpt.get(), reward.count);
                             if (!player.getInventory().add(stack)) {
                                 player.drop(stack, false);
                             }
-                        });
+                        } else {
+                            ArcadiaDungeon.LOGGER.warn("Reward item {} is missing or belongs to an absent mod; skipping reward.", reward.item);
+                        }
+                    } else {
+                        ArcadiaDungeon.LOGGER.warn("Reward item {} is not a valid resource location; skipping reward.", reward.item);
                     }
                 }
 

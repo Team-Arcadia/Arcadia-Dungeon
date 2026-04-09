@@ -15,6 +15,8 @@ public class BossConfig {
     public double healthMultiplierPerPlayer = 0.5;
     public double damageMultiplierPerPlayer = 0.1;
     public SpawnPointConfig spawnPoint = new SpawnPointConfig();
+    public DungeonConfig.AreaPos areaPos1 = null;
+    public DungeonConfig.AreaPos areaPos2 = null;
     public List<PhaseConfig> phases = new ArrayList<>();
     public List<RewardConfig> rewards = new ArrayList<>();
     public boolean showBossBar = true;
@@ -38,6 +40,16 @@ public class BossConfig {
     // Custom attributes (e.g. "minecraft:generic.armor" -> 10.0)
     public Map<String, Double> customAttributes = new HashMap<>();
 
+    // Direct combat tuning fields mirrored into ArcadiaCombat runtime data
+    public double attackRange = 0.0;
+    public int attackCooldownMs = 0;
+    public double aggroRange = 0.0;
+    public int projectileCooldownMs = 0;
+    public double dodgeChance = 0.0;
+    public int dodgeCooldownMs = 0;
+    public boolean dodgeProjectilesOnly = false;
+    public String dodgeMessage = "";
+
     public BossConfig() {}
 
     public BossConfig(String id, String entityType, double baseHealth, double baseDamage) {
@@ -45,5 +57,13 @@ public class BossConfig {
         this.entityType = entityType;
         this.baseHealth = baseHealth;
         this.baseDamage = baseDamage;
+    }
+
+    public boolean hasArea() {
+        return areaPos1 != null && areaPos2 != null;
+    }
+
+    public boolean isInArea(String dimension, double px, double py, double pz) {
+        return DungeonConfig.isInsideArea(areaPos1, areaPos2, dimension, px, py, pz);
     }
 }

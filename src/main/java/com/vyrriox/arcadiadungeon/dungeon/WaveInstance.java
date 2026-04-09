@@ -4,7 +4,6 @@ import com.vyrriox.arcadiadungeon.ArcadiaDungeon;
 import com.vyrriox.arcadiadungeon.boss.BossInstance;
 import com.vyrriox.arcadiadungeon.config.DungeonSettings;
 import com.vyrriox.arcadiadungeon.config.MobSpawnConfig;
-import com.vyrriox.arcadiadungeon.config.SpawnPointConfig;
 import com.vyrriox.arcadiadungeon.config.WaveConfig;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -23,25 +22,23 @@ import java.util.*;
 public class WaveInstance {
     private final WaveConfig config;
     private final List<LivingEntity> aliveMobs = new ArrayList<>();
-    private final Map<LivingEntity, SpawnPointConfig> mobSpawnPoints = new HashMap<>();
     private boolean spawned = false;
     private boolean cleared = false;
     private int successfulSpawns = 0;
-    private int delayTicksRemaining = 0;
+    private long nextSpawnAtMillis = -1L;
     private long spawnTimeMillis = 0;
     private boolean glowingApplied = false;
 
     public WaveInstance(WaveConfig config) {
         this.config = config;
-        this.delayTicksRemaining = config.delayBeforeSeconds * 20;
     }
 
     public boolean tickDelay() {
-        if (delayTicksRemaining > 0) {
-            delayTicksRemaining--;
-            return false;
+        long now = System.currentTimeMillis();
+        if (nextSpawnAtMillis < 0) {
+            nextSpawnAtMillis = now + (config.delayBeforeSeconds * 1000L);
         }
-        return true;
+        return now >= nextSpawnAtMillis;
     }
 
     public boolean spawn(MinecraftServer server) {
@@ -93,13 +90,15 @@ public class WaveInstance {
                     continue;
                 }
 
-                // Position with small random offset for multiple mobs
                 double offsetX = mobConfig.count > 1 ? (level.getRandom().nextDouble() - 0.5) * 3 : 0;
                 double offsetZ = mobConfig.count > 1 ? (level.getRandom().nextDouble() - 0.5) * 3 : 0;
-                living.setPos(
+                SpawnSafety.placeAtSafeSpawn(
+                        living,
+                        mobConfig.spawnPoint,
                         mobConfig.spawnPoint.x + offsetX,
                         mobConfig.spawnPoint.y,
-                        mobConfig.spawnPoint.z + offsetZ
+                        mobConfig.spawnPoint.z + offsetZ,
+                        4
                 );
 
                 // Custom name
@@ -131,6 +130,17 @@ public class WaveInstance {
 
                 // Custom attributes
                 BossInstance.applyCustomAttributes(living, mobConfig.customAttributes);
+                CombatTuning.applyConfiguredCombat(
+                        living,
+                        mobConfig.attackRange,
+                        mobConfig.attackCooldownMs,
+                        mobConfig.aggroRange,
+                        mobConfig.projectileCooldownMs,
+                        mobConfig.dodgeChance,
+                        mobConfig.dodgeCooldownMs,
+                        mobConfig.dodgeProjectilesOnly,
+                        mobConfig.dodgeMessage
+                );
 
                 // Prevent despawn
                 if (living instanceof Mob mob) {
@@ -140,11 +150,11 @@ public class WaveInstance {
                 // Tags for tracking and no-loot
                 living.addTag("arcadia_wave_mob");
                 living.addTag("arcadia_wave_" + config.waveNumber);
+                living.addTag("arcadia_managed");
                 living.addTag("arcadia_no_loot");
 
                 level.addFreshEntity(living);
                 aliveMobs.add(living);
-                mobSpawnPoints.put(living, mobConfig.spawnPoint);
                 successfulSpawns++;
             }
         }
@@ -160,19 +170,7 @@ public class WaveInstance {
     }
 
     public void checkContainmentArea(com.vyrriox.arcadiadungeon.config.DungeonConfig dungeonConfig) {
-        for (LivingEntity mob : aliveMobs) {
-            if (!mob.isAlive()) continue;
-
-            String mobDim = mob.level().dimension().location().toString();
-            if (!dungeonConfig.isInArea(mobDim, mob.getX(), mob.getY(), mob.getZ())) {
-                SpawnPointConfig sp = mobSpawnPoints.get(mob);
-                if (sp != null) {
-                    mob.teleportTo(sp.x, sp.y, sp.z);
-                } else {
-                    mob.teleportTo(dungeonConfig.spawnPoint.x, dungeonConfig.spawnPoint.y, dungeonConfig.spawnPoint.z);
-                }
-            }
-        }
+        // Wave mobs are no longer forcibly recentered. Spawn validation handles bad points up front.
     }
 
     public void checkGlowing() {
@@ -212,6 +210,10 @@ public class WaveInstance {
         return config;
     }
 
+    public List<LivingEntity> getAliveMobs() {
+        return aliveMobs;
+    }
+
     public void cleanup() {
         for (LivingEntity mob : aliveMobs) {
             if (mob.isAlive()) {
@@ -219,6 +221,5 @@ public class WaveInstance {
             }
         }
         aliveMobs.clear();
-        mobSpawnPoints.clear();
     }
 }
