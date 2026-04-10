@@ -1,40 +1,29 @@
 package com.vyrriox.arcadiadungeon.util;
 
-import com.mojang.logging.LogUtils;
-import net.minecraft.server.MinecraftServer;
-import org.slf4j.Logger;
+import com.arcadia.core.profiling.ProfilerUtil;
 
 public final class SparkUtil {
-    private static final Logger LOGGER = LogUtils.getLogger();
-    private static MinecraftServer server = null;
+    private static final String PROFILER_NAMESPACE = "arcadia_dungeon";
 
     private SparkUtil() {}
 
-    public static void setServer(MinecraftServer s) {
-        server = s;
-    }
-
-    public static void clearServer() {
-        server = null;
-    }
-
-    public static boolean startSection(String name) {
-        if (!ModCompat.HAS_SPARK || server == null) return false;
-        try {
-            server.getProfiler().push(name);
-            return true;
-        } catch (Exception e) {
-            LOGGER.error("SparkUtil: error starting section '{}'", name, e);
-            return false;
-        }
+    public static boolean startSection(String section) {
+        if (!ModCompat.HAS_SPARK) return false;
+        return ProfilerUtil.startSection(PROFILER_NAMESPACE, normalizeSection(section));
     }
 
     public static void endSection() {
-        if (!ModCompat.HAS_SPARK || server == null) return;
-        try {
-            server.getProfiler().pop();
-        } catch (Exception e) {
-            LOGGER.error("SparkUtil: error ending section", e);
-        }
+        endSection(true);
+    }
+
+    public static void endSection(boolean started) {
+        if (!ModCompat.HAS_SPARK) return;
+        ProfilerUtil.endSection(started);
+    }
+
+    private static String normalizeSection(String section) {
+        if (section == null || section.isBlank()) return "unknown";
+        String prefix = PROFILER_NAMESPACE + ".";
+        return section.startsWith(prefix) ? section.substring(prefix.length()) : section;
     }
 }

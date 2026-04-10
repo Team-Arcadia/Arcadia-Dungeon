@@ -1,9 +1,9 @@
 package com.vyrriox.arcadiadungeon;
 
 import com.mojang.logging.LogUtils;
+import com.arcadia.core.profiling.ProfilerUtil;
 import com.vyrriox.arcadiadungeon.command.ArcadiaCommands;
 import com.vyrriox.arcadiadungeon.util.ModCompat;
-import com.vyrriox.arcadiadungeon.util.SparkUtil;
 import com.vyrriox.arcadiadungeon.config.ConfigManager;
 import com.vyrriox.arcadiadungeon.dungeon.DungeonManager;
 import com.vyrriox.arcadiadungeon.event.DungeonEventHandler;
@@ -57,7 +57,7 @@ public class ArcadiaDungeon {
 
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
-        SparkUtil.setServer(event.getServer());
+        ProfilerUtil.setServer(event.getServer());
         ConfigManager.getInstance().loadAll();
         DungeonManager.getInstance().setServer(event.getServer());
         com.vyrriox.arcadiadungeon.dungeon.WeeklyLeaderboard.getInstance().load();
@@ -69,7 +69,7 @@ public class ArcadiaDungeon {
         DungeonManager.getInstance().stopAllDungeons();
         com.vyrriox.arcadiadungeon.dungeon.PlayerProgressManager.getInstance().flushDirty();
         DungeonManager.getInstance().setServer(null);
-        SparkUtil.clearServer();
+        ProfilerUtil.clearServer();
     }
 
     @SubscribeEvent

@@ -289,7 +289,7 @@ public class DungeonEventHandler {
     // === TICK ===
     @SubscribeEvent
     public void onServerTick(ServerTickEvent.Post event) {
-        boolean sparkSectionStarted = SparkUtil.startSection("arcadia.tick");
+        boolean sparkSectionStarted = SparkUtil.startSection("tick");
         try {
             try {
                 long now = System.currentTimeMillis();
@@ -354,7 +354,7 @@ public class DungeonEventHandler {
             }
         } finally {
             if (sparkSectionStarted) {
-                SparkUtil.endSection();
+                SparkUtil.endSection(sparkSectionStarted);
             }
         }
     }
@@ -391,7 +391,7 @@ public class DungeonEventHandler {
                 }
             }
 
-            boolean sparkSectionStarted = SparkUtil.startSection("arcadia.combat");
+            boolean sparkSectionStarted = SparkUtil.startSection("combat");
             try {
                 if (entity.getTags().contains("arcadia_managed") && CombatTuning.shouldDodge(entity, event.getSource().getDirectEntity(), now)) {
                     sendDodgeMessage(entity, event.getSource().getEntity());
@@ -407,7 +407,7 @@ public class DungeonEventHandler {
                 }
             } finally {
                 if (sparkSectionStarted) {
-                    SparkUtil.endSection();
+                    SparkUtil.endSection(sparkSectionStarted);
                 }
             }
 

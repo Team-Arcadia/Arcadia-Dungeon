@@ -27,7 +27,7 @@ public class BossManager {
     }
 
     public boolean spawnNextBoss(DungeonInstance instance) {
-        boolean sparkSectionStarted = SparkUtil.startSection("arcadia.boss.spawn");
+        boolean sparkSectionStarted = SparkUtil.startSection("boss.spawn");
         try {
             MinecraftServer server = DungeonManager.getInstance().getServer();
             if (server == null) return false;
@@ -109,7 +109,7 @@ public class BossManager {
             return false;
         } finally {
             if (sparkSectionStarted) {
-                SparkUtil.endSection();
+                SparkUtil.endSection(sparkSectionStarted);
             }
         }
     }

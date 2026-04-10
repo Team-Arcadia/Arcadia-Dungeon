@@ -7,6 +7,7 @@ import com.vyrriox.arcadiadungeon.config.ConfigManager;
 import com.vyrriox.arcadiadungeon.config.DungeonConfig;
 import com.vyrriox.arcadiadungeon.config.SpawnPointConfig;
 import com.vyrriox.arcadiadungeon.util.MessageUtil;
+import com.arcadia.core.message.LegacyColorFormatter;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -1005,54 +1006,7 @@ public class DungeonManager {
     }
 
     public static Component parseColorCodes(String message) {
-        MutableComponent result = Component.empty();
-        String[] parts = message.split("&");
-        boolean first = true;
-        for (String part : parts) {
-            if (first) {
-                result.append(Component.literal(part));
-                first = false;
-                continue;
-            }
-            if (part.isEmpty()) continue;
-            char code = part.charAt(0);
-            String text = part.substring(1);
-            ChatFormatting format = getFormatByCode(code);
-            if (format != null) {
-                result.append(Component.literal(text).withStyle(format));
-            } else {
-                result.append(Component.literal("&" + part));
-            }
-        }
-        return result;
-    }
-
-    private static ChatFormatting getFormatByCode(char code) {
-        return switch (code) {
-            case '0' -> ChatFormatting.BLACK;
-            case '1' -> ChatFormatting.DARK_BLUE;
-            case '2' -> ChatFormatting.DARK_GREEN;
-            case '3' -> ChatFormatting.DARK_AQUA;
-            case '4' -> ChatFormatting.DARK_RED;
-            case '5' -> ChatFormatting.DARK_PURPLE;
-            case '6' -> ChatFormatting.GOLD;
-            case '7' -> ChatFormatting.GRAY;
-            case '8' -> ChatFormatting.DARK_GRAY;
-            case '9' -> ChatFormatting.BLUE;
-            case 'a' -> ChatFormatting.GREEN;
-            case 'b' -> ChatFormatting.AQUA;
-            case 'c' -> ChatFormatting.RED;
-            case 'd' -> ChatFormatting.LIGHT_PURPLE;
-            case 'e' -> ChatFormatting.YELLOW;
-            case 'f' -> ChatFormatting.WHITE;
-            case 'l' -> ChatFormatting.BOLD;
-            case 'o' -> ChatFormatting.ITALIC;
-            case 'n' -> ChatFormatting.UNDERLINE;
-            case 'm' -> ChatFormatting.STRIKETHROUGH;
-            case 'k' -> ChatFormatting.OBFUSCATED;
-            case 'r' -> ChatFormatting.RESET;
-            default -> null;
-        };
+        return LegacyColorFormatter.parse(message);
     }
 
     public static String formatTime(long seconds) {
