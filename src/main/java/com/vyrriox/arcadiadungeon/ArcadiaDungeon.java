@@ -58,10 +58,11 @@ public class ArcadiaDungeon {
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
         ProfilerUtil.setServer(event.getServer());
-        ConfigManager.getInstance().loadAll();
+        ConfigManager configManager = ConfigManager.getInstance();
+        configManager.loadAll();
         DungeonManager.getInstance().setServer(event.getServer());
         com.vyrriox.arcadiadungeon.dungeon.WeeklyLeaderboard.getInstance().load();
-        LOGGER.info("Arcadia Dungeon loaded {} dungeon(s)", ConfigManager.getInstance().getDungeonConfigs().size());
+        LOGGER.info("Arcadia Dungeon loaded {} dungeon(s)", configManager.getDungeonConfigs().size());
     }
 
     @SubscribeEvent

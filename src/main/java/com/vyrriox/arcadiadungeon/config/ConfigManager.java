@@ -22,14 +22,17 @@ public class ConfigManager {
 
     private final Path configDir;
     private final Path dungeonsDir;
+    private final Path progressionConfigPath;
     private final Path documentationDir;
     private final Path examplesDir;
     private final Path schemaPath;
     private final Map<String, DungeonConfig> dungeonConfigs = new ConcurrentHashMap<>();
+    private volatile ArcadiaProgressionConfig progressionConfig = ArcadiaProgressionConfig.createDefault();
 
     private ConfigManager() {
         this.configDir = FMLPaths.CONFIGDIR.get().resolve("arcadia").resolve("dungeon");
         this.dungeonsDir = configDir.resolve("dungeons");
+        this.progressionConfigPath = configDir.resolve("arcadia-progression.json");
         this.documentationDir = Path.of("dungeon-configs");
         this.examplesDir = documentationDir.resolve("examples");
         this.schemaPath = documentationDir.resolve("dungeon-schema.json");
@@ -46,6 +49,8 @@ public class ConfigManager {
             ArcadiaDungeon.LOGGER.error("Failed to create config directories", e);
             return;
         }
+
+        loadProgressionConfig();
 
         Map<String, DungeonConfig> previousConfigs = Map.copyOf(dungeonConfigs);
         Map<String, DungeonConfig> loadedConfigs = new ConcurrentHashMap<>();
@@ -113,6 +118,39 @@ public class ConfigManager {
 
     public Map<String, DungeonConfig> getDungeonConfigs() {
         return Collections.unmodifiableMap(dungeonConfigs);
+    }
+
+    public synchronized void loadProgressionConfig() {
+        try {
+            Files.createDirectories(configDir);
+            if (Files.notExists(progressionConfigPath)) {
+                progressionConfig = ArcadiaProgressionConfig.createDefault();
+                Files.writeString(progressionConfigPath, GSON.toJson(progressionConfig));
+                ArcadiaDungeon.LOGGER.info("Generated default arcadia-progression.json");
+                return;
+            }
+
+            String json = Files.readString(progressionConfigPath);
+            ArcadiaProgressionConfig loadedConfig = GSON.fromJson(json, ArcadiaProgressionConfig.class);
+            if (loadedConfig == null) {
+                ArcadiaDungeon.LOGGER.warn("arcadia-progression.json is empty. Using default progression config.");
+                progressionConfig = ArcadiaProgressionConfig.createDefault();
+            } else {
+                loadedConfig.normalize();
+                progressionConfig = loadedConfig;
+            }
+            ArcadiaDungeon.LOGGER.info("Loaded Arcadia progression config: {} level threshold(s), {} rank threshold(s)",
+                    progressionConfig.levels.size(), progressionConfig.ranks.size());
+        } catch (Exception e) {
+            ArcadiaDungeon.LOGGER.error("Failed to load arcadia-progression.json. Keeping previous progression config.", e);
+            if (progressionConfig == null) {
+                progressionConfig = ArcadiaProgressionConfig.createDefault();
+            }
+        }
+    }
+
+    public ArcadiaProgressionConfig getProgressionConfig() {
+        return progressionConfig;
     }
 
     private void validateConfig(DungeonConfig config) {

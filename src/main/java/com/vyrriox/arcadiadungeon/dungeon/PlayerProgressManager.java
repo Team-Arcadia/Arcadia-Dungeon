@@ -3,6 +3,7 @@ package com.vyrriox.arcadiadungeon.dungeon;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.vyrriox.arcadiadungeon.ArcadiaDungeon;
+import com.vyrriox.arcadiadungeon.config.ConfigManager;
 import net.neoforged.fml.loading.FMLPaths;
 
 import java.io.IOException;
@@ -42,6 +43,9 @@ public class PlayerProgressManager {
                     String json = Files.readString(file);
                     PlayerProgress progress = GSON.fromJson(json, PlayerProgress.class);
                     if (progress != null && progress.uuid != null && !progress.uuid.isEmpty()) {
+                        if (progress.normalize()) {
+                            dirtyPlayers.add(progress.uuid);
+                        }
                         playerData.put(progress.uuid, progress);
                     }
                 } catch (Exception e) {
@@ -72,6 +76,9 @@ public class PlayerProgressManager {
             progress = new PlayerProgress(uuid, playerName);
             playerData.put(uuid, progress);
         }
+        if (progress.normalize()) {
+            dirtyPlayers.add(uuid);
+        }
         if (playerName != null && !playerName.isEmpty()) {
             progress.playerName = playerName;
         }
@@ -79,7 +86,11 @@ public class PlayerProgressManager {
     }
 
     public PlayerProgress get(String uuid) {
-        return playerData.get(uuid);
+        PlayerProgress progress = playerData.get(uuid);
+        if (progress != null) {
+            progress.normalize();
+        }
+        return progress;
     }
 
     private final Set<String> dirtyPlayers = ConcurrentHashMap.newKeySet();
@@ -95,6 +106,53 @@ public class PlayerProgressManager {
         progress.recordCompletion(dungeonId, timeSeconds);
         save(progress);
         dirtyPlayers.remove(uuid);
+    }
+
+    public LevelUpResult addXp(String uuid, long xpAmount) {
+        if (uuid == null || uuid.isBlank()) {
+            return new LevelUpResult(false, 1, 1, false, "Novice", "Novice");
+        }
+
+        PlayerProgress progress = getOrCreate(uuid, "");
+        PlayerProgress.ArcadiaProgress arcadiaProgress = progress.arcadiaProgress;
+        int oldLevel = arcadiaProgress.arcadiaLevel;
+        String oldRank = arcadiaProgress.arcadiaRank;
+
+        if (xpAmount <= 0) {
+            return new LevelUpResult(false, oldLevel, oldLevel, false, oldRank, oldRank);
+        }
+
+        arcadiaProgress.arcadiaXp = addClamped(arcadiaProgress.arcadiaXp, xpAmount);
+        int newLevel = ConfigManager.getInstance().getProgressionConfig().getLevelForXp(arcadiaProgress.arcadiaXp);
+        arcadiaProgress.arcadiaLevel = Math.max(oldLevel, newLevel);
+        String newRank = recalculateRank(arcadiaProgress);
+        dirtyPlayers.add(uuid);
+
+        return new LevelUpResult(
+                arcadiaProgress.arcadiaLevel > oldLevel,
+                oldLevel,
+                arcadiaProgress.arcadiaLevel,
+                !Objects.equals(oldRank, newRank),
+                oldRank,
+                newRank
+        );
+    }
+
+    public String recalculateRank(PlayerProgress.ArcadiaProgress progress) {
+        if (progress == null) {
+            return "Novice";
+        }
+        String rank = ConfigManager.getInstance().getProgressionConfig().getRankForLevel(progress.arcadiaLevel);
+        progress.arcadiaRank = rank;
+        return rank;
+    }
+
+    private long addClamped(long currentXp, long xpAmount) {
+        long result = currentXp + xpAmount;
+        if (result < currentXp) {
+            return Long.MAX_VALUE;
+        }
+        return result;
     }
 
     public void saveNow(String uuid) {
