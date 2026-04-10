@@ -161,6 +161,10 @@ public class ConfigManager {
         if (config.completionRewards == null) config.completionRewards = new java.util.ArrayList<>();
         if (config.scriptedWalls == null) config.scriptedWalls = new java.util.ArrayList<>();
         if (config.requiredDungeon == null) config.requiredDungeon = "";
+        if (config.arcadiaXp < 0) config.arcadiaXp = 0;
+        if (!Double.isFinite(config.difficultyMultiplier) || config.difficultyMultiplier < 0) {
+            config.difficultyMultiplier = 1.0;
+        }
         for (BossConfig boss : config.bosses) {
             if (boss.spawnPoint == null) boss.spawnPoint = new SpawnPointConfig();
             if (boss.phases == null) boss.phases = new java.util.ArrayList<>();
@@ -224,6 +228,8 @@ public class ConfigManager {
         example.announceCompletion = true;
         example.announceIntervalMinutes = 30;
         example.teleportBackOnComplete = true;
+        example.arcadiaXp = 100;
+        example.difficultyMultiplier = 1.0;
         example.spawnPoint = new SpawnPointConfig("minecraft:overworld", 100, 64, 100, 0, 0);
 
         BossConfig boss = new BossConfig("guardian", "minecraft:wither_skeleton", 200, 15);
@@ -394,6 +400,8 @@ public class ConfigManager {
         props.add("completionMessage", stringSchema("&6[Donjon] ...", "Global completion announcement."));
         props.add("failMessage", stringSchema("&6[Donjon] ...", "Global fail announcement."));
         props.add("teleportBackOnComplete", boolSchema(true, "Teleport players back on completion/fail."));
+        props.add("arcadiaXp", intSchema(0, "Arcadia XP granted to each present player on successful completion. 0 uses the global default."));
+        props.add("difficultyMultiplier", numberSchema(1.0, "Multiplier applied to Arcadia XP rewards for this dungeon."));
         props.add("spawnPoint", refSchema("spawnPoint"));
         props.add("bosses", arraySchema(refSchema("boss"), "Configured bosses."));
         props.add("completionRewards", arraySchema(refSchema("reward"), "Rewards granted on completion."));

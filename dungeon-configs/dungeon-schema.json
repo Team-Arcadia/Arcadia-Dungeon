@@ -16,7 +16,7 @@
     "cooldownSeconds": {
       "type": "integer",
       "default": 3600,
-      "description": "Cooldown after completion."
+      "description": "Cooldown after completion in seconds."
     },
     "announceStart": {
       "type": "boolean",
@@ -47,6 +47,16 @@
       "type": "boolean",
       "default": true,
       "description": "Teleport players back on completion/fail."
+    },
+    "arcadiaXp": {
+      "type": "integer",
+      "default": 0,
+      "description": "Arcadia XP granted to each present player on successful completion. 0 uses the global default."
+    },
+    "difficultyMultiplier": {
+      "type": "number",
+      "default": 1.0,
+      "description": "Multiplier applied to Arcadia XP rewards for this dungeon."
     },
     "spawnPoint": {
       "$ref": "#/$defs/spawnPoint"
@@ -82,6 +92,11 @@
       "type": "boolean",
       "default": true,
       "description": "Broadcast availability announcements."
+    },
+    "announceIntervalMinutes": {
+      "type": "integer",
+      "default": 0,
+      "description": "Periodic idle availability announcement interval in minutes."
     },
     "availabilityMessage": {
       "type": "string",

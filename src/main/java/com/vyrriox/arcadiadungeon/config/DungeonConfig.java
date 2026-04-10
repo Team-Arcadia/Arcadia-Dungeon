@@ -13,6 +13,8 @@ public class DungeonConfig {
     public String completionMessage = "&6[Donjon] &a%player% &7a vaincu &e%dungeon%&7!";
     public String failMessage = "&6[Donjon] &c%player% &7a echoue dans &e%dungeon%&7!";
     public boolean teleportBackOnComplete = true;
+    public int arcadiaXp = 0;
+    public double difficultyMultiplier = 1.0;
     public SpawnPointConfig spawnPoint = new SpawnPointConfig();
     public List<BossConfig> bosses = new ArrayList<>();
     public List<RewardConfig> completionRewards = new ArrayList<>();

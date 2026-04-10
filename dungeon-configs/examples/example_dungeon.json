@@ -8,6 +8,8 @@
   "completionMessage": "&6[Donjon] &a%player% &7a vaincu &e%dungeon%&7!",
   "failMessage": "&6[Donjon] &c%player% &7a echoue dans &e%dungeon%&7!",
   "teleportBackOnComplete": true,
+  "arcadiaXp": 0,
+  "difficultyMultiplier": 1.0,
   "spawnPoint": {
     "dimension": "minecraft:overworld",
     "x": 100.0,
@@ -200,6 +202,7 @@
   "enabled": true,
   "availableEverySeconds": 0,
   "announceAvailability": true,
+  "announceIntervalMinutes": 0,
   "availabilityMessage": "&6[Donjon] &e%dungeon% &7est de nouveau accessible! &fLancez avec &e/arcadia_dungeon start %id%",
   "requiredPermission": "",
   "order": 1,

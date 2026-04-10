@@ -358,12 +358,14 @@ public class DungeonManager {
         instance.setState(DungeonState.COMPLETED);
 
         long completionTime = instance.getElapsedSeconds();
+        long arcadiaXpReward = calculateArcadiaXpReward(config);
 
         for (UUID playerId : instance.getPlayers()) {
             ServerPlayer player = server.getPlayerList().getPlayer(playerId);
             if (player != null) {
                 instance.giveRewards(player, config.completionRewards);
 
+                LevelUpResult levelUpResult = PlayerProgressManager.getInstance().addXp(playerId.toString(), arcadiaXpReward);
                 PlayerProgressManager.getInstance().recordCompletionAndSave(
                         playerId.toString(), player.getName().getString(), dungeonId, completionTime
                 );
@@ -380,6 +382,7 @@ public class DungeonManager {
 
                 player.sendSystemMessage(Component.literal("[Arcadia] Donjon termine! Felicitations! (Temps: " + formatTime(completionTime) + ")")
                         .withStyle(ChatFormatting.GOLD));
+                sendArcadiaXpMessages(player, arcadiaXpReward, levelUpResult);
             }
         }
 
@@ -402,6 +405,37 @@ public class DungeonManager {
         instance.cleanup();
         activeInstances.remove(dungeonId);
         ArcadiaDungeon.LOGGER.info("Dungeon {} completed", dungeonId);
+    }
+
+    private long calculateArcadiaXpReward(DungeonConfig config) {
+        int baseXp = config.arcadiaXp > 0
+                ? config.arcadiaXp
+                : ConfigManager.getInstance().getProgressionConfig().defaultDungeonXp;
+        double multiplier = Double.isFinite(config.difficultyMultiplier) && config.difficultyMultiplier >= 0
+                ? config.difficultyMultiplier
+                : 1.0;
+        double reward = baseXp * multiplier;
+        if (reward <= 0) {
+            return 0;
+        }
+        if (reward >= Long.MAX_VALUE) {
+            return Long.MAX_VALUE;
+        }
+        return Math.max(0, Math.round(reward));
+    }
+
+    private void sendArcadiaXpMessages(ServerPlayer player, long xpReward, LevelUpResult result) {
+        if (xpReward > 0) {
+            MessageUtil.send(player, "&6[Arcadia] &a+" + xpReward + " XP Arcadia");
+        }
+        if (result == null || !result.leveledUp) {
+            return;
+        }
+
+        MessageUtil.send(player, "&6[Arcadia] &eNiveau Arcadia " + result.newLevel + " atteint!");
+        if (result.rankChanged) {
+            MessageUtil.send(player, "&6[Arcadia] &bNouveau rang: &f" + result.newRank);
+        }
     }
 
     public void failDungeon(String dungeonId) {
