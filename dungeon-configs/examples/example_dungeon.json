@@ -8,8 +8,11 @@
   "completionMessage": "&6[Donjon] &a%player% &7a vaincu &e%dungeon%&7!",
   "failMessage": "&6[Donjon] &c%player% &7a echoue dans &e%dungeon%&7!",
   "teleportBackOnComplete": true,
-  "arcadiaXp": 0,
+  "arcadiaXp": 100,
   "difficultyMultiplier": 1.0,
+  "requiredArcadiaLevel": 0,
+  "speedrunBonusSeconds": 300,
+  "speedrunBonusXp": 50,
   "spawnPoint": {
     "dimension": "minecraft:overworld",
     "x": 100.0,

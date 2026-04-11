@@ -58,6 +58,21 @@
       "default": 1.0,
       "description": "Multiplier applied to Arcadia XP rewards for this dungeon."
     },
+    "requiredArcadiaLevel": {
+      "type": "integer",
+      "default": 0,
+      "description": "Minimum Arcadia level required to start or join this dungeon. 0 disables the requirement."
+    },
+    "speedrunBonusSeconds": {
+      "type": "integer",
+      "default": 0,
+      "description": "Completion time threshold in seconds for granting the speedrun XP bonus. 0 disables the bonus."
+    },
+    "speedrunBonusXp": {
+      "type": "integer",
+      "default": 0,
+      "description": "Additional Arcadia XP granted when the dungeon is completed within speedrunBonusSeconds."
+    },
     "spawnPoint": {
       "$ref": "#/$defs/spawnPoint"
     },
