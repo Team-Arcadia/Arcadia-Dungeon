@@ -4,7 +4,7 @@ Un système de donjons **entièrement configurable** pour serveurs Minecraft ave
 
 **Mod ID:** `arcadia_dungeon`  
 **Version:** 1.0.0  
-**Auteur:** vyrriox  
+**Auteur:** Blushister, vyrriox  
 **Plateforme:** NeoForge 1.21.1
 
 ---
@@ -253,4 +253,4 @@ Pour les rapports de bugs ou les demandes de features, consultez la page [Issues
 
 ---
 
-**Fait avec ❤️ par vyrriox - Enjoy your dungeons!**
+**Fait par Blushister, vyrriox - Enjoy your dungeons!**
