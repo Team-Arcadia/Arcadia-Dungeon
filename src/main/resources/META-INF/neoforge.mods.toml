@@ -1,7 +1,7 @@
 modLoader="javafml"
 loaderVersion="${loader_version_range}"
 license="${mod_license}"
-issueTrackerURL="https://github.com/vyrriox/Arcadia"
+issueTrackerURL="https://github.com/Blushister"
 
 [[mods]]
 modId="${mod_id}"
