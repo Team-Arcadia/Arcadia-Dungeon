@@ -3,686 +3,347 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Procedure de Test Finale - Arcadia Dungeon v1.2.0</title>
+<title>Procedure de Test Epic 8 - Arcadia Dungeon</title>
 <style>
-:root{--bg:#1a1a2e;--bg2:#16213e;--bg3:#0f3460;--accent:#e94560;--gold:#f5a623;--green:#27ae60;--red:#e74c3c;--cyan:#00d2ff;--text:#eaeaea;--dim:#a0a0b8;--code-bg:#0d1117;--border:#2a2a4a;--purple:#9b59b6}
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',Tahoma,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;padding:20px}
-.container{max-width:1020px;margin:0 auto}
-header{text-align:center;padding:40px 20px;background:linear-gradient(135deg,var(--bg2),var(--bg3));border-radius:16px;margin-bottom:30px;border:1px solid var(--border);position:relative;overflow:hidden}
-header::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle,rgba(233,69,96,.08) 0%,transparent 60%);pointer-events:none}
-header h1{font-size:2.2em;background:linear-gradient(135deg,var(--accent),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
-header .ver{color:var(--cyan);font-size:1.1em;font-weight:600}
-header .sub{color:var(--gold);font-size:.95em;margin-top:8px;font-weight:600}
-header .aut{color:var(--dim);margin-top:4px}
-.pbar{background:var(--bg2);border-radius:12px;padding:20px;margin-bottom:24px;border:1px solid var(--border)}
-.pbar h3{color:var(--gold);margin-bottom:12px;font-size:1em}
-.ptrack{background:var(--code-bg);border-radius:8px;height:28px;overflow:hidden;position:relative}
-.pfill{height:100%;background:linear-gradient(90deg,var(--accent),var(--gold));border-radius:8px;width:0%;transition:width .5s}
-.ptxt{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-weight:700;font-size:.85em;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5)}
-.pre{background:var(--bg2);border-radius:12px;padding:20px;margin-bottom:24px;border-left:4px solid var(--cyan)}
-.pre h2{color:var(--cyan);font-size:1.1em;margin-bottom:10px}
-.pre ul{list-style:none;padding:0}
-.pre li{padding:4px 0;color:var(--dim)}
-.pre li::before{content:'\25B8';color:var(--cyan);margin-right:8px}
-.warn{background:rgba(231,76,60,.1);border-radius:12px;padding:16px 20px;margin-bottom:24px;border-left:4px solid var(--red);color:var(--red);font-weight:600;font-size:.92em}
-.warn::before{content:'\26A0';margin-right:8px}
-.info{background:rgba(0,210,255,.08);border-radius:12px;padding:14px 20px;margin-bottom:16px;border-left:4px solid var(--cyan);color:var(--cyan);font-size:.88em}
-.info::before{content:'\2139';margin-right:8px;font-weight:800}
-.ph{background:var(--bg2);border-radius:12px;margin-bottom:16px;border:1px solid var(--border);overflow:hidden}
-.phh{padding:14px 18px;cursor:pointer;display:flex;align-items:center;gap:10px;user-select:none;transition:background .2s}
-.phh:hover{background:rgba(233,69,96,.06)}
-.phn{background:linear-gradient(135deg,var(--accent),#c0392b);color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85em;flex-shrink:0}
-.pht{font-size:1.1em;font-weight:700;flex-grow:1}
-.phc{color:var(--dim);font-size:.8em;font-weight:600;background:var(--code-bg);padding:3px 8px;border-radius:20px}
-.pha{color:var(--dim);font-size:1.1em;transition:transform .3s}
-.ph.o .pha{transform:rotate(180deg)}
-.phb{display:none;padding:0 18px 16px}
-.ph.o .phb{display:block}
-.tg{margin-top:14px}
-.tg h3{color:var(--gold);font-size:.95em;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border)}
-.ins{color:var(--dim);font-style:italic;margin:6px 0;font-size:.88em}
-.cm{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:9px 60px 9px 12px;margin:6px 0;font-family:'Cascadia Code','Fira Code','Consolas',monospace;font-size:.82em;color:var(--cyan);position:relative;cursor:pointer;transition:border-color .2s;word-break:break-all}
-.cm:hover{border-color:var(--cyan)}
-.cm::after{content:'Copier';position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:.7em;color:var(--dim);opacity:0;transition:opacity .2s;font-family:'Segoe UI',sans-serif}
-.cm:hover::after{opacity:1}
-.cm.cp::after{content:'OK!';color:var(--green);opacity:1}
-.cm.a::before{content:'ADMIN';position:absolute;left:-1px;top:-1px;font-size:.5em;background:var(--accent);color:#fff;padding:1px 5px;border-radius:8px 0 5px 0;font-family:'Segoe UI',sans-serif;font-weight:700;letter-spacing:.5px}
-.cl{list-style:none;padding:0}
-.cl li{display:flex;align-items:flex-start;gap:8px;padding:5px 0;font-size:.9em}
-.cl input[type="checkbox"]{appearance:none;-webkit-appearance:none;width:18px;height:18px;border:2px solid var(--border);border-radius:3px;background:var(--code-bg);cursor:pointer;flex-shrink:0;margin-top:2px;position:relative;transition:all .2s}
-.cl input:checked{background:var(--green);border-color:var(--green)}
-.cl input:checked::after{content:'\2713';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;font-size:12px;font-weight:800}
-.cl input:checked+span{text-decoration:line-through;color:var(--dim)}
-.tag{display:inline-block;font-size:.6em;padding:1px 6px;border-radius:8px;font-weight:700;vertical-align:middle;margin-left:3px}
-.tag.n{background:rgba(39,174,96,.2);color:var(--green)}
-.tag.attr{background:rgba(155,89,182,.2);color:var(--purple)}
-.st{width:100%;border-collapse:collapse;margin-top:10px}
-.st th{text-align:left;padding:8px 12px;background:var(--bg3);color:var(--gold);font-size:.85em;border-bottom:2px solid var(--accent)}
-.st td{padding:6px 12px;border-bottom:1px solid var(--border);font-size:.82em}
-.st td:first-child{font-family:'Cascadia Code','Fira Code','Consolas',monospace;color:var(--cyan)}
-.st tr:hover td{background:rgba(233,69,96,.04)}
-.reset-btn{background:var(--accent);color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:700;font-size:.9em;margin-top:16px;transition:background .2s}
-.reset-btn:hover{background:#c0392b}
-footer{text-align:center;padding:30px;color:var(--dim);font-size:.85em;margin-top:30px}
-@media(max-width:600px){body{padding:10px}header h1{font-size:1.5em}.cm{font-size:.72em;padding-right:12px}.cm::after{display:none}}
+:root{
+  --bg:#10151c;
+  --panel:#17212b;
+  --panel-2:#1d2a36;
+  --line:#2c3b48;
+  --text:#ecf3f8;
+  --muted:#9fb0bf;
+  --accent:#e6a23c;
+  --accent-2:#4db6ac;
+  --ok:#52c41a;
+  --warn:#ff7875;
+  --code:#0d1117;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Segoe UI,Tahoma,sans-serif;
+  background:radial-gradient(circle at top,#1a2631 0%,var(--bg) 55%);
+  color:var(--text);
+  line-height:1.5;
+}
+.wrap{max-width:1100px;margin:0 auto;padding:24px}
+header{
+  background:linear-gradient(135deg,var(--panel),var(--panel-2));
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:28px;
+  margin-bottom:22px;
+  box-shadow:0 18px 40px rgba(0,0,0,.22);
+}
+h1{margin:0 0 8px;font-size:2rem;color:var(--accent)}
+.sub{color:var(--muted);margin-bottom:10px}
+.meta{display:flex;flex-wrap:wrap;gap:10px}
+.badge{
+  display:inline-block;
+  padding:6px 10px;
+  border-radius:999px;
+  background:#223241;
+  color:#d7e4ee;
+  border:1px solid var(--line);
+  font-size:.9rem;
+}
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:20px;
+  margin-bottom:18px;
+}
+h2{
+  margin:0 0 14px;
+  font-size:1.1rem;
+  color:var(--accent-2);
+}
+h3{
+  margin:18px 0 10px;
+  font-size:1rem;
+  color:var(--accent);
+}
+p{margin:8px 0}
+.path,.cmd{
+  background:var(--code);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:10px 12px;
+  font-family:Consolas,monospace;
+  color:#a8e6cf;
+  word-break:break-all;
+}
+.note{
+  padding:12px 14px;
+  border-left:4px solid var(--warn);
+  background:rgba(255,120,117,.08);
+  border-radius:10px;
+  color:#ffd6d5;
+}
+.ok{
+  padding:12px 14px;
+  border-left:4px solid var(--ok);
+  background:rgba(82,196,26,.08);
+  border-radius:10px;
+  color:#d9f7be;
+}
+.checklist{
+  list-style:none;
+  padding:0;
+  margin:10px 0 0;
+}
+.checklist li{
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+  padding:8px 0;
+  border-bottom:1px solid rgba(255,255,255,.04);
+}
+.checklist li:last-child{border-bottom:none}
+.checklist input[type="checkbox"]{
+  width:18px;
+  height:18px;
+  margin-top:2px;
+  accent-color:var(--ok);
+  cursor:pointer;
+  flex:0 0 auto;
+}
+.checklist label{cursor:pointer;display:block;width:100%}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:16px;
+}
+.footer-actions{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-top:14px;
+}
+button{
+  background:var(--accent);
+  color:#1a1a1a;
+  border:none;
+  border-radius:10px;
+  padding:10px 14px;
+  font-weight:700;
+  cursor:pointer;
+}
+button.secondary{
+  background:#314355;
+  color:var(--text);
+}
+.progress{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  margin-top:12px;
+}
+.bar{
+  flex:1;
+  height:14px;
+  background:#0e151d;
+  border:1px solid var(--line);
+  border-radius:999px;
+  overflow:hidden;
+}
+.bar > div{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,var(--accent-2),var(--accent));
+  transition:width .2s ease;
+}
+.small{color:var(--muted);font-size:.92rem}
 </style>
 </head>
 <body>
-<div class="container">
-<header>
-<h1>Arcadia Dungeon</h1>
-<div class="ver">Procedure de Test Finale v1.2.0</div>
-<div class="sub">Configuration complete de donjons permanents en production</div>
-<div class="aut">NeoForge 1.21.1 &bull; par vyrriox</div>
-</header>
+<div class="wrap">
+  <header>
+    <h1>Procedure de Test Epic 8</h1>
+    <div class="sub">Arcadia Dungeon - GUI vanilla coffre, progression Arcadia, milestones, streaks, admin in-game</div>
+    <div class="meta">
+      <span class="badge">Date: 11/04/2026</span>
+      <span class="badge">Build: OK</span>
+      <span class="badge">Compile: OK</span>
+      <span class="badge">Cible: test serveur en jeu</span>
+    </div>
+    <div class="progress">
+      <div class="bar"><div id="progressBar"></div></div>
+      <strong id="progressText">0 / 0</strong>
+    </div>
+  </header>
 
-<div class="pbar"><h3>Progression globale</h3><div class="ptrack"><div class="pfill" id="gP"></div><div class="ptxt" id="gT">0/0</div></div></div>
+  <section class="panel">
+    <h2>Jar</h2>
+    <p>Jar a deployer sur le serveur :</p>
+    <div class="path">C:\Users\curveo\Documents\ArcadiaTool\ArcadiaTool\Arcadia-Dungeon\build\libs\arcadia_dungeon-1.0.0.jar</div>
+    <p class="small">Nom du fichier : <strong>arcadia_dungeon-1.0.0.jar</strong></p>
+  </section>
 
-<div class="warn">Remplacez les noms de donjons (crypt, mine, nether) par vos vrais donjons. Toutes les commandes sont pre-remplies et copiables en 1 clic.</div>
+  <section class="panel">
+    <h2>Preparation</h2>
+    <ul class="checklist">
+      <li><input type="checkbox" id="prep-1"><label for="prep-1">Remplacer l’ancien mod par le nouveau jar sur le serveur.</label></li>
+      <li><input type="checkbox" id="prep-2"><label for="prep-2">Demarrer le serveur et verifier qu’il n’y a pas d’erreur au chargement du mod.</label></li>
+      <li><input type="checkbox" id="prep-3"><label for="prep-3">Se connecter avec un compte OP.</label></li>
+      <li><input type="checkbox" id="prep-4"><label for="prep-4">Verifier que les commandes `/arcadia_dungeon` repondent normalement.</label></li>
+    </ul>
+  </section>
 
-<div class="pre"><h2>Pre-requis</h2><ul>
-<li>Serveur NeoForge 1.21.1 avec le JAR installe</li>
-<li>OP 2+ pour <code>/arcadia_dungeon admin</code></li>
-<li>2+ joueurs pour les tests multijoueurs</li>
-<li>Zones de donjon construites sur la map</li>
-</ul></div>
+  <div class="grid">
+    <section class="panel">
+      <h2>Tests Joueur</h2>
+      <ul class="checklist">
+        <li><input type="checkbox" id="player-1"><label for="player-1">Executer `/arcadia_dungeon menu` et verifier l’ouverture du menu coffre.</label></li>
+        <li><input type="checkbox" id="player-2"><label for="player-2">Cliquer `Profil` et verifier l’affichage du profil Arcadia.</label></li>
+        <li><input type="checkbox" id="player-3"><label for="player-3">Cliquer `Top` et verifier l’affichage du classement Arcadia.</label></li>
+        <li><input type="checkbox" id="player-4"><label for="player-4">Cliquer `Progression` et verifier l’affichage des donjons.</label></li>
+        <li><input type="checkbox" id="player-5"><label for="player-5">Cliquer un donjon depuis le menu joueur et verifier que la tentative de lancement fonctionne.</label></li>
+      </ul>
+    </section>
 
-<!-- ============== PHASE 1 ============== -->
-<div class="ph o"><div class="phh" onclick="t(this)"><div class="phn">1</div><div class="pht">Demarrage serveur</div><div class="phc"></div><div class="pha">&#9660;</div></div><div class="phb">
-<div class="tg"><h3>1.1 - Verification</h3>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Console: <code>Arcadia Dungeon initializing</code></span></li>
-<li><input type="checkbox" onchange="u()"><span>Dossier <code>config/arcadia/dungeon/</code> cree</span></li>
-<li><input type="checkbox" onchange="u()"><span><code>example_dungeon.json</code> + <code>weekly_config.json</code> generes</span></li>
-</ul></div>
-</div></div>
+    <section class="panel">
+      <h2>Tests Admin Global</h2>
+      <ul class="checklist">
+        <li><input type="checkbox" id="admin-1"><label for="admin-1">Executer `/arcadia_dungeon admin arcadia menu` et verifier l’ouverture du menu admin coffre.</label></li>
+        <li><input type="checkbox" id="admin-2"><label for="admin-2">Cliquer `XP Global`, saisir `150` dans le chat, valider, puis verifier la reouverture automatique du menu.</label></li>
+        <li><input type="checkbox" id="admin-3"><label for="admin-3">Recliquer `XP Global`, taper `cancel`, et verifier l’annulation propre.</label></li>
+        <li><input type="checkbox" id="admin-4"><label for="admin-4">Cliquer `Overview` et verifier que le resume Arcadia s’affiche.</label></li>
+      </ul>
+    </section>
+  </div>
 
-<!-- ============== PHASE 2 ============== -->
-<div class="ph"><div class="phh" onclick="t(this)"><div class="phn">2</div><div class="pht">Creation des donjons + zones</div><div class="phc"></div><div class="pha">&#9660;</div></div><div class="phb">
-<div class="tg"><h3>2.1 - Creer</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin create crypt La Crypte des Damnes</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin create mine Les Mines Oubliees</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin create nether La Forteresse du Nether</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin list</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>3 donjons crees et listes</span></li>
-</ul></div>
+  <section class="panel">
+    <h2>Tests Admin Donjon</h2>
+    <p>Commande d’ouverture :</p>
+    <div class="cmd">/arcadia_dungeon admin arcadia menu &lt;id_du_donjon&gt;</div>
+    <ul class="checklist">
+      <li><input type="checkbox" id="dungeon-1"><label for="dungeon-1">Tester `XP Donjon` avec une valeur simple comme `250`.</label></li>
+      <li><input type="checkbox" id="dungeon-2"><label for="dungeon-2">Tester `Multiplicateur` avec une valeur comme `1.5`.</label></li>
+      <li><input type="checkbox" id="dungeon-3"><label for="dungeon-3">Tester `Niveau Requis` avec une valeur comme `5`.</label></li>
+      <li><input type="checkbox" id="dungeon-4"><label for="dungeon-4">Tester `Bonus Speedrun` avec le format `300 50`.</label></li>
+      <li><input type="checkbox" id="dungeon-5"><label for="dungeon-5">Verifier a chaque fois : fermeture du coffre, prompt chat, interception, application, puis reouverture du panneau.</label></li>
+    </ul>
+  </section>
 
-<div class="tg"><h3>2.2 - Renommer (si besoin)</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin rename crypt La Crypte Maudite</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Donjon renomme OK</span></li>
-</ul></div>
+  <div class="grid">
+    <section class="panel">
+      <h2>Tests Rangs</h2>
+      <ul class="checklist">
+        <li><input type="checkbox" id="rank-1"><label for="rank-1">Ouvrir le menu `Rangs` depuis l’admin GUI.</label></li>
+        <li><input type="checkbox" id="rank-2"><label for="rank-2">Ajouter ou modifier un rang via saisie chat : `30 Mythique 6`.</label></li>
+        <li><input type="checkbox" id="rank-3"><label for="rank-3">Verifier que le rang apparait dans la liste.</label></li>
+        <li><input type="checkbox" id="rank-4"><label for="rank-4">Supprimer le rang en saisissant `30`.</label></li>
+        <li><input type="checkbox" id="rank-5"><label for="rank-5">Verifier qu’il disparait bien.</label></li>
+      </ul>
+    </section>
 
-<div class="tg"><h3>2.3 - Spawns</h3>
-<p class="ins">Se placer a l'entree de chaque donjon :</p>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin setspawn crypt</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin setspawn mine</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin setspawn nether</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Spawns definis</span></li>
-</ul></div>
+    <section class="panel">
+      <h2>Tests Streaks</h2>
+      <ul class="checklist">
+        <li><input type="checkbox" id="streak-1"><label for="streak-1">Ouvrir le menu `Streaks` depuis l’admin GUI.</label></li>
+        <li><input type="checkbox" id="streak-2"><label for="streak-2">Ajouter ou modifier un streak via saisie chat : `5 200 &amp;6[Arcadia] &amp;eStreak 5 semaines!`.</label></li>
+        <li><input type="checkbox" id="streak-3"><label for="streak-3">Verifier qu’il apparait dans la liste.</label></li>
+        <li><input type="checkbox" id="streak-4"><label for="streak-4">Supprimer le streak en saisissant `5`.</label></li>
+        <li><input type="checkbox" id="streak-5"><label for="streak-5">Verifier qu’il disparait bien.</label></li>
+      </ul>
+    </section>
+  </div>
 
-<div class="tg"><h3>2.4 - Zones (wand)</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wand</div>
-<p class="ins">Cliquer sur le donjon dans le chat, puis clic gauche coin 1, clic droit coin 2 :</p>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wand_select mine</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Wand recue, donjons cliquables</span></li>
-<li><input type="checkbox" onchange="u()"><span>Zone crypt definie (dimensions en or)</span></li>
-<li><input type="checkbox" onchange="u()"><span>Zone mine definie</span></li>
-<li><input type="checkbox" onchange="u()"><span>Zone nether definie</span></li>
-</ul></div>
-</div></div>
+  <section class="panel">
+    <h2>Tests Milestones</h2>
+    <ul class="checklist">
+      <li><input type="checkbox" id="mile-1"><label for="mile-1">Ouvrir le menu `Milestones` depuis l’admin GUI.</label></li>
+      <li><input type="checkbox" id="mile-2"><label for="mile-2">Ajouter un milestone via saisie chat : `12 &amp;6[Arcadia] &amp;ePalier 12 atteint!`.</label></li>
+      <li><input type="checkbox" id="mile-3"><label for="mile-3">Verifier qu’il apparait dans la liste puis ouvrir son detail.</label></li>
+      <li><input type="checkbox" id="mile-4"><label for="mile-4">Modifier le message depuis le detail.</label></li>
+      <li><input type="checkbox" id="mile-5"><label for="mile-5">Ajouter un reward item avec `minecraft:diamond 3 1.0`.</label></li>
+      <li><input type="checkbox" id="mile-6"><label for="mile-6">Ajouter un reward XP.</label></li>
+      <li><input type="checkbox" id="mile-7"><label for="mile-7">Ajouter un reward commande.</label></li>
+      <li><input type="checkbox" id="mile-8"><label for="mile-8">Verifier que les rewards apparaissent dans la page de detail.</label></li>
+      <li><input type="checkbox" id="mile-9"><label for="mile-9">Tester `Vider Rewards` et verifier que la liste est vide ensuite.</label></li>
+    </ul>
+  </section>
 
-<!-- ============== PHASE 3 ============== -->
-<div class="ph"><div class="phh" onclick="t(this)"><div class="phn">3</div><div class="pht">Settings complets</div><div class="phc"></div><div class="pha">&#9660;</div></div><div class="phb">
-<div class="tg"><h3>3.1 - Settings joueurs + temps</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin settings crypt maxplayers 4</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin settings crypt minplayers 1</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin settings crypt maxdeaths 3</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin settings crypt recruitment 60</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin settings crypt timelimit 900</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Settings joueurs/temps OK</span></li>
-</ul></div>
+  <section class="panel">
+    <h2>Tests Fonctionnels Epic 8</h2>
+    <ul class="checklist">
+      <li><input type="checkbox" id="func-1"><label for="func-1">Configurer un donjon avec `requiredArcadiaLevel` superieur au niveau du joueur.</label></li>
+      <li><input type="checkbox" id="func-2"><label for="func-2">Verifier que le `start` et le `join` sont refuses avec le bon message.</label></li>
+      <li><input type="checkbox" id="func-3"><label for="func-3">Configurer un bonus speedrun et terminer le donjon rapidement.</label></li>
+      <li><input type="checkbox" id="func-4"><label for="func-4">Verifier le message de bonus speedrun a la completion.</label></li>
+      <li><input type="checkbox" id="func-5"><label for="func-5">Faire monter le joueur d’un niveau Arcadia et verifier le message de niveau.</label></li>
+      <li><input type="checkbox" id="func-6"><label for="func-6">Verifier le changement de rang et le broadcast serveur.</label></li>
+      <li><input type="checkbox" id="func-7"><label for="func-7">Verifier `/arcadia_dungeon profile`.</label></li>
+      <li><input type="checkbox" id="func-8"><label for="func-8">Verifier `/arcadia_dungeon top`.</label></li>
+      <li><input type="checkbox" id="func-9"><label for="func-9">Verifier qu’un milestone donne bien son message et ses rewards lors d’un passage de niveau.</label></li>
+    </ul>
+  </section>
 
-<div class="tg"><h3>3.2 - Settings booleens</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin settings crypt pvp false</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin settings crypt teleportback true</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin settings crypt difficultyscaling true</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin settings crypt antimonopole true</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin settings crypt antimonopolethreshold 5</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin settings crypt blockteleport true</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Booleens: seuls true/false proposes</span></li>
-</ul></div>
+  <section class="panel">
+    <h2>Tests Pagination</h2>
+    <ul class="checklist">
+      <li><input type="checkbox" id="page-1"><label for="page-1">Ajouter assez de rangs pour depasser une page et verifier les fleches precedent/suivant.</label></li>
+      <li><input type="checkbox" id="page-2"><label for="page-2">Ajouter assez de milestones pour depasser une page et verifier la navigation.</label></li>
+      <li><input type="checkbox" id="page-3"><label for="page-3">Ajouter assez de streaks pour depasser une page et verifier la navigation.</label></li>
+      <li><input type="checkbox" id="page-4"><label for="page-4">Ajouter plus de 4 rewards a un milestone et verifier la pagination de la page detail.</label></li>
+    </ul>
+  </section>
 
-<div class="tg"><h3>3.3 - Scaling vagues</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin settings crypt wavehealthmultiplier 0.3</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin settings crypt wavedamagemultiplier 0.1</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Multiplicateurs vagues configures</span></li>
-</ul></div>
-
-<div class="tg"><h3>3.4 - Cooldown + Availability</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin cooldown crypt 1800</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin availability crypt 0</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Cooldown 30min per-joueur, availability toujours</span></li>
-</ul></div>
-
-<div class="tg"><h3>3.5 - Timer Warnings</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin timerwarnings crypt add 300</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin timerwarnings crypt add 120</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin timerwarnings crypt add 60</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin timerwarnings crypt add 30</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin timerwarnings crypt add 10</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin timerwarnings crypt list</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Warnings ajoutes et listes</span></li>
-</ul></div>
-
-<div class="tg"><h3>3.6 - Annonces</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin announce crypt start true</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin announce crypt completion true</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin announce crypt availability true</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Annonces activees</span></li>
-</ul></div>
-
-<div class="tg"><h3>3.7 - Messages personnalises</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin setmessage crypt start &6[Donjon] &e%player% &7ouvre &eLa Crypte&7! &fRejoignez!</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin setmessage crypt completion &6[Donjon] &a%player% &7a vaincu &eLa Crypte&7!</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin setmessage crypt fail &6[Donjon] &c%player% &7a echoue dans &eLa Crypte&7!</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin setmessage crypt recruitment &6[Donjon] &e%player% &7ouvre &e%dungeon%&7! Rejoignez dans les %time%s!</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin announce crypt availabilitymessage &6[Donjon] &eLa Crypte &7est de nouveau accessible!</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Messages personnalises configures</span></li>
-</ul></div>
-</div></div>
-
-<!-- ============== PHASE 4 ============== -->
-<div class="ph"><div class="phh" onclick="t(this)"><div class="phn">4</div><div class="pht">Progression + Ordre des donjons</div><div class="phc"></div><div class="pha">&#9660;</div></div><div class="phb">
-<div class="tg"><h3>4.1 - Definir l'ordre</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin order crypt 1</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin order mine 2</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin order nether 3</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin require mine crypt</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin require nether mine</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Ordre et pre-requis configures</span></li>
-</ul></div>
-
-<div class="tg"><h3>4.2 - Tester</h3>
-<div class="cm" onclick="c(this)">/arcadia_dungeon progression</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Crypte disponible, Mine/Nether verrouilles</span></li>
-<li><input type="checkbox" onchange="u()"><span>Noms cliquables</span></li>
-</ul></div>
-</div></div>
-
-<!-- ============== PHASE 5 ============== -->
-<div class="ph"><div class="phh" onclick="t(this)"><div class="phn">5</div><div class="pht">Vagues de mobs (complet)</div><div class="phc"></div><div class="pha">&#9660;</div></div><div class="phb">
-<div class="tg"><h3>5.1 - Creer les vagues</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave add crypt 1</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave mob crypt 1 minecraft:zombie 6</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave mob crypt 1 minecraft:skeleton 3</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave setmobpos crypt 1 0</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave setmobpos crypt 1 1</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave add crypt 2</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave mob crypt 2 minecraft:husk 4</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave mob crypt 2 minecraft:stray 4</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave setmobpos crypt 2 0</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave setmobpos crypt 2 1</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave list crypt</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>2 vagues creees et listees</span></li>
-</ul></div>
-
-<div class="tg"><h3>5.2 - Config des vagues</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave delay crypt 1 0</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave delay crypt 2 5</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave message crypt 1 &cLes morts se levent...</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave message crypt 2 &4Une horde approche!</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave glowing crypt 1 true 30</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave glowing crypt 2 true 20</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Delais, messages, glowing configures</span></li>
-</ul></div>
-
-<div class="tg"><h3>5.3 - Stats des mobs</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave setmob crypt 1 0 health 30</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave setmob crypt 1 0 damage 5</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave setmob crypt 1 0 name Zombie Maudit</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave setmob crypt 1 1 health 20</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave setmob crypt 1 1 damage 7</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave setmob crypt 2 0 health 40</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave setmob crypt 2 0 damage 8</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Vie, degats, noms configures</span></li>
-</ul></div>
-
-<div class="tg"><h3>5.4 - Equipement</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave equip crypt 1 0 mainhand minecraft:iron_sword</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave equip crypt 1 0 helmet minecraft:iron_helmet</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave equip crypt 1 1 mainhand minecraft:bow</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave copyequip crypt 2 0</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Equip direct + copyequip OK</span></li>
-</ul></div>
-
-<div class="tg"><h3>5.5 - Attributs mobs <span class="tag attr">ATTR</span></h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave attribute set crypt 1 0 minecraft:generic.armor 8</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave attribute set crypt 1 0 minecraft:generic.knockback_resistance 0.5</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave attribute list crypt 1 0</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin wave attribute remove crypt 1 0 minecraft:generic.knockback_resistance</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Attributs: autocompletion, set, list, remove OK</span></li>
-</ul></div>
-</div></div>
-
-<!-- ============== PHASE 6 ============== -->
-<div class="ph"><div class="phh" onclick="t(this)"><div class="phn">6</div><div class="pht">Boss (complet)</div><div class="phc"></div><div class="pha">&#9660;</div></div><div class="phb">
-<div class="tg"><h3>6.1 - Creer le boss principal</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss add crypt gardien minecraft:zombie 200 12</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss setname crypt gardien Le Gardien de la Crypte</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss setspawn crypt gardien</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss bossbar crypt gardien RED</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Boss cree, nomme, spawn defini, bossbar rouge</span></li>
-</ul></div>
-
-<div class="tg"><h3>6.2 - Modifier vie/degats</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss sethealth crypt gardien 300</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss setdamage crypt gardien 15</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Vie et degats modifies sans recree</span></li>
-</ul></div>
-
-<div class="tg"><h3>6.3 - Adaptive + equipement</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss adaptive crypt gardien true 0.5 0.1</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss equip crypt gardien mainhand minecraft:netherite_sword</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss equip crypt gardien helmet minecraft:netherite_helmet</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss equip crypt gardien chestplate minecraft:netherite_chestplate</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss equip crypt gardien leggings minecraft:netherite_leggings</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss equip crypt gardien boots minecraft:netherite_boots</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Adaptive + full equip OK</span></li>
-</ul></div>
-
-<div class="tg"><h3>6.4 - Attributs boss <span class="tag attr">ATTR</span></h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss attribute set crypt gardien minecraft:generic.armor 20</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss attribute set crypt gardien minecraft:generic.armor_toughness 10</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss attribute set crypt gardien minecraft:generic.knockback_resistance 1.0</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss attribute set crypt gardien minecraft:generic.attack_knockback 2.0</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss attribute set crypt gardien minecraft:generic.follow_range 64</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss attribute list crypt gardien</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Attributs boss configures et listes</span></li>
-</ul></div>
-
-<div class="tg"><h3>6.5 - Boss optionnel + chance <span class="tag n">NEW</span></h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss add crypt spectre minecraft:wither_skeleton 100 15</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss setname crypt spectre Le Spectre Errant</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss setspawn crypt spectre</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss optional crypt spectre true</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss spawnchance crypt spectre 0.3</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Boss optionnel 30% via commande</span></li>
-</ul></div>
-
-<div class="tg"><h3>6.6 - Mini-boss entre les vagues <span class="tag n">NEW</span></h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss add crypt miniboss minecraft:vindicator 80 10</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss setname crypt miniboss Le Champion Corrompu</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss setspawn crypt miniboss</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss spawnafterwave crypt miniboss 1</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss bossbar crypt miniboss YELLOW</div>
-<p class="ins">Flow attendu: Vague 1 &rarr; Mini-boss &rarr; Vague 2 &rarr; Boss final</p>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Mini-boss configure apres vague 1</span></li>
-</ul></div>
-</div></div>
-
-<!-- ============== PHASE 7 ============== -->
-<div class="ph"><div class="phh" onclick="t(this)"><div class="phn">7</div><div class="pht">Phases de boss</div><div class="phc"></div><div class="pha">&#9660;</div></div><div class="phb">
-<div class="tg"><h3>7.1 - Creer les phases</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss phase add crypt gardien 2 0.6</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss phase set crypt gardien 2 damage 1.5</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss phase set crypt gardien 2 speed 1.3</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss phase set crypt gardien 2 invulnerable 3</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss phase set crypt gardien 2 message Le Gardien entre en rage!</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss phase add crypt gardien 3 0.25</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss phase set crypt gardien 3 damage 2.0</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss phase set crypt gardien 3 speed 1.5</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss phase set crypt gardien 3 action KILL_SUMMONS</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss phase set crypt gardien 3 message PHASE FINALE! Eliminez les serviteurs!</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Phase 2 (60% HP) et Phase 3 (25% HP) creees</span></li>
-</ul></div>
-
-<div class="tg"><h3>7.2 - Effets de phase + commandes</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin phaseeffect crypt gardien 2 minecraft:slowness 10 1</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin phaseeffect crypt gardien 3 minecraft:darkness 8 0</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin phasecommand crypt gardien 2 say Le Gardien rugit!</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin phasecommand crypt gardien 3 say Les morts se relevent!</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Effets + commandes de phase configures</span></li>
-</ul></div>
-
-<div class="tg"><h3>7.3 - Sbires de phase + attributs <span class="tag attr">ATTR</span></h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss phase summon crypt gardien 3 minecraft:zombie 4</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss phase summonequip crypt gardien 3 0 mainhand minecraft:iron_sword</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss phase summonattribute set crypt gardien 3 0 minecraft:generic.armor 10</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss phase summonattribute set crypt gardien 3 0 minecraft:generic.max_health 40</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin boss phase summonattribute list crypt gardien 3 0</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Sbires equipes + attributs configures</span></li>
-</ul></div>
-</div></div>
-
-<!-- ============== PHASE 8 ============== -->
-<div class="ph"><div class="phh" onclick="t(this)"><div class="phn">8</div><div class="pht">Recompenses</div><div class="phc"></div><div class="pha">&#9660;</div></div><div class="phb">
-<div class="tg"><h3>8.1 - Rewards boss</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin reward add crypt gardien minecraft:diamond 5 1.0</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin reward add crypt gardien minecraft:golden_apple 2 0.5</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin reward add crypt spectre minecraft:netherite_scrap 1 0.3</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Rewards par boss OK</span></li>
-</ul></div>
-
-<div class="tg"><h3>8.2 - Rewards completion</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin reward completion crypt minecraft:experience_bottle 10 1.0</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin reward completion crypt minecraft:emerald 8 1.0</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Rewards completion configures</span></li>
-</ul></div>
-</div></div>
-
-<!-- ============== PHASE 9 ============== -->
-<div class="ph"><div class="phh" onclick="t(this)"><div class="phn">9</div><div class="pht">Verification config</div><div class="phc"></div><div class="pha">&#9660;</div></div><div class="phb">
-<div class="tg"><h3>9.1 - Info complete</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin info crypt</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin debug info crypt</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Info affiche tous les settings correctement</span></li>
-<li><input type="checkbox" onchange="u()"><span>Debug info montre l'etat interne</span></li>
-</ul></div>
-</div></div>
-
-<!-- ============== PHASE 10 ============== -->
-<div class="ph"><div class="phh" onclick="t(this)"><div class="phn">10</div><div class="pht">Test recrutement</div><div class="phc"></div><div class="pha">&#9660;</div></div><div class="phb">
-<div class="tg"><h3>10.1 - Lancer</h3>
-<div class="cm" onclick="c(this)">/arcadia_dungeon start crypt</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Broadcast cliquable [REJOINDRE]</span></li>
-<li><input type="checkbox" onchange="u()"><span>Joueur TP + freeze + blindness</span></li>
-<li><input type="checkbox" onchange="u()"><span>Rappels a 30s/10s/5s cliquables</span></li>
-</ul></div>
-
-<div class="tg"><h3>10.2 - Join + fermeture</h3>
-<div class="cm" onclick="c(this)">/arcadia_dungeon join crypt</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>J2 TP + freeze, J1 notifie</span></li>
-<li><input type="checkbox" onchange="u()"><span>Fin recrutement: "Les portes se ferment!"</span></li>
-<li><input type="checkbox" onchange="u()"><span>Mobs existants dans zone cleares</span></li>
-<li><input type="checkbox" onchange="u()"><span>Anti-parasites: joueurs non-participants ejectes</span></li>
-</ul></div>
-</div></div>
-
-<!-- ============== PHASE 11 ============== -->
-<div class="ph"><div class="phh" onclick="t(this)"><div class="phn">11</div><div class="pht">Run complet du donjon</div><div class="phc"></div><div class="pha">&#9660;</div></div><div class="phb">
-<div class="info">Faire un run complet: vagues &rarr; mini-boss &rarr; vagues &rarr; boss final. Verifier chaque etape.</div>
-
-<div class="tg"><h3>11.1 - Vague 1</h3>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Message "&cLes morts se levent..." affiche</span></li>
-<li><input type="checkbox" onchange="u()"><span>Mobs equipes avec armes/armures</span></li>
-<li><input type="checkbox" onchange="u()"><span>Attributs appliques (armor, etc.)</span></li>
-<li><input type="checkbox" onchange="u()"><span>Noms personnalises affiches</span></li>
-<li><input type="checkbox" onchange="u()"><span>Mobs ne drop RIEN (no-loot)</span></li>
-<li><input type="checkbox" onchange="u()"><span>Scaling adaptatif: mobs plus forts si 2+ joueurs</span></li>
-<li><input type="checkbox" onchange="u()"><span>Glowing apres 30s si pas tues</span></li>
-</ul></div>
-
-<div class="tg"><h3>11.2 - Mini-boss (apres vague 1) <span class="tag n">NEW</span></h3>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>"[Donjon] Un boss approche!" affiche</span></li>
-<li><input type="checkbox" onchange="u()"><span>Mini-boss spawn avec bossbar jaune</span></li>
-<li><input type="checkbox" onchange="u()"><span>Mini-boss invulnerable 5s au spawn</span></li>
-<li><input type="checkbox" onchange="u()"><span>Mini-boss tue &rarr; vague 2 commence</span></li>
-</ul></div>
-
-<div class="tg"><h3>11.3 - Vague 2</h3>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Delai 5s avant spawn</span></li>
-<li><input type="checkbox" onchange="u()"><span>Message "&4Une horde approche!" affiche</span></li>
-<li><input type="checkbox" onchange="u()"><span>Vague 2 terminee &rarr; "Toutes les vagues eliminees!"</span></li>
-</ul></div>
-
-<div class="tg"><h3>11.4 - Boss final</h3>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Boss spawn equipe full netherite</span></li>
-<li><input type="checkbox" onchange="u()"><span>Bossbar rouge affichee</span></li>
-<li><input type="checkbox" onchange="u()"><span>Invulnerable 5s au spawn</span></li>
-<li><input type="checkbox" onchange="u()"><span>Anti-phase-skip: impossible de one-shot</span></li>
-</ul></div>
-
-<div class="tg"><h3>11.5 - Phases du boss</h3>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Phase 2 (60% HP): message + slowness + invuln 3s</span></li>
-<li><input type="checkbox" onchange="u()"><span>Commande de phase executee ("Le Gardien rugit!")</span></li>
-<li><input type="checkbox" onchange="u()"><span>Phase 3 (25% HP): darkness + sbires equipes + KILL_SUMMONS</span></li>
-<li><input type="checkbox" onchange="u()"><span>Sbires avec attributs (armor 10, 40 HP)</span></li>
-<li><input type="checkbox" onchange="u()"><span>"Eliminez les sbires!" affiche</span></li>
-</ul></div>
-
-<div class="tg"><h3>11.6 - Victoire</h3>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Rewards boss + completion distribues</span></li>
-<li><input type="checkbox" onchange="u()"><span>TP retour au point d'avant</span></li>
-<li><input type="checkbox" onchange="u()"><span>Annonce victoire broadcast</span></li>
-<li><input type="checkbox" onchange="u()"><span>Tous les mobs/sbires cleanup</span></li>
-<li><input type="checkbox" onchange="u()"><span>Progression enregistree</span></li>
-</ul></div>
-</div></div>
-
-<!-- ============== PHASE 12 ============== -->
-<div class="ph"><div class="phh" onclick="t(this)"><div class="phn">12</div><div class="pht">Mort + Securite + Containment</div><div class="phc"></div><div class="pha">&#9660;</div></div><div class="phb">
-<div class="tg"><h3>12.1 - Systeme de vies</h3>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Mort &rarr; respawn au spawn donjon + "X vie(s) restante(s)"</span></li>
-<li><input type="checkbox" onchange="u()"><span>3e mort &rarr; exclusion + notification equipe</span></li>
-</ul></div>
-
-<div class="tg"><h3>12.2 - Containment</h3>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Joueur sort de zone &rarr; TP retour</span></li>
-<li><input type="checkbox" onchange="u()"><span>Mobs sortent de zone &rarr; TP retour</span></li>
-<li><input type="checkbox" onchange="u()"><span>Admin spectator PAS teleporte</span></li>
-</ul></div>
-
-<div class="tg"><h3>12.3 - Commandes bloquees</h3>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>/tpa, /spawn, /home bloques</span></li>
-<li><input type="checkbox" onchange="u()"><span>/arcadia_dungeon abandon toujours autorise</span></li>
-<li><input type="checkbox" onchange="u()"><span>Anti-PVP entre coequipiers</span></li>
-</ul></div>
-</div></div>
-
-<!-- ============== PHASE 13 ============== -->
-<div class="ph"><div class="phh" onclick="t(this)"><div class="phn">13</div><div class="pht">Leave / Abandon / Echec / Timer</div><div class="phc"></div><div class="pha">&#9660;</div></div><div class="phb">
-<div class="tg"><h3>13.1 - Abandon</h3>
-<div class="cm" onclick="c(this)">/arcadia_dungeon abandon</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>"X a quitte! (Y restant(s))"</span></li>
-<li><input type="checkbox" onchange="u()"><span>Dernier quitte &rarr; echec broadcast noms</span></li>
-<li><input type="checkbox" onchange="u()"><span>Deconnexion &rarr; retire + boss bar nettoyee</span></li>
-</ul></div>
-
-<div class="tg"><h3>13.2 - Timeout</h3>
-<p class="ins">Mettre un timelimit court pour tester :</p>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin settings crypt timelimit 60</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Warnings aux timers configures</span></li>
-<li><input type="checkbox" onchange="u()"><span>"Temps ecoule!" + echec broadcast</span></li>
-</ul></div>
-</div></div>
-
-<!-- ============== PHASE 14 ============== -->
-<div class="ph"><div class="phh" onclick="t(this)"><div class="phn">14</div><div class="pht">Commandes joueur</div><div class="phc"></div><div class="pha">&#9660;</div></div><div class="phb">
-<div class="tg"><h3>14.1 - Toutes les commandes</h3>
-<div class="cm" onclick="c(this)">/arcadia_dungeon progression</div>
-<div class="cm" onclick="c(this)">/arcadia_dungeon stats</div>
-<div class="cm" onclick="c(this)">/arcadia_dungeon top</div>
-<div class="cm" onclick="c(this)">/arcadia_dungeon top crypt</div>
-<div class="cm" onclick="c(this)">/arcadia_dungeon status</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Progression: donjons deverrouilles/verrouilles</span></li>
-<li><input type="checkbox" onchange="u()"><span>Stats: completions + meilleur temps</span></li>
-<li><input type="checkbox" onchange="u()"><span>Top: podium or/argent/bronze</span></li>
-<li><input type="checkbox" onchange="u()"><span>Status: donjon actuel, vies, temps, cooldowns</span></li>
-<li><input type="checkbox" onchange="u()"><span>Cooldown per-donjon fonctionne</span></li>
-</ul></div>
-</div></div>
-
-<!-- ============== PHASE 15 ============== -->
-<div class="ph"><div class="phh" onclick="t(this)"><div class="phn">15</div><div class="pht">Leaderboard hebdomadaire</div><div class="phc"></div><div class="pha">&#9660;</div></div><div class="phb">
-<div class="tg"><h3>15.1 - Config</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin weekly reward 1 minecraft:netherite_ingot 3</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin weekly reward 2 minecraft:diamond 16</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin weekly reward 3 minecraft:gold_ingot 32</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin weekly resetday MONDAY</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin weekly hour 20</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin weekly info</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Rewards + jour + heure configures</span></li>
-</ul></div>
-
-<div class="tg"><h3>15.2 - Force reset</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin weekly reset</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Top 3 annonce + rewards distribues</span></li>
-</ul></div>
-</div></div>
-
-<!-- ============== PHASE 16 ============== -->
-<div class="ph"><div class="phh" onclick="t(this)"><div class="phn">16</div><div class="pht">Debug + Admin</div><div class="phc"></div><div class="pha">&#9660;</div></div><div class="phb">
-<div class="tg"><h3>16.1 - Debug</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin debug reload</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin debug active</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin debug spawnboss crypt</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin debug skipboss crypt</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin debug complete crypt</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin debug resetcooldown</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Toutes les commandes debug fonctionnent</span></li>
-</ul></div>
-
-<div class="tg"><h3>16.2 - Gestion</h3>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin forcereset crypt</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin disable crypt</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin enable crypt</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin progress set PSEUDO crypt 5 120</div>
-<div class="cm a" onclick="c(this)">/arcadia_dungeon admin progress reset PSEUDO crypt</div>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Force reset, enable/disable, progress set/reset OK</span></li>
-</ul></div>
-</div></div>
-
-<!-- ============== PHASE 17 ============== -->
-<div class="ph"><div class="phh" onclick="t(this)"><div class="phn">17</div><div class="pht">Persistence + Redemarrage</div><div class="phc"></div><div class="pha">&#9660;</div></div><div class="phb">
-<div class="tg"><h3>17.1 - Fichiers</h3>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span><code>dungeons/crypt.json</code> complet (boss, vagues, attributs, phases)</span></li>
-<li><input type="checkbox" onchange="u()"><span><code>playerdata/*.json</code> progression enregistree</span></li>
-<li><input type="checkbox" onchange="u()"><span><code>weekly_leaderboard.json</code> + <code>weekly_config.json</code></span></li>
-</ul></div>
-
-<div class="tg"><h3>17.2 - Redemarrage</h3>
-<ul class="cl">
-<li><input type="checkbox" onchange="u()"><span>Restart serveur &rarr; tout recharge intact</span></li>
-<li><input type="checkbox" onchange="u()"><span>Configs intactes (attributs, phases, rewards)</span></li>
-<li><input type="checkbox" onchange="u()"><span>Progression joueurs intacte</span></li>
-</ul></div>
-</div></div>
-
-<!-- ============== RECAP ============== -->
-<div class="ph"><div class="phh" onclick="t(this)"><div class="phn" style="background:linear-gradient(135deg,var(--gold),#e67e22)">&#9733;</div><div class="pht">Checklist commandes</div><div class="pha">&#9660;</div></div><div class="phb">
-
-<h3 style="color:var(--cyan);margin-bottom:8px">Joueur</h3>
-<table class="st"><thead><tr><th>Commande</th><th style="width:50px;text-align:center">OK</th></tr></thead><tbody>
-<tr><td>start / join / leave / abandon</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td>progression / top / stats / status</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-</tbody></table>
-
-<h3 style="color:var(--accent);margin:16px 0 8px">Admin</h3>
-<table class="st"><thead><tr><th>Commande</th><th style="width:50px;text-align:center">OK</th></tr></thead><tbody>
-<tr><td>create / delete / list / info / rename</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td>setspawn / setdungeonarea / wand / wand_select</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td>cooldown / availability</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td>announce start/completion/availability/availabilitymessage</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td>setmessage start/completion/fail/recruitment</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td>settings: maxplayers/minplayers/recruitment/timelimit/pvp/maxdeaths/teleportback</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td>settings: difficultyscaling/antimonopole/antimonopolethreshold/blockteleport</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td>settings: wavehealthmultiplier/wavedamagemultiplier</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td>timerwarnings add/remove/list</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td>order / require</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td>boss add/remove/setname/setspawn/sethealth/setdamage</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td>boss adaptive/bossbar/optional/spawnchance/spawnafterwave</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td>boss equip / copyequip</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td style="color:var(--purple)">boss attribute set/remove/list</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td>boss phase add/remove/set (damage/speed/action/message/invulnerable)</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td>boss phase summon / summonequip</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td style="color:var(--purple)">boss phase summonattribute set/remove/list</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td>phaseeffect / phasecommand</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td>reward add / completion / clear</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td>wave add/remove/mob/setmobpos/message/list</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td>wave delay / glowing / setmob (health/damage/speed/count/name)</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td>wave equip / copyequip</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td style="color:var(--purple)">wave attribute set/remove/list</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td>stop / tp / forcereset / enable / disable</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td>progress set / reset</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td>weekly reward/resetday/hour/info/reset</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-<tr><td>debug reload/info/active/spawnboss/skipboss/complete/resetcooldown</td><td style="text-align:center"><input type="checkbox" onchange="u()"></td></tr>
-</tbody></table>
-
-<h3 style="color:var(--purple);margin:16px 0 8px">Attributs reference</h3>
-<table class="st"><thead><tr><th>Attribut</th><th>Valeur type</th></tr></thead><tbody>
-<tr><td>minecraft:generic.max_health</td><td>20 (10 coeurs)</td></tr>
-<tr><td>minecraft:generic.attack_damage</td><td>3.0</td></tr>
-<tr><td>minecraft:generic.movement_speed</td><td>0.23</td></tr>
-<tr><td>minecraft:generic.armor</td><td>0 - 30</td></tr>
-<tr><td>minecraft:generic.armor_toughness</td><td>0 - 20</td></tr>
-<tr><td>minecraft:generic.knockback_resistance</td><td>0.0 - 1.0</td></tr>
-<tr><td>minecraft:generic.attack_knockback</td><td>0.0 - 5.0</td></tr>
-<tr><td>minecraft:generic.attack_speed</td><td>4.0</td></tr>
-<tr><td>minecraft:generic.follow_range</td><td>16 - 64</td></tr>
-</tbody></table>
-</div></div>
-
-<div style="text-align:center;margin:20px 0">
-<button class="reset-btn" onclick="if(confirm('Remettre toute la progression a zero ?')){localStorage.removeItem('at_v6');location.reload()}">Reinitialiser la progression</button>
-</div>
-
-<footer>Arcadia Dungeon v1.2.0 &bull; NeoForge 1.21.1 &bull; <strong>vyrriox</strong></footer>
+  <section class="panel">
+    <h2>Validation Finale</h2>
+    <div class="ok">Si toutes les cases critiques sont cochees et qu’aucune erreur serveur n’apparait, la version peut etre consideree prete pour validation fonctionnelle serveur.</div>
+    <div class="note" style="margin-top:12px;">Pense a surveiller la console serveur pendant toute la session de test, surtout lors des ouvertures de GUI, des saisies chat et des completions de donjon.</div>
+    <div class="footer-actions">
+      <button type="button" onclick="toggleAll(true)">Tout cocher</button>
+      <button type="button" class="secondary" onclick="toggleAll(false)">Tout decocher</button>
+      <button type="button" class="secondary" onclick="resetStorage()">Reinitialiser la sauvegarde locale</button>
+    </div>
+  </section>
 </div>
 
 <script>
-function t(h){h.parentElement.classList.toggle('o')}
-function c(e){navigator.clipboard.writeText(e.textContent.trim()).then(()=>{e.classList.add('cp');setTimeout(()=>e.classList.remove('cp'),1500)})}
-function u(){
-const a=document.querySelectorAll('input[type=checkbox]'),k=document.querySelectorAll('input:checked'),n=a.length,d=k.length,p=n?Math.round(d/n*100):0;
-document.getElementById('gP').style.width=p+'%';
-document.getElementById('gT').textContent=d+'/'+n+' ('+p+'%)';
-document.querySelectorAll('.ph').forEach(ph=>{
-const pa=ph.querySelectorAll('.phb input[type=checkbox]'),pc=ph.querySelectorAll('.phb input:checked'),ct=ph.querySelector('.phc');
-if(ct&&pa.length){ct.textContent=pc.length+'/'+pa.length;ct.style.color=pc.length===pa.length?'#27ae60':'';ct.style.background=pc.length===pa.length?'rgba(39,174,96,.15)':''}
-});
-const s=[];a.forEach(cb=>s.push(cb.checked));localStorage.setItem('at_v6',JSON.stringify(s))
+const boxes = [...document.querySelectorAll('input[type="checkbox"]')];
+const KEY = 'arcadia-epic8-test-procedure-v1';
+
+function updateProgress() {
+  const total = boxes.length;
+  const checked = boxes.filter(b => b.checked).length;
+  document.getElementById('progressText').textContent = `${checked} / ${total}`;
+  document.getElementById('progressBar').style.width = total ? `${(checked / total) * 100}%` : '0%';
 }
-(function(){const s=localStorage.getItem('at_v6');if(s){const st=JSON.parse(s);document.querySelectorAll('input[type=checkbox]').forEach((cb,i)=>{if(i<st.length)cb.checked=st[i]})}u()})()
+
+function saveState() {
+  const state = {};
+  boxes.forEach(box => state[box.id] = box.checked);
+  localStorage.setItem(KEY, JSON.stringify(state));
+  updateProgress();
+}
+
+function loadState() {
+  const raw = localStorage.getItem(KEY);
+  if (!raw) return updateProgress();
+  try {
+    const state = JSON.parse(raw);
+    boxes.forEach(box => box.checked = !!state[box.id]);
+  } catch (_) {}
+  updateProgress();
+}
+
+function toggleAll(value) {
+  boxes.forEach(box => box.checked = value);
+  saveState();
+}
+
+function resetStorage() {
+  localStorage.removeItem(KEY);
+  boxes.forEach(box => box.checked = false);
+  updateProgress();
+}
+
+boxes.forEach(box => box.addEventListener('change', saveState));
+loadState();
 </script>
 </body>
 </html>
