@@ -1,7 +1,7 @@
 modLoader="javafml"
 loaderVersion="${loader_version_range}"
 license="${mod_license}"
-issueTrackerURL="https://github.com/vyrriox/Arcadia"
+issueTrackerURL="https://github.com/Blushister"
 
 [[mods]]
 modId="${mod_id}"
@@ -23,6 +23,13 @@ description='''${mod_description}'''
     versionRange="${minecraft_version_range}"
     ordering="NONE"
     side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="arcadia_core"
+    type="required"
+    versionRange="[0.1.0,)"
+    ordering="AFTER"
+    side="SERVER"
 
 [[dependencies.${mod_id}]]
     modId="luckperms"

@@ -15,3 +15,8 @@ logs/
 .claude/
 gradle-wrapper.jar
 .vscode
+
+# Local BMAD/Codex workspace artifacts
+.agents/
+_bmad/
+_bmad-output/

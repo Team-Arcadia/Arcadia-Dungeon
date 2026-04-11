@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arcadia Dungeon — Cahier des charges</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --bg2: #161b27;
+      --bg3: #1e2538;
+      --accent: #7c6af7;
+      --accent2: #a78bfa;
+      --gold: #f59e0b;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --cyan: #06b6d4;
+      --text: #e2e8f0;
+      --text2: #94a3b8;
+      --border: #2d3748;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* ===== HEADER ===== */
+    .hero {
+      background: linear-gradient(135deg, #0f1117 0%, #1a1040 50%, #0f1117 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 60px 40px 50px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, rgba(124,106,247,0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-badge {
+      display: inline-block;
+      background: rgba(124,106,247,0.15);
+      border: 1px solid rgba(124,106,247,0.4);
+      color: var(--accent2);
+      padding: 4px 14px;
+      border-radius: 99px;
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-size: 3.2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 0%, var(--accent2) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+      letter-spacing: -1px;
+    }
+    .hero-sub {
+      font-size: 1.15rem;
+      color: var(--text2);
+      max-width: 640px;
+      margin: 0 auto 30px;
+    }
+    .hero-tags {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .tag {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      padding: 5px 14px;
+      border-radius: 99px;
+      font-size: 12px;
+      color: var(--text2);
+    }
+    .tag.green { border-color: rgba(16,185,129,0.4); color: #6ee7b7; background: rgba(16,185,129,0.08); }
+    .tag.purple { border-color: rgba(124,106,247,0.4); color: var(--accent2); background: rgba(124,106,247,0.08); }
+    .tag.gold { border-color: rgba(245,158,11,0.4); color: #fcd34d; background: rgba(245,158,11,0.08); }
+
+    /* ===== LAYOUT ===== */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 40px; }
+    .section { padding: 50px 0; border-bottom: 1px solid var(--border); }
+    .section:last-child { border-bottom: none; }
+    .section-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title .icon { font-size: 1.4rem; }
+    .section-desc { color: var(--text2); margin-bottom: 30px; font-size: 0.95rem; }
+
+    /* ===== STAT CARDS ===== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+    }
+    .stat-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 20px;
+      text-align: center;
+    }
+    .stat-number {
+      font-size: 2.4rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .stat-label { color: var(--text2); font-size: 0.85rem; }
+
+    /* ===== SUMMARY ===== */
+    .summary-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      font-size: 1.02rem;
+      line-height: 1.8;
+    }
+    .summary-box strong { color: var(--accent2); }
+
+    /* ===== DIFFERENTIATORS ===== */
+    .diff-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+    .diff-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+    }
+    .diff-card .diff-icon { font-size: 1.8rem; margin-bottom: 10px; }
+    .diff-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; color: var(--accent2); }
+    .diff-card p { font-size: 0.88rem; color: var(--text2); line-height: 1.6; }
+
+    /* ===== PERSONAS ===== */
+    .personas-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+    }
+    .persona-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+    }
+    .persona-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .persona-avatar {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+      flex-shrink: 0;
+    }
+    .persona-name { font-weight: 700; font-size: 0.95rem; }
+    .persona-role { font-size: 0.78rem; color: var(--text2); }
+    .persona-quote {
+      font-style: italic;
+      color: var(--text2);
+      font-size: 0.85rem;
+      border-left: 3px solid var(--accent);
+      padding-left: 12px;
+      margin-bottom: 10px;
+    }
+    .persona-needs { font-size: 0.82rem; color: var(--text2); }
+    .persona-needs strong { color: var(--text); }
+
+    /* ===== EPICS ===== */
+    .epic-list { display: flex; flex-direction: column; gap: 14px; }
+    .epic-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .epic-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 22px;
+    }
+    .epic-num {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+    }
+    .epic-title { font-weight: 700; font-size: 1rem; flex: 1; }
+    .epic-status {
+      padding: 4px 12px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+    .status-inprogress { background: rgba(124,106,247,0.15); color: var(--accent2); border: 1px solid rgba(124,106,247,0.3); }
+    .status-backlog { background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid rgba(100,116,139,0.3); }
+    .epic-body { padding: 0 22px 18px; }
+    .epic-desc { font-size: 0.88rem; color: var(--text2); margin-bottom: 14px; }
+    .story-pills { display: flex; flex-wrap: wrap; gap: 7px; }
+    .story-pill {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 0.78rem;
+      color: var(--text2);
+    }
+    .story-pill.done { border-color: rgba(16,185,129,0.4); color: #6ee7b7; background: rgba(16,185,129,0.08); }
+    .story-pill.review { border-color: rgba(124,106,247,0.4); color: var(--accent2); background: rgba(124,106,247,0.08); }
+    .epic-fr-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .fr-tag {
+      background: rgba(59,130,246,0.08);
+      border: 1px solid rgba(59,130,246,0.25);
+      color: #93c5fd;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+    }
+
+    /* ===== NFR ===== */
+    .nfr-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .nfr-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+    .nfr-card h4 { font-size: 0.85rem; font-weight: 700; color: var(--accent2); margin-bottom: 8px; }
+    .nfr-card ul { list-style: none; }
+    .nfr-card ul li {
+      font-size: 0.8rem;
+      color: var(--text2);
+      padding: 3px 0;
+      padding-left: 14px;
+      position: relative;
+    }
+    .nfr-card ul li::before {
+      content: '▸';
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+    }
+
+    /* ===== TECH STACK ===== */
+    .stack-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    .stack-item {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .stack-icon { font-size: 1.4rem; flex-shrink: 0; }
+    .stack-name { font-size: 0.88rem; font-weight: 600; }
+    .stack-ver { font-size: 0.75rem; color: var(--text2); }
+
+    /* ===== ARCHITECTURE ===== */
+    .arch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .arch-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .arch-card h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 10px; color: var(--accent2); }
+    .arch-card .code-list { list-style: none; }
+    .arch-card .code-list li {
+      font-size: 0.78rem;
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+      color: var(--text2);
+      padding: 2px 0;
+      padding-left: 12px;
+      border-left: 2px solid var(--border);
+      margin-bottom: 2px;
+    }
+    .arch-card .code-list li span { color: #86efac; }
+
+    /* ===== SPRINT PROGRESS ===== */
+    .progress-section { }
+    .epic-progress-item {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .epic-progress-name { flex: 1; font-size: 0.9rem; font-weight: 600; }
+    .epic-progress-count { font-size: 0.78rem; color: var(--text2); min-width: 60px; text-align: right; }
+    .progress-bar-track {
+      width: 160px;
+      height: 6px;
+      background: var(--bg3);
+      border-radius: 99px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
+    .sprint-badge {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    /* ===== ROADMAP ===== */
+    .phases-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 700px) { .phases-grid { grid-template-columns: 1fr; } }
+    .phase-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+    }
+    .phase-card.active { border-color: rgba(124,106,247,0.5); background: rgba(124,106,247,0.05); }
+    .phase-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text2);
+      margin-bottom: 6px;
+    }
+    .phase-card.active .phase-label { color: var(--accent2); }
+    .phase-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 14px; }
+    .phase-items { list-style: none; }
+    .phase-items li {
+      font-size: 0.82rem;
+      color: var(--text2);
+      padding: 4px 0;
+      padding-left: 16px;
+      position: relative;
+      border-bottom: 1px solid rgba(45,55,72,0.5);
+    }
+    .phase-items li:last-child { border-bottom: none; }
+    .phase-items li::before { content: '→'; position: absolute; left: 0; color: var(--accent); font-size: 0.75rem; }
+
+    /* ===== COMMANDS ===== */
+    .commands-table { width: 100%; border-collapse: collapse; }
+    .commands-table th {
+      background: var(--bg3);
+      padding: 10px 16px;
+      text-align: left;
+      font-size: 0.78rem;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+    }
+    .commands-table td {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+    }
+    .commands-table tr:last-child td { border-bottom: none; }
+    .commands-table tr:hover td { background: rgba(124,106,247,0.04); }
+    .cmd-code {
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+      color: #93c5fd;
+      font-size: 0.82rem;
+    }
+    .commands-wrap {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    /* ===== RISKS ===== */
+    .risks-table { width: 100%; border-collapse: collapse; }
+    .risks-table th {
+      background: var(--bg3);
+      padding: 10px 16px;
+      text-align: left;
+      font-size: 0.78rem;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+    }
+    .risks-table td { padding: 10px 16px; border-bottom: 1px solid var(--border); font-size: 0.84rem; }
+    .risks-table tr:last-child td { border-bottom: none; }
+    .impact-high { color: #fca5a5; font-weight: 600; }
+    .impact-med { color: #fcd34d; font-weight: 600; }
+    .risks-wrap {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    /* ===== FOOTER ===== */
+    .footer {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      padding: 28px 40px;
+      text-align: center;
+      color: var(--text2);
+      font-size: 0.82rem;
+    }
+    .footer strong { color: var(--text); }
+
+    /* Epic color palette */
+    .c1 { background: rgba(124,106,247,0.2); color: #a78bfa; }
+    .c2 { background: rgba(59,130,246,0.2); color: #93c5fd; }
+    .c3 { background: rgba(239,68,68,0.2); color: #fca5a5; }
+    .c4 { background: rgba(245,158,11,0.2); color: #fcd34d; }
+    .c5 { background: rgba(16,185,129,0.2); color: #6ee7b7; }
+    .c6 { background: rgba(236,72,153,0.2); color: #f9a8d4; }
+    .c7 { background: rgba(6,182,212,0.2); color: #67e8f9; }
+  </style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <div class="hero-badge">NeoForge 1.21.1 · Minecraft Mod</div>
+  <h1>⚔ Arcadia Dungeon</h1>
+  <p class="hero-sub">Système de donjons RPG configurables pour serveurs Minecraft fortement moddés — boss multi-phases, combat tuning, leaderboard hebdomadaire et administration naturelle via IA.</p>
+  <div class="hero-tags">
+    <span class="tag purple">Server-side only</span>
+    <span class="tag gold">Brownfield · MVP en cours</span>
+    <span class="tag green">Java 21 · Gson · NeoForge 21.1.222</span>
+    <span class="tag">Auteur : Curveo · 2026-04-06</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ===== CHIFFRES CLÉS ===== -->
+  <section class="section">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-number">41</div>
+        <div class="stat-label">Exigences fonctionnelles</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">7</div>
+        <div class="stat-label">Epics de développement</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">28</div>
+        <div class="stat-label">Stories planifiées</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">18</div>
+        <div class="stat-label">NFR critiques</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">400+</div>
+        <div class="stat-label">Mods compatibles (cible)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">3</div>
+        <div class="stat-label">Phases de roadmap</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== RÉSUMÉ ===== -->
+  <section class="section">
+    <h2 class="section-title"><span class="icon">📋</span> Résumé Exécutif</h2>
+    <div class="summary-box">
+      <strong>Arcadia Dungeon</strong> est un mod NeoForge server-side conçu comme <strong>couche d'endgame RPG</strong> pour les serveurs Minecraft fortement moddés. Là où le contenu existant est rapidement maîtrisé par les joueurs end-game, Arcadia offre une <strong>progression verticale continue</strong> via des donjons entièrement configurables par JSON.<br><br>
+      Chaque élément est pilotable sans recompilation : boss multi-phases avec seuils de PV, invocations, multiplicateurs, dodge, barres de vie, vagues ordonnées, récompenses cross-mods, cooldowns par joueur, leaderboard hebdomadaire, confinement de zone, commandes admin et rechargement à chaud. Le mod se positionne comme <strong>hub d'endgame cross-mods</strong> — les récompenses peuvent être n'importe quel item de n'importe quel mod installé sur le serveur.<br><br>
+      Réaction cible admin : <em>"Ils ont pensé à tout"</em> — chaque cas d'usage gameplay a une option de configuration dédiée.
+    </div>
+  </section>
+
+  <!-- ===== DIFFÉRENCIATEURS ===== -->
+  <section class="section">
+    <h2 class="section-title"><span class="icon">✨</span> Ce qui le rend unique</h2>
+    <p class="section-desc">4 piliers de différenciation par rapport aux alternatives existantes (Dungeons+, Better Dungeons, etc.)</p>
+    <div class="diff-grid">
+      <div class="diff-card">
+        <div class="diff-icon">⚙️</div>
+        <h3>Configuration totale par JSON</h3>
+        <p>Boss, phases, vagues, récompenses, spawn points, messages, cooldowns, aire de confinement — tout est pilotable sans toucher au code Java ni redémarrer le serveur.</p>
+      </div>
+      <div class="diff-card">
+        <div class="diff-icon">🔗</div>
+        <h3>Hub d'endgame cross-mods</h3>
+        <p>Les récompenses peuvent être n'importe quel item Minecraft ou mod tiers. Arcadia devient le point de convergence des progressions sur un serveur à 400+ mods.</p>
+      </div>
+      <div class="diff-card">
+        <div class="diff-icon">🤖</div>
+        <h3>Administration naturelle via IA</h3>
+        <p>Un skill Claude Code conversationnel permet à l'admin de créer et modifier des donjons en langage naturel — sans ouvrir un seul fichier JSON manuellement.</p>
+      </div>
+      <div class="diff-card">
+        <div class="diff-icon">🏆</div>
+        <h3>Compétition & rétention</h3>
+        <p>Leaderboard hebdomadaire par donjon, cooldowns par joueur, speedrun reproductible. Les joueurs reviennent chaque semaine. Les donjons sont discutés sur Discord.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PERSONAS ===== -->
+  <section class="section">
+    <h2 class="section-title"><span class="icon">👥</span> Parcours Utilisateurs</h2>
+    <p class="section-desc">5 personas identifiés, chacun révélant des besoins distincts couverts par le mod.</p>
+    <div class="personas-grid">
+      <div class="persona-card">
+        <div class="persona-header">
+          <div class="persona-avatar" style="background:rgba(239,68,68,0.2)">⚔️</div>
+          <div>
+            <div class="persona-name">Théo — le joueur end-game</div>
+            <div class="persona-role">Full netherite · Se reconnecte par ennui</div>
+          </div>
+        </div>
+        <div class="persona-quote">"Je mourais pour la première fois depuis des semaines."</div>
+        <div class="persona-needs"><strong>Besoins :</strong> Boss multi-phases, comportements surprenants, récompenses mémorables, messages d'annonce percutants.</div>
+      </div>
+      <div class="persona-card">
+        <div class="persona-header">
+          <div class="persona-avatar" style="background:rgba(16,185,129,0.2)">🌿</div>
+          <div>
+            <div class="persona-name">Camille — la joueuse casual</div>
+            <div class="persona-role">2-3h le week-end · Correctement équipée</div>
+          </div>
+        </div>
+        <div class="persona-quote">"Elle a recommandé le donjon à une amie."</div>
+        <div class="persona-needs"><strong>Besoins :</strong> Donjons calibrables, recrutement accessible, expérience gratifiante sans over-gearing requis.</div>
+      </div>
+      <div class="persona-card">
+        <div class="persona-header">
+          <div class="persona-avatar" style="background:rgba(59,130,246,0.2)">👨‍👩‍👧‍👦</div>
+          <div>
+            <div class="persona-name">Le groupe de 4 amis</div>
+            <div class="persona-role">Session du samedi soir · Run spontanée</div>
+          </div>
+        </div>
+        <div class="persona-quote">"Ils postent un clip et planifient une revanche."</div>
+        <div class="persona-needs"><strong>Besoins :</strong> Annonce serveur de recrutement, gestion morts + éjection, téléportation groupe, tension dramatique.</div>
+      </div>
+      <div class="persona-card">
+        <div class="persona-header">
+          <div class="persona-avatar" style="background:rgba(245,158,11,0.2)">🏅</div>
+          <div>
+            <div class="persona-name">Beuzed — le compétiteur</div>
+            <div class="persona-role">Try-hard · Optimise ses runs en permanence</div>
+          </div>
+        </div>
+        <div class="persona-quote">"Il bat le record. Il attend le prochain inédit."</div>
+        <div class="persona-needs"><strong>Besoins :</strong> Leaderboard hebdo par donjon, cooldowns par joueur, reproductibilité des runs.</div>
+      </div>
+      <div class="persona-card">
+        <div class="persona-header">
+          <div class="persona-avatar" style="background:rgba(124,106,247,0.2)">🔧</div>
+          <div>
+            <div class="persona-name">Curveo — l'admin</div>
+            <div class="persona-role">Lead dev · Configure et déploie les donjons</div>
+          </div>
+        </div>
+        <div class="persona-quote">"Le donjon est live en 2h. Aucune ligne de code."</div>
+        <div class="persona-needs"><strong>Besoins :</strong> Skill Claude Code conversationnel, JSON complet, commandes admin, hot reload, récompenses cross-mods.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== EPICS ===== -->
+  <section class="section">
+    <h2 class="section-title"><span class="icon">🗺️</span> Epics & Stories</h2>
+    <p class="section-desc">7 epics couvrant l'intégralité des 41 exigences fonctionnelles. Chaque epic est une livraisonindépendante de valeur.</p>
+    <div class="epic-list">
+
+      <div class="epic-card">
+        <div class="epic-header">
+          <div class="epic-num c1">E1</div>
+          <div class="epic-title">Fondations Techniques & Stabilité</div>
+          <div class="epic-status status-inprogress">En cours</div>
+        </div>
+        <div class="epic-body">
+          <div class="epic-desc">Base robuste, performante et observable — ModCompat, SparkUtil, MessageUtil, scheduleRemoval(), debugMode. Prérequis de toutes les autres features.</div>
+          <div class="story-pills">
+            <span class="story-pill review">1.1 ModCompat ✓ review</span>
+            <span class="story-pill review">1.2 SparkUtil ✓ review</span>
+            <span class="story-pill">1.3 MessageUtil</span>
+            <span class="story-pill">1.4 scheduleRemoval()</span>
+            <span class="story-pill">1.5 debugMode + tick reliability</span>
+          </div>
+          <div class="epic-fr-tags">
+            <span class="fr-tag">AR1</span><span class="fr-tag">AR2</span><span class="fr-tag">AR3</span><span class="fr-tag">AR4</span><span class="fr-tag">AR7</span>
+            <span class="fr-tag">NFR1–10</span><span class="fr-tag">NFR15</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="epic-card">
+        <div class="epic-header">
+          <div class="epic-num c2">E2</div>
+          <div class="epic-title">Configuration & Cycle de Vie des Donjons</div>
+          <div class="epic-status status-backlog">Backlog</div>
+        </div>
+        <div class="epic-body">
+          <div class="epic-desc">Création via JSON, vagues de mobs, boss, activation/désactivation, prérequis, multi-instances, hot reload, config d'exemple auto-générée et schéma JSON.</div>
+          <div class="story-pills">
+            <span class="story-pill">2.1 Création donjon JSON</span>
+            <span class="story-pill">2.2 Vagues & boss</span>
+            <span class="story-pill">2.3 Enable/disable & prérequis</span>
+            <span class="story-pill">2.4 Multi-instances</span>
+            <span class="story-pill">2.5 Hot reload</span>
+            <span class="story-pill">2.6 Config exemple & schéma</span>
+          </div>
+          <div class="epic-fr-tags">
+            <span class="fr-tag">FR1–7</span><span class="fr-tag">FR32</span><span class="fr-tag">FR33</span><span class="fr-tag">AR8</span><span class="fr-tag">NFR8</span><span class="fr-tag">NFR9</span><span class="fr-tag">NFR14</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="epic-card">
+        <div class="epic-header">
+          <div class="epic-num c3">E3</div>
+          <div class="epic-title">Combat & Boss Avancés</div>
+          <div class="epic-status status-backlog">Backlog</div>
+        </div>
+        <div class="epic-body">
+          <div class="epic-desc">Boss multi-phases (seuils PV), multiplicateurs de stats, invocations, combat étendu configurable, dodge, boss optionnel avec probabilité, barre de vie.</div>
+          <div class="story-pills">
+            <span class="story-pill">3.1 Phases boss & seuils PV</span>
+            <span class="story-pill">3.2 Multiplicateurs & invocations</span>
+            <span class="story-pill">3.3 Combat étendu configurable</span>
+            <span class="story-pill">3.4 Dodge configurable</span>
+            <span class="story-pill">3.5 Boss optionnel & barre de vie</span>
+          </div>
+          <div class="epic-fr-tags">
+            <span class="fr-tag">FR8–15</span><span class="fr-tag">NFR3</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="epic-card">
+        <div class="epic-header">
+          <div class="epic-num c4">E4</div>
+          <div class="epic-title">Sécurité & Confinement</div>
+          <div class="epic-status status-backlog">Backlog</div>
+        </div>
+        <div class="epic-body">
+          <div class="epic-desc">Environnements hermétiques — anti-parasite (entités extérieures), confinement joueurs dans l'aire cuboid, blocage commandes restreintes, suppression drops vanilla, murs scriptés.</div>
+          <div class="story-pills">
+            <span class="story-pill">4.1 Anti-parasite</span>
+            <span class="story-pill">4.2 Confinement joueurs</span>
+            <span class="story-pill">4.3 Blocage commandes</span>
+            <span class="story-pill">4.4 Drops vanilla & murs scriptés</span>
+          </div>
+          <div class="epic-fr-tags">
+            <span class="fr-tag">FR34–38</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="epic-card">
+        <div class="epic-header">
+          <div class="epic-num c5">E5</div>
+          <div class="epic-title">Expérience Joueur & Recrutement</div>
+          <div class="epic-status status-backlog">Backlog</div>
+        </div>
+        <div class="epic-body">
+          <div class="epic-desc">Annonce serveur, recrutement, téléportation groupe, gestion morts + éjection, récompenses cross-mods, messages narratifs, cooldowns persistés entre redémarrages.</div>
+          <div class="story-pills">
+            <span class="story-pill">5.1 Recrutement & téléportation</span>
+            <span class="story-pill">5.2 Morts & éjection</span>
+            <span class="story-pill">5.3 Récompenses cross-mods</span>
+            <span class="story-pill">5.4 Messages configurables</span>
+            <span class="story-pill">5.5 Cooldowns & persistance</span>
+          </div>
+          <div class="epic-fr-tags">
+            <span class="fr-tag">FR16–23</span><span class="fr-tag">FR39</span><span class="fr-tag">FR41</span><span class="fr-tag">AR5</span><span class="fr-tag">AR6</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="epic-card">
+        <div class="epic-header">
+          <div class="epic-num c6">E6</div>
+          <div class="epic-title">Compétition & Leaderboard</div>
+          <div class="epic-status status-backlog">Backlog</div>
+        </div>
+        <div class="epic-body">
+          <div class="epic-desc">Enregistrement des temps de complétion, leaderboard hebdomadaire par donjon (top 10), reset automatique chaque semaine, annonces périodiques de disponibilité.</div>
+          <div class="story-pills">
+            <span class="story-pill">6.1 Temps de complétion</span>
+            <span class="story-pill">6.2 Leaderboard hebdo & reset</span>
+            <span class="story-pill">6.3 Annonces périodiques</span>
+          </div>
+          <div class="epic-fr-tags">
+            <span class="fr-tag">FR24–27</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="epic-card">
+        <div class="epic-header">
+          <div class="epic-num c7">E7</div>
+          <div class="epic-title">Administration & Outils</div>
+          <div class="epic-status status-backlog">Backlog</div>
+        </div>
+        <div class="epic-body">
+          <div class="epic-desc">Commandes admin (status, stop, cuboid), tuning combat en live sans recompilation, désactivation gracieuse des soft deps, skill Claude Code conversationnel pour création de donjons.</div>
+          <div class="story-pills">
+            <span class="story-pill">7.1 Status, stop, cuboid</span>
+            <span class="story-pill">7.2 Tuning combat en live</span>
+            <span class="story-pill">7.3 Soft deps gracieux</span>
+            <span class="story-pill">7.4 Skill Claude Code admin</span>
+          </div>
+          <div class="epic-fr-tags">
+            <span class="fr-tag">FR28–31</span><span class="fr-tag">FR40</span><span class="fr-tag">AR9</span><span class="fr-tag">NFR11</span><span class="fr-tag">NFR12</span><span class="fr-tag">NFR16–18</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== SPRINT PROGRESS ===== -->
+  <section class="section">
+    <h2 class="section-title"><span class="icon">📊</span> Avancement Sprint</h2>
+    <p class="section-desc">État au 2026-04-06 — Epic 1 en cours, 2 stories en review.</p>
+
+    <div class="epic-progress-item">
+      <div class="epic-num c1" style="width:32px;height:32px;font-size:0.8rem;flex-shrink:0;border-radius:6px;display:flex;align-items:center;justify-content:center;">E1</div>
+      <div class="epic-progress-name">Fondations Techniques & Stabilité</div>
+      <div class="progress-bar-track"><div class="progress-bar-fill" style="width:40%"></div></div>
+      <div class="epic-progress-count">2 / 5 stories</div>
+      <span class="sprint-badge status-inprogress">En cours</span>
+    </div>
+    <div class="epic-progress-item">
+      <div class="epic-num c2" style="width:32px;height:32px;font-size:0.8rem;flex-shrink:0;border-radius:6px;display:flex;align-items:center;justify-content:center;">E2</div>
+      <div class="epic-progress-name">Configuration & Cycle de Vie</div>
+      <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+      <div class="epic-progress-count">0 / 6 stories</div>
+      <span class="sprint-badge status-backlog">Backlog</span>
+    </div>
+    <div class="epic-progress-item">
+      <div class="epic-num c3" style="width:32px;height:32px;font-size:0.8rem;flex-shrink:0;border-radius:6px;display:flex;align-items:center;justify-content:center;">E3</div>
+      <div class="epic-progress-name">Combat & Boss Avancés</div>
+      <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+      <div class="epic-progress-count">0 / 5 stories</div>
+      <span class="sprint-badge status-backlog">Backlog</span>
+    </div>
+    <div class="epic-progress-item">
+      <div class="epic-num c4" style="width:32px;height:32px;font-size:0.8rem;flex-shrink:0;border-radius:6px;display:flex;align-items:center;justify-content:center;">E4</div>
+      <div class="epic-progress-name">Sécurité & Confinement</div>
+      <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+      <div class="epic-progress-count">0 / 4 stories</div>
+      <span class="sprint-badge status-backlog">Backlog</span>
+    </div>
+    <div class="epic-progress-item">
+      <div class="epic-num c5" style="width:32px;height:32px;font-size:0.8rem;flex-shrink:0;border-radius:6px;display:flex;align-items:center;justify-content:center;">E5</div>
+      <div class="epic-progress-name">Expérience Joueur & Recrutement</div>
+      <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+      <div class="epic-progress-count">0 / 5 stories</div>
+      <span class="sprint-badge status-backlog">Backlog</span>
+    </div>
+    <div class="epic-progress-item">
+      <div class="epic-num c6" style="width:32px;height:32px;font-size:0.8rem;flex-shrink:0;border-radius:6px;display:flex;align-items:center;justify-content:center;">E6</div>
+      <div class="epic-progress-name">Compétition & Leaderboard</div>
+      <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+      <div class="epic-progress-count">0 / 3 stories</div>
+      <span class="sprint-badge status-backlog">Backlog</span>
+    </div>
+    <div class="epic-progress-item">
+      <div class="epic-num c7" style="width:32px;height:32px;font-size:0.8rem;flex-shrink:0;border-radius:6px;display:flex;align-items:center;justify-content:center;">E7</div>
+      <div class="epic-progress-name">Administration & Outils</div>
+      <div class="progress-bar-track"><div class="progress-bar-fill" style="width:0%"></div></div>
+      <div class="epic-progress-count">0 / 4 stories</div>
+      <span class="sprint-badge status-backlog">Backlog</span>
+    </div>
+  </section>
+
+  <!-- ===== EXIGENCES NON-FONCTIONNELLES ===== -->
+  <section class="section">
+    <h2 class="section-title"><span class="icon">⚡</span> Exigences Non-Fonctionnelles Critiques</h2>
+    <p class="section-desc">18 NFR répartis en 5 catégories — les contraintes qui déterminent les décisions architecturales.</p>
+    <div class="nfr-grid">
+      <div class="nfr-card">
+        <h4>⚡ Performance</h4>
+        <ul>
+          <li>Tick handler &lt; 1ms par tick (NFR1)</li>
+          <li>Pattern <code>nextXCheckAt</code> obligatoire (NFR2)</li>
+          <li>Event handlers de combat : O(1) (NFR3)</li>
+          <li>Démarrage donjon &lt; 500ms (NFR4)</li>
+          <li>3 donjons actifs ≥ 18 TPS (NFR5)</li>
+        </ul>
+      </div>
+      <div class="nfr-card">
+        <h4>🛡️ Fiabilité</h4>
+        <ul>
+          <li>Crash joueur sans bloquer le donjon (NFR6)</li>
+          <li>Arrêt serveur : sauvegarde cooldowns/leaderboard (NFR7)</li>
+          <li>JSON invalide n'empêche pas les autres (NFR8)</li>
+          <li>Hot reload sans interruption (NFR9)</li>
+          <li>Zéro exception non catchée (NFR10)</li>
+        </ul>
+      </div>
+      <div class="nfr-card">
+        <h4>🔗 Intégration</h4>
+        <ul>
+          <li>Aucune dépendance obligatoire (NFR11)</li>
+          <li>Mod absent → log WARN, pas crash (NFR12)</li>
+          <li>Compatible mods d'attributs (NFR13)</li>
+          <li>JSON rétrocompatible (NFR14)</li>
+          <li>Sections Spark visibles (NFR15)</li>
+        </ul>
+      </div>
+      <div class="nfr-card">
+        <h4>🔒 Sécurité</h4>
+        <ul>
+          <li>Commandes → permission op niveau 2 (NFR16)</li>
+          <li>Persistance : UUID + timestamps uniquement (NFR17)</li>
+          <li>Skill IA : validation avant écriture (NFR18)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ARCHITECTURE ===== -->
+  <section class="section">
+    <h2 class="section-title"><span class="icon">🏗️</span> Architecture Technique</h2>
+    <p class="section-desc">Pattern Singleton sur tous les managers, double event bus NeoForge, frontières de packages strictes.</p>
+    <div class="arch-grid">
+      <div class="arch-card">
+        <h4>📦 Packages principaux</h4>
+        <ul class="code-list">
+          <li><span>util/</span> — ModCompat, SparkUtil, MessageUtil</li>
+          <li><span>config/</span> — POJOs JSON, ConfigManager</li>
+          <li><span>dungeon/</span> — DungeonManager, DungeonInstance</li>
+          <li><span>boss/</span> — BossManager, BossInstance</li>
+          <li><span>event/</span> — DungeonEventHandler</li>
+          <li><span>command/</span> — ArcadiaCommands, AdminCommands</li>
+        </ul>
+      </div>
+      <div class="arch-card">
+        <h4>🔄 Patterns clés</h4>
+        <ul class="code-list">
+          <li>Singletons — tous les managers</li>
+          <li>scheduleRemoval() — anti-ConcurrentModification</li>
+          <li>nextXCheckAt — throttling systématique</li>
+          <li>"arcadia_managed" — tag entités gérées</li>
+          <li>ArcadiaCombat NBT — sous-tag combat</li>
+          <li>try/catch global — event handlers</li>
+        </ul>
+      </div>
+      <div class="arch-card">
+        <h4>💾 Persistance</h4>
+        <ul class="code-list">
+          <li>Configs → <span>arcadia/dungeon/dungeons/*.json</span></li>
+          <li>Joueurs → <span>arcadia/dungeon/players/{uuid}.json</span></li>
+          <li>Leaderboard → JSON, reset hebdomadaire</li>
+          <li>Sérialisation → Gson setPrettyPrinting</li>
+          <li>Hot reload → instances actives non affectées</li>
+        </ul>
+      </div>
+      <div class="arch-card">
+        <h4>⚠️ Anti-patterns interdits</h4>
+        <ul class="code-list">
+          <li>new ResourceLocation() → <span>ResourceLocation.parse()</span></li>
+          <li>player.hasPermissions() → <span>PermissionAPI</span></li>
+          <li>activeInstances.remove() → <span>scheduleRemoval()</span></li>
+          <li>player.sendSystemMessage() → <span>MessageUtil</span></li>
+          <li>ModList.get().isLoaded() → <span>ModCompat.HAS_*</span></li>
+          <li>System.out.println() → <span>LOGGER</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== STACK TECHNIQUE ===== -->
+  <section class="section">
+    <h2 class="section-title"><span class="icon">🔧</span> Stack Technique</h2>
+    <div class="stack-grid">
+      <div class="stack-item">
+        <div class="stack-icon">☕</div>
+        <div><div class="stack-name">Java</div><div class="stack-ver">21 · toolchain obligatoire</div></div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-icon">🔨</div>
+        <div><div class="stack-name">NeoForge</div><div class="stack-ver">21.1.222 · Minecraft 1.21.1</div></div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-icon">🐘</div>
+        <div><div class="stack-name">NeoGradle</div><div class="stack-ver">7.0.170 · build system</div></div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-icon">📝</div>
+        <div><div class="stack-name">Gson</div><div class="stack-ver">via Minecraft · JSON &amp; persistance</div></div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-icon">📊</div>
+        <div><div class="stack-name">Spark</div><div class="stack-ver">Soft dep · profiling via MC profiler</div></div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-icon">🔑</div>
+        <div><div class="stack-name">LuckPerms</div><div class="stack-ver">Soft dep · NeoForge PermissionAPI</div></div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-icon">🤖</div>
+        <div><div class="stack-name">Claude Code</div><div class="stack-ver">Skill admin · config naturelle</div></div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-icon">🗺️</div>
+        <div><div class="stack-name">Parchment</div><div class="stack-ver">2024.11.17 · mappings human-readable</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== COMMANDES ADMIN ===== -->
+  <section class="section">
+    <h2 class="section-title"><span class="icon">💻</span> Interface Admin — Commandes</h2>
+    <p class="section-desc">Toutes les commandes requièrent le niveau de permission opérateur 2 minimum (NFR16).</p>
+    <div class="commands-wrap">
+      <table class="commands-table">
+        <thead>
+          <tr><th>Commande</th><th>Usage</th><th>Epic</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="cmd-code">/arcadia start &lt;id&gt;</td><td>Lancer un donjon, déclenche l'annonce de recrutement</td><td><span class="fr-tag">E5 · FR16</span></td></tr>
+          <tr><td class="cmd-code">/arcadia join &lt;id&gt;</td><td>Rejoindre un donjon en cours de recrutement</td><td><span class="fr-tag">E5 · FR17</span></td></tr>
+          <tr><td class="cmd-code">/arcadia stop &lt;id&gt;</td><td>Forcer l'arrêt propre d'un donjon actif</td><td><span class="fr-tag">E7 · FR28</span></td></tr>
+          <tr><td class="cmd-code">/arcadia reload</td><td>Recharger les configs JSON à chaud sans interruption</td><td><span class="fr-tag">E2 · FR7</span></td></tr>
+          <tr><td class="cmd-code">/arcadia status</td><td>État de tous les donjons actifs (joueurs, phase, état)</td><td><span class="fr-tag">E7 · FR29</span></td></tr>
+          <tr><td class="cmd-code">/arcadia tuning &lt;entity&gt; &lt;clé&gt; &lt;val&gt;</td><td>Appliquer du tuning combat en live sur une entité</td><td><span class="fr-tag">E7 · FR30</span></td></tr>
+          <tr><td class="cmd-code">/arcadia cuboid &lt;id&gt; &lt;x1 y1 z1 x2 y2 z2&gt;</td><td>Définir l'aire géographique (confinement) d'un donjon</td><td><span class="fr-tag">E7 · FR33</span></td></tr>
+          <tr><td class="cmd-code">/arcadia leaderboard &lt;id&gt;</td><td>Consulter le top 10 hebdomadaire d'un donjon</td><td><span class="fr-tag">E6 · FR25</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== ROADMAP ===== -->
+  <section class="section">
+    <h2 class="section-title"><span class="icon">🚀</span> Roadmap — 3 Phases</h2>
+    <p class="section-desc">Approche MVP "Experience" — qualité production avant publication CurseForge, zéro scope creep.</p>
+    <div class="phases-grid">
+      <div class="phase-card active">
+        <div class="phase-label">Phase 1 · En cours</div>
+        <div class="phase-title">MVP — Production Ready</div>
+        <ul class="phase-items">
+          <li>Config JSON complète (vagues, boss multi-phases)</li>
+          <li>Combat tuning configurable</li>
+          <li>Stabilité production (anti-parasite, containment)</li>
+          <li>Leaderboard hebdomadaire</li>
+          <li>Recrutement avec annonce serveur</li>
+          <li>Commandes admin complètes</li>
+          <li>Schéma JSON + exemple annoté</li>
+          <li>Skill Claude Code admin (privé)</li>
+        </ul>
+      </div>
+      <div class="phase-card">
+        <div class="phase-label">Phase 2 · Post-CurseForge</div>
+        <div class="phase-title">Growth</div>
+        <ul class="phase-items">
+          <li>Progression joueur (niveaux, points, rang RPG)</li>
+          <li>Conditions avancées (prérequis cross-mods)</li>
+          <li>Nouvelles mécaniques (pièges, objectifs custom)</li>
+          <li>Interface stats visible in-game</li>
+        </ul>
+      </div>
+      <div class="phase-card">
+        <div class="phase-label">Phase 3 · Vision</div>
+        <div class="phase-title">Couche RPG Complète</div>
+        <ul class="phase-items">
+          <li>Client-side : items custom, textures, UI dédiée</li>
+          <li>Intégration profonde cross-mods</li>
+          <li>Classes, talents, équipement Arcadia</li>
+          <li>Synchronisation multi-serveurs (à explorer)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== RISQUES ===== -->
+  <section class="section">
+    <h2 class="section-title"><span class="icon">⚠️</span> Analyse des Risques</h2>
+    <div class="risks-wrap">
+      <table class="risks-table">
+        <thead>
+          <tr><th>Risque</th><th>Impact</th><th>Mitigation</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Compatibilité avec 400+ mods</td>
+            <td class="impact-high">Haut</td>
+            <td>Tests en conditions réelles + soft dependencies obligatoires</td>
+          </tr>
+          <tr>
+            <td>Performances sous charge (3+ donjons)</td>
+            <td class="impact-high">Haut</td>
+            <td>Throttling systématique (nextXCheckAt) + profiling Spark avant release</td>
+          </tr>
+          <tr>
+            <td>Changement d'API NeoForge</td>
+            <td class="impact-med">Moyen</td>
+            <td>Pinning sur NeoForge 21.1.222 pour le MVP</td>
+          </tr>
+          <tr>
+            <td>Config JSON complexe → erreurs admin</td>
+            <td class="impact-med">Moyen</td>
+            <td>Validation + logs clairs + skill Claude Code + config exemple annotée</td>
+          </tr>
+          <tr>
+            <td>Skill IA génère des configs invalides</td>
+            <td class="impact-med">Moyen</td>
+            <td>Validation schéma JSON + retour d'erreur explicite avant toute écriture</td>
+          </tr>
+          <tr>
+            <td>Scope creep vers Phase 2</td>
+            <td class="impact-med">Moyen</td>
+            <td>Aucune feature Phase 2 avant publication CurseForge</td>
+          </tr>
+          <tr>
+            <td>Soft dependencies cassent silencieusement</td>
+            <td class="impact-med">Faible</td>
+            <td>ModCompat.HAS_* + logs WARN + désactivation gracieuse documentée</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div><!-- /container -->
+
+<!-- ===== FOOTER ===== -->
+<div class="footer">
+  <strong>Arcadia Dungeon</strong> — Cahier des charges v1.0 · Généré le 2026-04-06<br>
+  Auteur : <strong>Curveo</strong> · NeoForge 1.21.1 · Minecraft 1.21.1 · Java 21<br>
+  <span style="color:#4b5563">Document interne — non distribué</span>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Procedure de Test Epic 8 - Arcadia Dungeon</title>
+<style>
+:root{
+  --bg:#10151c;
+  --panel:#17212b;
+  --panel-2:#1d2a36;
+  --line:#2c3b48;
+  --text:#ecf3f8;
+  --muted:#9fb0bf;
+  --accent:#e6a23c;
+  --accent-2:#4db6ac;
+  --ok:#52c41a;
+  --warn:#ff7875;
+  --code:#0d1117;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Segoe UI,Tahoma,sans-serif;
+  background:radial-gradient(circle at top,#1a2631 0%,var(--bg) 55%);
+  color:var(--text);
+  line-height:1.5;
+}
+.wrap{max-width:1100px;margin:0 auto;padding:24px}
+header{
+  background:linear-gradient(135deg,var(--panel),var(--panel-2));
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:28px;
+  margin-bottom:22px;
+  box-shadow:0 18px 40px rgba(0,0,0,.22);
+}
+h1{margin:0 0 8px;font-size:2rem;color:var(--accent)}
+.sub{color:var(--muted);margin-bottom:10px}
+.meta{display:flex;flex-wrap:wrap;gap:10px}
+.badge{
+  display:inline-block;
+  padding:6px 10px;
+  border-radius:999px;
+  background:#223241;
+  color:#d7e4ee;
+  border:1px solid var(--line);
+  font-size:.9rem;
+}
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:20px;
+  margin-bottom:18px;
+}
+h2{
+  margin:0 0 14px;
+  font-size:1.1rem;
+  color:var(--accent-2);
+}
+h3{
+  margin:18px 0 10px;
+  font-size:1rem;
+  color:var(--accent);
+}
+p{margin:8px 0}
+.path,.cmd{
+  background:var(--code);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:10px 12px;
+  font-family:Consolas,monospace;
+  color:#a8e6cf;
+  word-break:break-all;
+}
+.note{
+  padding:12px 14px;
+  border-left:4px solid var(--warn);
+  background:rgba(255,120,117,.08);
+  border-radius:10px;
+  color:#ffd6d5;
+}
+.ok{
+  padding:12px 14px;
+  border-left:4px solid var(--ok);
+  background:rgba(82,196,26,.08);
+  border-radius:10px;
+  color:#d9f7be;
+}
+.checklist{
+  list-style:none;
+  padding:0;
+  margin:10px 0 0;
+}
+.checklist li{
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+  padding:8px 0;
+  border-bottom:1px solid rgba(255,255,255,.04);
+}
+.checklist li:last-child{border-bottom:none}
+.checklist input[type="checkbox"]{
+  width:18px;
+  height:18px;
+  margin-top:2px;
+  accent-color:var(--ok);
+  cursor:pointer;
+  flex:0 0 auto;
+}
+.checklist label{cursor:pointer;display:block;width:100%}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:16px;
+}
+.footer-actions{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-top:14px;
+}
+button{
+  background:var(--accent);
+  color:#1a1a1a;
+  border:none;
+  border-radius:10px;
+  padding:10px 14px;
+  font-weight:700;
+  cursor:pointer;
+}
+button.secondary{
+  background:#314355;
+  color:var(--text);
+}
+.progress{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  margin-top:12px;
+}
+.bar{
+  flex:1;
+  height:14px;
+  background:#0e151d;
+  border:1px solid var(--line);
+  border-radius:999px;
+  overflow:hidden;
+}
+.bar > div{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,var(--accent-2),var(--accent));
+  transition:width .2s ease;
+}
+.small{color:var(--muted);font-size:.92rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Procedure de Test Epic 8</h1>
+    <div class="sub">Arcadia Dungeon - GUI vanilla coffre, progression Arcadia, milestones, streaks, admin in-game</div>
+    <div class="meta">
+      <span class="badge">Date: 11/04/2026</span>
+      <span class="badge">Build: OK</span>
+      <span class="badge">Compile: OK</span>
+      <span class="badge">Cible: test serveur en jeu</span>
+    </div>
+    <div class="progress">
+      <div class="bar"><div id="progressBar"></div></div>
+      <strong id="progressText">0 / 0</strong>
+    </div>
+  </header>
+
+  <section class="panel">
+    <h2>Jar</h2>
+    <p>Jar a deployer sur le serveur :</p>
+    <div class="path">C:\Users\curveo\Documents\ArcadiaTool\ArcadiaTool\Arcadia-Dungeon\build\libs\arcadia_dungeon-1.0.0.jar</div>
+    <p class="small">Nom du fichier : <strong>arcadia_dungeon-1.0.0.jar</strong></p>
+  </section>
+
+  <section class="panel">
+    <h2>Preparation</h2>
+    <ul class="checklist">
+      <li><input type="checkbox" id="prep-1"><label for="prep-1">Remplacer l’ancien mod par le nouveau jar sur le serveur.</label></li>
+      <li><input type="checkbox" id="prep-2"><label for="prep-2">Demarrer le serveur et verifier qu’il n’y a pas d’erreur au chargement du mod.</label></li>
+      <li><input type="checkbox" id="prep-3"><label for="prep-3">Se connecter avec un compte OP.</label></li>
+      <li><input type="checkbox" id="prep-4"><label for="prep-4">Verifier que les commandes `/arcadia_dungeon` repondent normalement.</label></li>
+    </ul>
+  </section>
+
+  <div class="grid">
+    <section class="panel">
+      <h2>Tests Joueur</h2>
+      <ul class="checklist">
+        <li><input type="checkbox" id="player-1"><label for="player-1">Executer `/arcadia_dungeon menu` et verifier l’ouverture du menu coffre.</label></li>
+        <li><input type="checkbox" id="player-2"><label for="player-2">Cliquer `Profil` et verifier l’affichage du profil Arcadia.</label></li>
+        <li><input type="checkbox" id="player-3"><label for="player-3">Cliquer `Top` et verifier l’affichage du classement Arcadia.</label></li>
+        <li><input type="checkbox" id="player-4"><label for="player-4">Cliquer `Progression` et verifier l’affichage des donjons.</label></li>
+        <li><input type="checkbox" id="player-5"><label for="player-5">Cliquer un donjon depuis le menu joueur et verifier que la tentative de lancement fonctionne.</label></li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>Tests Admin Global</h2>
+      <ul class="checklist">
+        <li><input type="checkbox" id="admin-1"><label for="admin-1">Executer `/arcadia_dungeon admin arcadia menu` et verifier l’ouverture du menu admin coffre.</label></li>
+        <li><input type="checkbox" id="admin-2"><label for="admin-2">Cliquer `XP Global`, saisir `150` dans le chat, valider, puis verifier la reouverture automatique du menu.</label></li>
+        <li><input type="checkbox" id="admin-3"><label for="admin-3">Recliquer `XP Global`, taper `cancel`, et verifier l’annulation propre.</label></li>
+        <li><input type="checkbox" id="admin-4"><label for="admin-4">Cliquer `Overview` et verifier que le resume Arcadia s’affiche.</label></li>
+      </ul>
+    </section>
+  </div>
+
+  <section class="panel">
+    <h2>Tests Admin Donjon</h2>
+    <p>Commande d’ouverture :</p>
+    <div class="cmd">/arcadia_dungeon admin arcadia menu &lt;id_du_donjon&gt;</div>
+    <ul class="checklist">
+      <li><input type="checkbox" id="dungeon-1"><label for="dungeon-1">Tester `XP Donjon` avec une valeur simple comme `250`.</label></li>
+      <li><input type="checkbox" id="dungeon-2"><label for="dungeon-2">Tester `Multiplicateur` avec une valeur comme `1.5`.</label></li>
+      <li><input type="checkbox" id="dungeon-3"><label for="dungeon-3">Tester `Niveau Requis` avec une valeur comme `5`.</label></li>
+      <li><input type="checkbox" id="dungeon-4"><label for="dungeon-4">Tester `Bonus Speedrun` avec le format `300 50`.</label></li>
+      <li><input type="checkbox" id="dungeon-5"><label for="dungeon-5">Verifier a chaque fois : fermeture du coffre, prompt chat, interception, application, puis reouverture du panneau.</label></li>
+    </ul>
+  </section>
+
+  <div class="grid">
+    <section class="panel">
+      <h2>Tests Rangs</h2>
+      <ul class="checklist">
+        <li><input type="checkbox" id="rank-1"><label for="rank-1">Ouvrir le menu `Rangs` depuis l’admin GUI.</label></li>
+        <li><input type="checkbox" id="rank-2"><label for="rank-2">Ajouter ou modifier un rang via saisie chat : `30 Mythique 6`.</label></li>
+        <li><input type="checkbox" id="rank-3"><label for="rank-3">Verifier que le rang apparait dans la liste.</label></li>
+        <li><input type="checkbox" id="rank-4"><label for="rank-4">Supprimer le rang en saisissant `30`.</label></li>
+        <li><input type="checkbox" id="rank-5"><label for="rank-5">Verifier qu’il disparait bien.</label></li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>Tests Streaks</h2>
+      <ul class="checklist">
+        <li><input type="checkbox" id="streak-1"><label for="streak-1">Ouvrir le menu `Streaks` depuis l’admin GUI.</label></li>
+        <li><input type="checkbox" id="streak-2"><label for="streak-2">Ajouter ou modifier un streak via saisie chat : `5 200 &amp;6[Arcadia] &amp;eStreak 5 semaines!`.</label></li>
+        <li><input type="checkbox" id="streak-3"><label for="streak-3">Verifier qu’il apparait dans la liste.</label></li>
+        <li><input type="checkbox" id="streak-4"><label for="streak-4">Supprimer le streak en saisissant `5`.</label></li>
+        <li><input type="checkbox" id="streak-5"><label for="streak-5">Verifier qu’il disparait bien.</label></li>
+      </ul>
+    </section>
+  </div>
+
+  <section class="panel">
+    <h2>Tests Milestones</h2>
+    <ul class="checklist">
+      <li><input type="checkbox" id="mile-1"><label for="mile-1">Ouvrir le menu `Milestones` depuis l’admin GUI.</label></li>
+      <li><input type="checkbox" id="mile-2"><label for="mile-2">Ajouter un milestone via saisie chat : `12 &amp;6[Arcadia] &amp;ePalier 12 atteint!`.</label></li>
+      <li><input type="checkbox" id="mile-3"><label for="mile-3">Verifier qu’il apparait dans la liste puis ouvrir son detail.</label></li>
+      <li><input type="checkbox" id="mile-4"><label for="mile-4">Modifier le message depuis le detail.</label></li>
+      <li><input type="checkbox" id="mile-5"><label for="mile-5">Ajouter un reward item avec `minecraft:diamond 3 1.0`.</label></li>
+      <li><input type="checkbox" id="mile-6"><label for="mile-6">Ajouter un reward XP.</label></li>
+      <li><input type="checkbox" id="mile-7"><label for="mile-7">Ajouter un reward commande.</label></li>
+      <li><input type="checkbox" id="mile-8"><label for="mile-8">Verifier que les rewards apparaissent dans la page de detail.</label></li>
+      <li><input type="checkbox" id="mile-9"><label for="mile-9">Tester `Vider Rewards` et verifier que la liste est vide ensuite.</label></li>
+    </ul>
+  </section>
+
+  <section class="panel">
+    <h2>Tests Fonctionnels Epic 8</h2>
+    <ul class="checklist">
+      <li><input type="checkbox" id="func-1"><label for="func-1">Configurer un donjon avec `requiredArcadiaLevel` superieur au niveau du joueur.</label></li>
+      <li><input type="checkbox" id="func-2"><label for="func-2">Verifier que le `start` et le `join` sont refuses avec le bon message.</label></li>
+      <li><input type="checkbox" id="func-3"><label for="func-3">Configurer un bonus speedrun et terminer le donjon rapidement.</label></li>
+      <li><input type="checkbox" id="func-4"><label for="func-4">Verifier le message de bonus speedrun a la completion.</label></li>
+      <li><input type="checkbox" id="func-5"><label for="func-5">Faire monter le joueur d’un niveau Arcadia et verifier le message de niveau.</label></li>
+      <li><input type="checkbox" id="func-6"><label for="func-6">Verifier le changement de rang et le broadcast serveur.</label></li>
+      <li><input type="checkbox" id="func-7"><label for="func-7">Verifier `/arcadia_dungeon profile`.</label></li>
+      <li><input type="checkbox" id="func-8"><label for="func-8">Verifier `/arcadia_dungeon top`.</label></li>
+      <li><input type="checkbox" id="func-9"><label for="func-9">Verifier qu’un milestone donne bien son message et ses rewards lors d’un passage de niveau.</label></li>
+    </ul>
+  </section>
+
+  <section class="panel">
+    <h2>Tests Pagination</h2>
+    <ul class="checklist">
+      <li><input type="checkbox" id="page-1"><label for="page-1">Ajouter assez de rangs pour depasser une page et verifier les fleches precedent/suivant.</label></li>
+      <li><input type="checkbox" id="page-2"><label for="page-2">Ajouter assez de milestones pour depasser une page et verifier la navigation.</label></li>
+      <li><input type="checkbox" id="page-3"><label for="page-3">Ajouter assez de streaks pour depasser une page et verifier la navigation.</label></li>
+      <li><input type="checkbox" id="page-4"><label for="page-4">Ajouter plus de 4 rewards a un milestone et verifier la pagination de la page detail.</label></li>
+    </ul>
+  </section>
+
+  <section class="panel">
+    <h2>Validation Finale</h2>
+    <div class="ok">Si toutes les cases critiques sont cochees et qu’aucune erreur serveur n’apparait, la version peut etre consideree prete pour validation fonctionnelle serveur.</div>
+    <div class="note" style="margin-top:12px;">Pense a surveiller la console serveur pendant toute la session de test, surtout lors des ouvertures de GUI, des saisies chat et des completions de donjon.</div>
+    <div class="footer-actions">
+      <button type="button" onclick="toggleAll(true)">Tout cocher</button>
+      <button type="button" class="secondary" onclick="toggleAll(false)">Tout decocher</button>
+      <button type="button" class="secondary" onclick="resetStorage()">Reinitialiser la sauvegarde locale</button>
+    </div>
+  </section>
+</div>
+
+<script>
+const boxes = [...document.querySelectorAll('input[type="checkbox"]')];
+const KEY = 'arcadia-epic8-test-procedure-v1';
+
+function updateProgress() {
+  const total = boxes.length;
+  const checked = boxes.filter(b => b.checked).length;
+  document.getElementById('progressText').textContent = `${checked} / ${total}`;
+  document.getElementById('progressBar').style.width = total ? `${(checked / total) * 100}%` : '0%';
+}
+
+function saveState() {
+  const state = {};
+  boxes.forEach(box => state[box.id] = box.checked);
+  localStorage.setItem(KEY, JSON.stringify(state));
+  updateProgress();
+}
+
+function loadState() {
+  const raw = localStorage.getItem(KEY);
+  if (!raw) return updateProgress();
+  try {
+    const state = JSON.parse(raw);
+    boxes.forEach(box => box.checked = !!state[box.id]);
+  } catch (_) {}
+  updateProgress();
+}
+
+function toggleAll(value) {
+  boxes.forEach(box => box.checked = value);
+  saveState();
+}
+
+function resetStorage() {
+  localStorage.removeItem(KEY);
+  boxes.forEach(box => box.checked = false);
+  updateProgress();
+}
+
+boxes.forEach(box => box.addEventListener('change', saveState));
+loadState();
+</script>
+</body>
+</html>
