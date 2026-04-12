@@ -5,6 +5,7 @@ import com.arcadia.dungeon.gui.ArcadiaPendingInputManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
@@ -19,6 +20,12 @@ public final class AdminGuiSupport {
                                    BiFunction<ServerPlayer, String, Boolean> apply,
                                    Consumer<ServerPlayer> reopen) {
         ArcadiaPendingInputManager.begin(player, prompt, apply, reopen);
+    }
+
+    public static void beginPromptNoReopen(ServerPlayer player, String prompt,
+                                           BiFunction<ServerPlayer, String, Boolean> apply,
+                                           Consumer<ServerPlayer> reopenOnCancel) {
+        ArcadiaPendingInputManager.begin(player, prompt, apply, reopenOnCancel, false);
     }
 
     public static void beginIntPrompt(ServerPlayer player, String prompt,
@@ -58,6 +65,27 @@ public final class AdminGuiSupport {
             menu.setButton(nextSlot, navItem(ChatFormatting.YELLOW + "Page suivante", "Page " + (safePage + 2)),
                     sp -> openPage.accept(sp, safePage + 1));
         }
+    }
+
+    public static void openConfirmationGui(ServerPlayer player, String title, String description,
+                                           Consumer<ServerPlayer> onConfirm, Consumer<ServerPlayer> onCancel) {
+        player.openMenu(new SimpleMenuProvider((containerId, inventory, p) -> {
+            ArcadiaChestMenu menu = new ArcadiaChestMenu(containerId, inventory, 3);
+            menu.setButton(11, guiItem(Items.LIME_DYE, ChatFormatting.GREEN + "Confirmer", description), onConfirm);
+            menu.setButton(15, guiItem(Items.BARRIER, ChatFormatting.RED + "Annuler", "Revenir sans rien changer"), onCancel);
+            return menu;
+        }, Component.literal(title)));
+    }
+
+    private static ItemStack guiItem(net.minecraft.world.item.Item item, String name, String... loreLines) {
+        ItemStack stack = new ItemStack(item);
+        stack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal(name));
+        java.util.List<Component> lore = new java.util.ArrayList<>();
+        for (String line : loreLines) {
+            lore.add(Component.literal(line).withStyle(ChatFormatting.GRAY));
+        }
+        stack.set(net.minecraft.core.component.DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(lore));
+        return stack;
     }
 
     private static ItemStack navItem(String name, String lore) {

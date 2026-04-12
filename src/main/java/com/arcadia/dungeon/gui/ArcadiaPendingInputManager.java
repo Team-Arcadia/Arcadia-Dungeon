@@ -18,14 +18,22 @@ public final class ArcadiaPendingInputManager {
     public record PendingInput(
             String prompt,
             BiFunction<ServerPlayer, String, Boolean> applyAction,
-            Consumer<ServerPlayer> reopenAction
+            Consumer<ServerPlayer> reopenAction,
+            boolean reopenOnSuccess
     ) {}
 
     public static void begin(ServerPlayer player, String prompt,
                              BiFunction<ServerPlayer, String, Boolean> applyAction,
                              Consumer<ServerPlayer> reopenAction) {
+        begin(player, prompt, applyAction, reopenAction, true);
+    }
+
+    public static void begin(ServerPlayer player, String prompt,
+                             BiFunction<ServerPlayer, String, Boolean> applyAction,
+                             Consumer<ServerPlayer> reopenAction,
+                             boolean reopenOnSuccess) {
         if (player == null || applyAction == null) return;
-        PENDING_INPUTS.put(player.getUUID(), new PendingInput(prompt, applyAction, reopenAction));
+        PENDING_INPUTS.put(player.getUUID(), new PendingInput(prompt, applyAction, reopenAction, reopenOnSuccess));
         player.closeContainer();
         player.sendSystemMessage(Component.literal("[Arcadia] " + prompt).withStyle(ChatFormatting.GOLD));
         player.sendSystemMessage(Component.literal("[Arcadia] Tape 'cancel' pour annuler.").withStyle(ChatFormatting.GRAY));

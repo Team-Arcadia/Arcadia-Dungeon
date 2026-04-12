@@ -6,8 +6,12 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.arcadia.dungeon.config.ConfigManager;
 import com.arcadia.dungeon.config.DungeonConfig;
 import com.arcadia.dungeon.dungeon.CombatTuning;
+import com.arcadia.dungeon.dungeon.PlayerProgressManager;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
+
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public class ArcadiaCommands {
 
@@ -57,6 +61,18 @@ public class ArcadiaCommands {
             SharedSuggestionProvider.suggest(
                     ctx.getSource().getServer().getPlayerList().getPlayers().stream().map(p -> p.getName().getString()), builder
             );
+
+    static final SuggestionProvider<CommandSourceStack> SUGGEST_KNOWN_PLAYERS = (ctx, builder) -> {
+        Set<String> playerNames = new LinkedHashSet<>();
+        PlayerProgressManager.getInstance().getAll().stream()
+                .map(progress -> progress.playerName)
+                .filter(name -> name != null && !name.isBlank())
+                .forEach(playerNames::add);
+        ctx.getSource().getServer().getPlayerList().getPlayers().stream()
+                .map(player -> player.getName().getString())
+                .forEach(playerNames::add);
+        return SharedSuggestionProvider.suggest(playerNames, builder);
+    };
 
     static final SuggestionProvider<CommandSourceStack> SUGGEST_ATTRIBUTES = (ctx, builder) ->
             SharedSuggestionProvider.suggest(

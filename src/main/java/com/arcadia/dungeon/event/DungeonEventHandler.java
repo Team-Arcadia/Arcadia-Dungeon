@@ -97,7 +97,9 @@ public class DungeonEventHandler {
             boolean applied = pending.applyAction().apply(player, input);
             if (applied) {
                 ArcadiaPendingInputManager.clear(player);
-                reopenPendingMenu(player, pending);
+                if (pending.reopenOnSuccess()) {
+                    reopenPendingMenu(player, pending);
+                }
             }
         } catch (Exception e) {
             logHandlerError("onServerChat", e);

@@ -6,6 +6,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.arcadia.dungeon.ArcadiaDungeon;
+import com.arcadia.dungeon.dungeon.CombatTuning;
 import net.neoforged.fml.loading.FMLPaths;
 
 import java.io.IOException;
@@ -197,6 +198,21 @@ public class ConfigManager {
             if (boss.spawnPoint == null) boss.spawnPoint = new SpawnPointConfig();
             if (boss.phases == null) boss.phases = new java.util.ArrayList<>();
             if (boss.rewards == null) boss.rewards = new java.util.ArrayList<>();
+            migrateLegacyCombatAttributes(boss.customAttributes,
+                    value -> boss.attackRange = Math.max(0.0D, value),
+                    value -> boss.attackCooldownMs = Math.max(0, (int) Math.round(value)),
+                    value -> boss.aggroRange = Math.max(0.0D, value),
+                    value -> boss.projectileCooldownMs = Math.max(0, (int) Math.round(value)),
+                    value -> boss.dodgeChance = Math.max(0.0D, Math.min(1.0D, value)),
+                    value -> boss.dodgeCooldownMs = Math.max(0, (int) Math.round(value)),
+                    value -> boss.dodgeProjectilesOnly = value >= 0.5D,
+                    boss.attackRange,
+                    boss.attackCooldownMs,
+                    boss.aggroRange,
+                    boss.projectileCooldownMs,
+                    boss.dodgeChance,
+                    boss.dodgeCooldownMs,
+                    boss.dodgeProjectilesOnly);
             for (RewardConfig reward : boss.rewards) {
                 if (reward != null) reward.normalize();
             }
@@ -204,14 +220,81 @@ public class ConfigManager {
                 if (phase.summonMobs == null) phase.summonMobs = new java.util.ArrayList<>();
                 if (phase.playerEffects == null) phase.playerEffects = new java.util.ArrayList<>();
                 if (phase.phaseCommands == null) phase.phaseCommands = new java.util.ArrayList<>();
+                for (SummonConfig summon : phase.summonMobs) {
+                    migrateLegacyCombatAttributes(summon.customAttributes,
+                            value -> summon.attackRange = Math.max(0.0D, value),
+                            value -> summon.attackCooldownMs = Math.max(0, (int) Math.round(value)),
+                            value -> summon.aggroRange = Math.max(0.0D, value),
+                            value -> summon.projectileCooldownMs = Math.max(0, (int) Math.round(value)),
+                            value -> summon.dodgeChance = Math.max(0.0D, Math.min(1.0D, value)),
+                            value -> summon.dodgeCooldownMs = Math.max(0, (int) Math.round(value)),
+                            value -> summon.dodgeProjectilesOnly = value >= 0.5D,
+                            summon.attackRange,
+                            summon.attackCooldownMs,
+                            summon.aggroRange,
+                            summon.projectileCooldownMs,
+                            summon.dodgeChance,
+                            summon.dodgeCooldownMs,
+                            summon.dodgeProjectilesOnly);
+                }
             }
         }
         for (WaveConfig wave : config.waves) {
             if (wave.mobs == null) wave.mobs = new java.util.ArrayList<>();
             for (MobSpawnConfig mob : wave.mobs) {
                 if (mob.spawnPoint == null) mob.spawnPoint = new SpawnPointConfig();
+                migrateLegacyCombatAttributes(mob.customAttributes,
+                        value -> mob.attackRange = Math.max(0.0D, value),
+                        value -> mob.attackCooldownMs = Math.max(0, (int) Math.round(value)),
+                        value -> mob.aggroRange = Math.max(0.0D, value),
+                        value -> mob.projectileCooldownMs = Math.max(0, (int) Math.round(value)),
+                        value -> mob.dodgeChance = Math.max(0.0D, Math.min(1.0D, value)),
+                        value -> mob.dodgeCooldownMs = Math.max(0, (int) Math.round(value)),
+                        value -> mob.dodgeProjectilesOnly = value >= 0.5D,
+                        mob.attackRange,
+                        mob.attackCooldownMs,
+                        mob.aggroRange,
+                        mob.projectileCooldownMs,
+                        mob.dodgeChance,
+                        mob.dodgeCooldownMs,
+                        mob.dodgeProjectilesOnly);
             }
         }
+    }
+
+    private void migrateLegacyCombatAttributes(Map<String, Double> attributes,
+                                               java.util.function.DoubleConsumer attackRangeSetter,
+                                               java.util.function.DoubleConsumer attackCooldownSetter,
+                                               java.util.function.DoubleConsumer aggroRangeSetter,
+                                               java.util.function.DoubleConsumer projectileCooldownSetter,
+                                               java.util.function.DoubleConsumer dodgeChanceSetter,
+                                               java.util.function.DoubleConsumer dodgeCooldownSetter,
+                                               java.util.function.DoubleConsumer dodgeProjectilesOnlySetter,
+                                               double attackRangeCurrent,
+                                               int attackCooldownCurrent,
+                                               double aggroRangeCurrent,
+                                               int projectileCooldownCurrent,
+                                               double dodgeChanceCurrent,
+                                               int dodgeCooldownCurrent,
+                                               boolean dodgeProjectilesOnlyCurrent) {
+        if (attributes == null || attributes.isEmpty()) return;
+
+        migrateLegacyCombatValue(attributes, CombatTuning.KEY_ATTACK_RANGE, attackRangeCurrent == 0.0D, attackRangeSetter);
+        migrateLegacyCombatValue(attributes, CombatTuning.KEY_ATTACK_COOLDOWN_MS, attackCooldownCurrent == 0, attackCooldownSetter);
+        migrateLegacyCombatValue(attributes, CombatTuning.KEY_AGGRO_RANGE, aggroRangeCurrent == 0.0D, aggroRangeSetter);
+        migrateLegacyCombatValue(attributes, CombatTuning.KEY_PROJECTILE_COOLDOWN_MS, projectileCooldownCurrent == 0, projectileCooldownSetter);
+        migrateLegacyCombatValue(attributes, CombatTuning.KEY_DODGE_CHANCE, dodgeChanceCurrent == 0.0D, dodgeChanceSetter);
+        migrateLegacyCombatValue(attributes, CombatTuning.KEY_DODGE_COOLDOWN_MS, dodgeCooldownCurrent == 0, dodgeCooldownSetter);
+        migrateLegacyCombatValue(attributes, CombatTuning.KEY_DODGE_PROJECTILES_ONLY, !dodgeProjectilesOnlyCurrent, dodgeProjectilesOnlySetter);
+    }
+
+    private void migrateLegacyCombatValue(Map<String, Double> attributes, String key, boolean shouldApply, java.util.function.DoubleConsumer setter) {
+        if (!attributes.containsKey(key)) return;
+        double value = attributes.getOrDefault(key, 0.0D);
+        if (shouldApply && setter != null) {
+            setter.accept(value);
+        }
+        attributes.remove(key);
     }
 
     public Path getConfigDir() {

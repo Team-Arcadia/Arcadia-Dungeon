@@ -4,6 +4,7 @@ import com.mojang.brigadier.arguments.*;
 import com.mojang.brigadier.context.CommandContext;
 import com.arcadia.dungeon.config.*;
 import com.arcadia.dungeon.dungeon.*;
+import com.arcadia.dungeon.service.admin.AdminGuiActionService;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.arguments.ResourceLocationArgument;
@@ -11,6 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static com.arcadia.dungeon.command.ArcadiaCommandHelper.findBoss;
@@ -87,25 +89,7 @@ final class ArcadiaAdminConfigCommandActions {
             ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + id));
             return 0;
         }
-
-        ctx.getSource().sendSuccess(() -> Component.literal("=== " + config.name + " ===").withStyle(ChatFormatting.GOLD), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("ID: " + config.id).withStyle(ChatFormatting.GRAY), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("Cooldown: " + config.cooldownSeconds + "s").withStyle(ChatFormatting.GRAY), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("Disponible toutes les: " + (config.availableEverySeconds > 0 ? config.availableEverySeconds + "s" : "toujours")).withStyle(ChatFormatting.GRAY), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("Annonce periodique: " + (config.announceIntervalMinutes > 0 ? config.announceIntervalMinutes + " min" : "desactivee")).withStyle(ChatFormatting.GRAY), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("TP retour: " + (config.teleportBackOnComplete ? "Oui" : "Non")).withStyle(ChatFormatting.GRAY), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("Annonce debut: " + (config.announceStart ? "Oui" : "Non")).withStyle(ChatFormatting.GRAY), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("Annonce fin: " + (config.announceCompletion ? "Oui" : "Non")).withStyle(ChatFormatting.GRAY), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("Joueurs max: " + config.settings.maxPlayers).withStyle(ChatFormatting.GRAY), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("Temps limite: " + config.settings.timeLimitSeconds + "s").withStyle(ChatFormatting.GRAY), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("Spawn: " + config.spawnPoint.dimension + " [" +
-                (int) config.spawnPoint.x + ", " + (int) config.spawnPoint.y + ", " + (int) config.spawnPoint.z + "]").withStyle(ChatFormatting.GRAY), false);
-
-        ctx.getSource().sendSuccess(() -> Component.literal("Boss (" + config.bosses.size() + "):").withStyle(ChatFormatting.YELLOW), false);
-        for (BossConfig boss : config.bosses) {
-            ctx.getSource().sendSuccess(() -> Component.literal("  - " + boss.customName + " (" + boss.entityType + ") HP:" + boss.baseHealth + " DMG:" + boss.baseDamage +
-                    " Phases:" + boss.phases.size() + " Rewards:" + boss.rewards.size()).withStyle(ChatFormatting.GRAY), false);
-        }
+        AdminGuiActionService.showDungeonInfo(component -> ctx.getSource().sendSuccess(() -> component, false), id);
         return 1;
     }
 
@@ -1227,7 +1211,7 @@ final class ArcadiaAdminConfigCommandActions {
         BossConfig boss = findBoss(ctx, dungeonId, bossId);
         if (boss == null) return 0;
 
-        boss.customAttributes.put(attribute, value);
+        applyBossAttributeValue(boss, attribute, value);
         ConfigManager.getInstance().saveDungeon(ConfigManager.getInstance().getDungeon(dungeonId));
         ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Boss " + bossId + " : " + attribute + " = " + value)
                 .withStyle(ChatFormatting.GREEN), true);
@@ -1242,10 +1226,11 @@ final class ArcadiaAdminConfigCommandActions {
         BossConfig boss = findBoss(ctx, dungeonId, bossId);
         if (boss == null) return 0;
 
-        if (boss.customAttributes.remove(attribute) == null) {
+        if (!hasBossAttributeValue(boss, attribute)) {
             ctx.getSource().sendFailure(Component.literal("[Arcadia] Attribut non defini: " + attribute));
             return 0;
         }
+        removeBossAttributeValue(boss, attribute);
 
         ConfigManager.getInstance().saveDungeon(ConfigManager.getInstance().getDungeon(dungeonId));
         ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Boss " + bossId + " : attribut " + attribute + " supprime")
@@ -1260,7 +1245,8 @@ final class ArcadiaAdminConfigCommandActions {
         BossConfig boss = findBoss(ctx, dungeonId, bossId);
         if (boss == null) return 0;
 
-        if (boss.customAttributes.isEmpty()) {
+        Map<String, Double> attrs = filteredNonCombatAttributes(boss.customAttributes);
+        if (attrs.isEmpty()) {
             ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Boss " + bossId + " : aucun attribut personnalise")
                     .withStyle(ChatFormatting.YELLOW), false);
             return 1;
@@ -1268,7 +1254,7 @@ final class ArcadiaAdminConfigCommandActions {
 
         ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Attributs du boss " + bossId + " :")
                 .withStyle(ChatFormatting.GOLD), false);
-        for (Map.Entry<String, Double> entry : boss.customAttributes.entrySet()) {
+        for (Map.Entry<String, Double> entry : attrs.entrySet()) {
             ctx.getSource().sendSuccess(() -> Component.literal("  " + entry.getKey() + " = " + entry.getValue())
                     .withStyle(ChatFormatting.GREEN), false);
         }
@@ -1283,7 +1269,7 @@ final class ArcadiaAdminConfigCommandActions {
         BossConfig boss = findBoss(ctx, dungeonId, bossId);
         if (boss == null) return 0;
 
-        boss.customAttributes.put(key, value);
+        applyBossAttributeValue(boss, key, value);
         ConfigManager.getInstance().saveDungeon(ConfigManager.getInstance().getDungeon(dungeonId));
         ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Boss " + bossId + " : " + key + " = " + value)
                 .withStyle(ChatFormatting.GREEN), true);
@@ -1298,7 +1284,7 @@ final class ArcadiaAdminConfigCommandActions {
         BossConfig boss = findBoss(ctx, dungeonId, bossId);
         if (boss == null) return 0;
 
-        boss.customAttributes.put(key, value ? 1.0D : 0.0D);
+        applyBossAttributeValue(boss, key, value ? 1.0D : 0.0D);
         ConfigManager.getInstance().saveDungeon(ConfigManager.getInstance().getDungeon(dungeonId));
         ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Boss " + bossId + " : " + key + " = " + value)
                 .withStyle(ChatFormatting.GREEN), true);
@@ -1330,7 +1316,7 @@ final class ArcadiaAdminConfigCommandActions {
             return 0;
         }
 
-        wave.mobs.get(mobIndex).customAttributes.put(attribute, value);
+        applyWaveMobAttributeValue(wave.mobs.get(mobIndex), attribute, value);
         ConfigManager.getInstance().saveDungeon(config);
         ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Mob " + mobIndex + " (vague " + waveNum + ") : " + attribute + " = " + value)
                 .withStyle(ChatFormatting.GREEN), true);
@@ -1359,10 +1345,11 @@ final class ArcadiaAdminConfigCommandActions {
             return 0;
         }
 
-        if (wave.mobs.get(mobIndex).customAttributes.remove(attribute) == null) {
+        if (!hasWaveMobAttributeValue(wave.mobs.get(mobIndex), attribute)) {
             ctx.getSource().sendFailure(Component.literal("[Arcadia] Attribut non defini: " + attribute));
             return 0;
         }
+        removeWaveMobAttributeValue(wave.mobs.get(mobIndex), attribute);
 
         ConfigManager.getInstance().saveDungeon(config);
         ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Mob " + mobIndex + " (vague " + waveNum + ") : attribut " + attribute + " supprime")
@@ -1391,7 +1378,7 @@ final class ArcadiaAdminConfigCommandActions {
             return 0;
         }
 
-        Map<String, Double> attrs = wave.mobs.get(mobIndex).customAttributes;
+        Map<String, Double> attrs = filteredNonCombatAttributes(wave.mobs.get(mobIndex).customAttributes);
         if (attrs.isEmpty()) {
             ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Mob " + mobIndex + " (vague " + waveNum + ") : aucun attribut personnalise")
                     .withStyle(ChatFormatting.YELLOW), false);
@@ -1429,7 +1416,7 @@ final class ArcadiaAdminConfigCommandActions {
             return 0;
         }
 
-        wave.mobs.get(mobIndex).customAttributes.put(key, value);
+        applyWaveMobAttributeValue(wave.mobs.get(mobIndex), key, value);
         ConfigManager.getInstance().saveDungeon(config);
         ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Mob " + mobIndex + " (vague " + waveNum + ") : " + key + " = " + value)
                 .withStyle(ChatFormatting.GREEN), true);
@@ -1458,7 +1445,7 @@ final class ArcadiaAdminConfigCommandActions {
             return 0;
         }
 
-        wave.mobs.get(mobIndex).customAttributes.put(key, value ? 1.0D : 0.0D);
+        applyWaveMobAttributeValue(wave.mobs.get(mobIndex), key, value ? 1.0D : 0.0D);
         ConfigManager.getInstance().saveDungeon(config);
         ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Mob " + mobIndex + " (vague " + waveNum + ") : " + key + " = " + value)
                 .withStyle(ChatFormatting.GREEN), true);
@@ -1488,7 +1475,7 @@ final class ArcadiaAdminConfigCommandActions {
             return 0;
         }
 
-        phase.summonMobs.get(summonIndex).customAttributes.put(attribute, value);
+        applySummonAttributeValue(phase.summonMobs.get(summonIndex), attribute, value);
         ConfigManager.getInstance().saveDungeon(ConfigManager.getInstance().getDungeon(dungeonId));
         ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Sbire " + summonIndex + " (phase " + phaseNum + ") : " + attribute + " = " + value)
                 .withStyle(ChatFormatting.GREEN), true);
@@ -1515,10 +1502,11 @@ final class ArcadiaAdminConfigCommandActions {
             return 0;
         }
 
-        if (phase.summonMobs.get(summonIndex).customAttributes.remove(attribute) == null) {
+        if (!hasSummonAttributeValue(phase.summonMobs.get(summonIndex), attribute)) {
             ctx.getSource().sendFailure(Component.literal("[Arcadia] Attribut non defini: " + attribute));
             return 0;
         }
+        removeSummonAttributeValue(phase.summonMobs.get(summonIndex), attribute);
 
         ConfigManager.getInstance().saveDungeon(ConfigManager.getInstance().getDungeon(dungeonId));
         ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Sbire " + summonIndex + " (phase " + phaseNum + ") : attribut " + attribute + " supprime")
@@ -1545,7 +1533,7 @@ final class ArcadiaAdminConfigCommandActions {
             return 0;
         }
 
-        Map<String, Double> attrs = phase.summonMobs.get(summonIndex).customAttributes;
+        Map<String, Double> attrs = filteredNonCombatAttributes(phase.summonMobs.get(summonIndex).customAttributes);
         if (attrs.isEmpty()) {
             ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Sbire " + summonIndex + " (phase " + phaseNum + ") : aucun attribut personnalise")
                     .withStyle(ChatFormatting.YELLOW), false);
@@ -1581,7 +1569,7 @@ final class ArcadiaAdminConfigCommandActions {
             return 0;
         }
 
-        phase.summonMobs.get(summonIndex).customAttributes.put(key, value);
+        applySummonAttributeValue(phase.summonMobs.get(summonIndex), key, value);
         ConfigManager.getInstance().saveDungeon(ConfigManager.getInstance().getDungeon(dungeonId));
         ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Sbire " + summonIndex + " (phase " + phaseNum + ") : " + key + " = " + value)
                 .withStyle(ChatFormatting.GREEN), true);
@@ -1608,7 +1596,7 @@ final class ArcadiaAdminConfigCommandActions {
             return 0;
         }
 
-        phase.summonMobs.get(summonIndex).customAttributes.put(key, value ? 1.0D : 0.0D);
+        applySummonAttributeValue(phase.summonMobs.get(summonIndex), key, value ? 1.0D : 0.0D);
         ConfigManager.getInstance().saveDungeon(ConfigManager.getInstance().getDungeon(dungeonId));
         ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Sbire " + summonIndex + " (phase " + phaseNum + ") : " + key + " = " + value)
                 .withStyle(ChatFormatting.GREEN), true);
@@ -1621,5 +1609,150 @@ final class ArcadiaAdminConfigCommandActions {
         } catch (IllegalArgumentException ignored) {
             return IntegerArgumentType.getInteger(ctx, "value");
         }
+    }
+
+    private static Map<String, Double> filteredNonCombatAttributes(Map<String, Double> attributes) {
+        Map<String, Double> filtered = new LinkedHashMap<>();
+        if (attributes == null || attributes.isEmpty()) return filtered;
+        attributes.entrySet().stream()
+                .filter(entry -> entry != null && entry.getKey() != null && !CombatTuning.SPECIAL_KEYS.contains(entry.getKey()))
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> filtered.put(entry.getKey(), entry.getValue()));
+        return filtered;
+    }
+
+    private static boolean hasBossAttributeValue(BossConfig boss, String key) {
+        if (boss == null || key == null) return false;
+        if (boss.customAttributes != null && boss.customAttributes.containsKey(key)) return true;
+        if (CombatTuning.KEY_ATTACK_RANGE.equals(key)) return boss.attackRange != 0.0D;
+        if (CombatTuning.KEY_ATTACK_COOLDOWN_MS.equals(key)) return boss.attackCooldownMs != 0;
+        if (CombatTuning.KEY_AGGRO_RANGE.equals(key)) return boss.aggroRange != 0.0D;
+        if (CombatTuning.KEY_PROJECTILE_COOLDOWN_MS.equals(key)) return boss.projectileCooldownMs != 0;
+        if (CombatTuning.KEY_DODGE_CHANCE.equals(key)) return boss.dodgeChance != 0.0D;
+        if (CombatTuning.KEY_DODGE_COOLDOWN_MS.equals(key)) return boss.dodgeCooldownMs != 0;
+        if (CombatTuning.KEY_DODGE_PROJECTILES_ONLY.equals(key)) return boss.dodgeProjectilesOnly;
+        return boss.customAttributes != null && boss.customAttributes.containsKey(key);
+    }
+
+    private static void applyBossAttributeValue(BossConfig boss, String key, double value) {
+        if (boss == null || key == null) return;
+        if (boss.customAttributes == null) boss.customAttributes = new java.util.HashMap<>();
+        switch (key) {
+            case CombatTuning.KEY_ATTACK_RANGE -> boss.attackRange = Math.max(0.0D, value);
+            case CombatTuning.KEY_ATTACK_COOLDOWN_MS -> boss.attackCooldownMs = Math.max(0, (int) Math.round(value));
+            case CombatTuning.KEY_AGGRO_RANGE -> boss.aggroRange = Math.max(0.0D, value);
+            case CombatTuning.KEY_PROJECTILE_COOLDOWN_MS -> boss.projectileCooldownMs = Math.max(0, (int) Math.round(value));
+            case CombatTuning.KEY_DODGE_CHANCE -> boss.dodgeChance = Math.max(0.0D, Math.min(1.0D, value));
+            case CombatTuning.KEY_DODGE_COOLDOWN_MS -> boss.dodgeCooldownMs = Math.max(0, (int) Math.round(value));
+            case CombatTuning.KEY_DODGE_PROJECTILES_ONLY -> boss.dodgeProjectilesOnly = value >= 0.5D;
+            default -> boss.customAttributes.put(key, value);
+        }
+        if (CombatTuning.SPECIAL_KEYS.contains(key)) boss.customAttributes.remove(key);
+    }
+
+    private static void removeBossAttributeValue(BossConfig boss, String key) {
+        if (boss == null || key == null) return;
+        if (boss.customAttributes == null) boss.customAttributes = new java.util.HashMap<>();
+        switch (key) {
+            case CombatTuning.KEY_ATTACK_RANGE -> boss.attackRange = 0.0D;
+            case CombatTuning.KEY_ATTACK_COOLDOWN_MS -> boss.attackCooldownMs = 0;
+            case CombatTuning.KEY_AGGRO_RANGE -> boss.aggroRange = 0.0D;
+            case CombatTuning.KEY_PROJECTILE_COOLDOWN_MS -> boss.projectileCooldownMs = 0;
+            case CombatTuning.KEY_DODGE_CHANCE -> boss.dodgeChance = 0.0D;
+            case CombatTuning.KEY_DODGE_COOLDOWN_MS -> boss.dodgeCooldownMs = 0;
+            case CombatTuning.KEY_DODGE_PROJECTILES_ONLY -> boss.dodgeProjectilesOnly = false;
+            default -> boss.customAttributes.remove(key);
+        }
+        boss.customAttributes.remove(key);
+    }
+
+    private static boolean hasWaveMobAttributeValue(MobSpawnConfig mob, String key) {
+        if (mob == null || key == null) return false;
+        if (mob.customAttributes != null && mob.customAttributes.containsKey(key)) return true;
+        if (CombatTuning.KEY_ATTACK_RANGE.equals(key)) return mob.attackRange != 0.0D;
+        if (CombatTuning.KEY_ATTACK_COOLDOWN_MS.equals(key)) return mob.attackCooldownMs != 0;
+        if (CombatTuning.KEY_AGGRO_RANGE.equals(key)) return mob.aggroRange != 0.0D;
+        if (CombatTuning.KEY_PROJECTILE_COOLDOWN_MS.equals(key)) return mob.projectileCooldownMs != 0;
+        if (CombatTuning.KEY_DODGE_CHANCE.equals(key)) return mob.dodgeChance != 0.0D;
+        if (CombatTuning.KEY_DODGE_COOLDOWN_MS.equals(key)) return mob.dodgeCooldownMs != 0;
+        if (CombatTuning.KEY_DODGE_PROJECTILES_ONLY.equals(key)) return mob.dodgeProjectilesOnly;
+        return mob.customAttributes != null && mob.customAttributes.containsKey(key);
+    }
+
+    private static void applyWaveMobAttributeValue(MobSpawnConfig mob, String key, double value) {
+        if (mob == null || key == null) return;
+        if (mob.customAttributes == null) mob.customAttributes = new java.util.HashMap<>();
+        switch (key) {
+            case CombatTuning.KEY_ATTACK_RANGE -> mob.attackRange = Math.max(0.0D, value);
+            case CombatTuning.KEY_ATTACK_COOLDOWN_MS -> mob.attackCooldownMs = Math.max(0, (int) Math.round(value));
+            case CombatTuning.KEY_AGGRO_RANGE -> mob.aggroRange = Math.max(0.0D, value);
+            case CombatTuning.KEY_PROJECTILE_COOLDOWN_MS -> mob.projectileCooldownMs = Math.max(0, (int) Math.round(value));
+            case CombatTuning.KEY_DODGE_CHANCE -> mob.dodgeChance = Math.max(0.0D, Math.min(1.0D, value));
+            case CombatTuning.KEY_DODGE_COOLDOWN_MS -> mob.dodgeCooldownMs = Math.max(0, (int) Math.round(value));
+            case CombatTuning.KEY_DODGE_PROJECTILES_ONLY -> mob.dodgeProjectilesOnly = value >= 0.5D;
+            default -> mob.customAttributes.put(key, value);
+        }
+        if (CombatTuning.SPECIAL_KEYS.contains(key)) mob.customAttributes.remove(key);
+    }
+
+    private static void removeWaveMobAttributeValue(MobSpawnConfig mob, String key) {
+        if (mob == null || key == null) return;
+        if (mob.customAttributes == null) mob.customAttributes = new java.util.HashMap<>();
+        switch (key) {
+            case CombatTuning.KEY_ATTACK_RANGE -> mob.attackRange = 0.0D;
+            case CombatTuning.KEY_ATTACK_COOLDOWN_MS -> mob.attackCooldownMs = 0;
+            case CombatTuning.KEY_AGGRO_RANGE -> mob.aggroRange = 0.0D;
+            case CombatTuning.KEY_PROJECTILE_COOLDOWN_MS -> mob.projectileCooldownMs = 0;
+            case CombatTuning.KEY_DODGE_CHANCE -> mob.dodgeChance = 0.0D;
+            case CombatTuning.KEY_DODGE_COOLDOWN_MS -> mob.dodgeCooldownMs = 0;
+            case CombatTuning.KEY_DODGE_PROJECTILES_ONLY -> mob.dodgeProjectilesOnly = false;
+            default -> mob.customAttributes.remove(key);
+        }
+        mob.customAttributes.remove(key);
+    }
+
+    private static boolean hasSummonAttributeValue(SummonConfig summon, String key) {
+        if (summon == null || key == null) return false;
+        if (summon.customAttributes != null && summon.customAttributes.containsKey(key)) return true;
+        if (CombatTuning.KEY_ATTACK_RANGE.equals(key)) return summon.attackRange != 0.0D;
+        if (CombatTuning.KEY_ATTACK_COOLDOWN_MS.equals(key)) return summon.attackCooldownMs != 0;
+        if (CombatTuning.KEY_AGGRO_RANGE.equals(key)) return summon.aggroRange != 0.0D;
+        if (CombatTuning.KEY_PROJECTILE_COOLDOWN_MS.equals(key)) return summon.projectileCooldownMs != 0;
+        if (CombatTuning.KEY_DODGE_CHANCE.equals(key)) return summon.dodgeChance != 0.0D;
+        if (CombatTuning.KEY_DODGE_COOLDOWN_MS.equals(key)) return summon.dodgeCooldownMs != 0;
+        if (CombatTuning.KEY_DODGE_PROJECTILES_ONLY.equals(key)) return summon.dodgeProjectilesOnly;
+        return summon.customAttributes != null && summon.customAttributes.containsKey(key);
+    }
+
+    private static void applySummonAttributeValue(SummonConfig summon, String key, double value) {
+        if (summon == null || key == null) return;
+        if (summon.customAttributes == null) summon.customAttributes = new java.util.HashMap<>();
+        switch (key) {
+            case CombatTuning.KEY_ATTACK_RANGE -> summon.attackRange = Math.max(0.0D, value);
+            case CombatTuning.KEY_ATTACK_COOLDOWN_MS -> summon.attackCooldownMs = Math.max(0, (int) Math.round(value));
+            case CombatTuning.KEY_AGGRO_RANGE -> summon.aggroRange = Math.max(0.0D, value);
+            case CombatTuning.KEY_PROJECTILE_COOLDOWN_MS -> summon.projectileCooldownMs = Math.max(0, (int) Math.round(value));
+            case CombatTuning.KEY_DODGE_CHANCE -> summon.dodgeChance = Math.max(0.0D, Math.min(1.0D, value));
+            case CombatTuning.KEY_DODGE_COOLDOWN_MS -> summon.dodgeCooldownMs = Math.max(0, (int) Math.round(value));
+            case CombatTuning.KEY_DODGE_PROJECTILES_ONLY -> summon.dodgeProjectilesOnly = value >= 0.5D;
+            default -> summon.customAttributes.put(key, value);
+        }
+        if (CombatTuning.SPECIAL_KEYS.contains(key)) summon.customAttributes.remove(key);
+    }
+
+    private static void removeSummonAttributeValue(SummonConfig summon, String key) {
+        if (summon == null || key == null) return;
+        if (summon.customAttributes == null) summon.customAttributes = new java.util.HashMap<>();
+        switch (key) {
+            case CombatTuning.KEY_ATTACK_RANGE -> summon.attackRange = 0.0D;
+            case CombatTuning.KEY_ATTACK_COOLDOWN_MS -> summon.attackCooldownMs = 0;
+            case CombatTuning.KEY_AGGRO_RANGE -> summon.aggroRange = 0.0D;
+            case CombatTuning.KEY_PROJECTILE_COOLDOWN_MS -> summon.projectileCooldownMs = 0;
+            case CombatTuning.KEY_DODGE_CHANCE -> summon.dodgeChance = 0.0D;
+            case CombatTuning.KEY_DODGE_COOLDOWN_MS -> summon.dodgeCooldownMs = 0;
+            case CombatTuning.KEY_DODGE_PROJECTILES_ONLY -> summon.dodgeProjectilesOnly = false;
+            default -> summon.customAttributes.remove(key);
+        }
+        summon.customAttributes.remove(key);
     }
 }

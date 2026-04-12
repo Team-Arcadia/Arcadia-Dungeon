@@ -211,8 +211,18 @@ public class PlayerProgressManager {
 
     public PlayerProgress findByName(String playerName) {
         if (playerName == null || playerName.isEmpty()) return null;
+        PlayerProgress byUuid = playerData.get(playerName);
+        if (byUuid != null) {
+            byUuid.normalize();
+            return byUuid;
+        }
         for (PlayerProgress progress : playerData.values()) {
+            if (progress.uuid != null && progress.uuid.equalsIgnoreCase(playerName)) {
+                progress.normalize();
+                return progress;
+            }
             if (progress.playerName != null && progress.playerName.equalsIgnoreCase(playerName)) {
+                progress.normalize();
                 return progress;
             }
         }
@@ -227,6 +237,8 @@ public class PlayerProgressManager {
         PlayerProgress progress = playerData.get(uuid);
         if (progress != null) {
             progress.completedDungeons.clear();
+            progress.arcadiaProgress = new PlayerProgress.ArcadiaProgress();
+            progress.normalize();
             save(progress);
         }
     }

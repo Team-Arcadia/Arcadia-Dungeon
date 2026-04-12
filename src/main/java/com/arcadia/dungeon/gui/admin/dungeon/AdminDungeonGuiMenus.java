@@ -1,6 +1,7 @@
 package com.arcadia.dungeon.gui.admin.dungeon;
 
 import com.arcadia.dungeon.service.admin.AdminDungeonConfigService;
+import com.arcadia.dungeon.service.admin.AdminGuiActionService;
 import com.arcadia.dungeon.gui.admin.AdminGuiRouter;
 import com.arcadia.dungeon.config.ConfigManager;
 import com.arcadia.dungeon.config.DungeonConfig;
@@ -42,6 +43,7 @@ public final class AdminDungeonGuiMenus {
             menu.setButton(20, guiItem(Items.WITHER_SKELETON_SKULL, ChatFormatting.RED + "Bosses", "Configurer les bosses"), sp -> AdminGuiRouter.openBossListGui(sp, dungeon.id, 0));
             menu.setButton(22, guiItem(Items.ZOMBIE_HEAD, ChatFormatting.GREEN + "Waves", "Configurer les vagues"), sp -> AdminGuiRouter.openWaveListGui(sp, dungeon.id, 0));
             menu.setButton(24, guiItem(Items.ENCHANTED_BOOK, ChatFormatting.AQUA + "Arcadia", "Reglages Arcadia du donjon"), sp -> AdminGuiRouter.openDungeonArcadiaAdminGui(sp, dungeon.id));
+            menu.setButton(26, guiItem(Items.REDSTONE_TORCH, ChatFormatting.RED + "Debug", "Actions runtime/debug sur ce donjon"), sp -> openDungeonDebugGui(sp, dungeon.id));
             menu.setButton(31, guiItem(dungeon.enabled ? Items.LIME_DYE : Items.GRAY_DYE, dungeon.enabled ? ChatFormatting.GREEN + "Donjon active" : ChatFormatting.RED + "Donjon desactive", "Cliquer pour basculer"), sp -> {
                 DungeonConfig cfg = ConfigManager.getInstance().getDungeon(dungeon.id);
                 if (cfg != null) {
@@ -51,8 +53,59 @@ public final class AdminDungeonGuiMenus {
                 openDungeonAdminHubGui(sp, dungeon.id);
             });
             menu.setButton(33, guiItem(Items.NAME_TAG, ChatFormatting.YELLOW + dungeon.name, "ID: " + dungeon.id), null);
+            menu.setButton(34, guiItem(Items.BOOK, ChatFormatting.AQUA + "Info Chat", "Afficher les infos du donjon dans le chat"), sp -> {
+                sp.closeContainer();
+                AdminGuiActionService.showDungeonInfo(sp, dungeon.id);
+            });
+            menu.setButton(35, guiItem(Items.TNT, ChatFormatting.RED + "Force Reset", "Reset l'instance active de ce donjon"), sp ->
+                    AdminGuiSupport.openConfirmationGui(sp, "Confirmer Force Reset", dungeon.name, confirm -> {
+                        confirm.closeContainer();
+                        AdminGuiActionService.forceResetDungeon(confirm, dungeon.id);
+                    }, cancel -> openDungeonAdminHubGui(cancel, dungeon.id)));
             return menu;
         }, Component.literal("Donjon: " + dungeon.name)));
+    }
+
+    public static void openDungeonDebugGui(ServerPlayer player, String dungeonId) {
+        DungeonConfig dungeon = ConfigManager.getInstance().getDungeon(dungeonId);
+        if (dungeon == null) {
+            player.sendSystemMessage(Component.literal("[Arcadia] Donjon introuvable: " + dungeonId).withStyle(ChatFormatting.RED));
+            return;
+        }
+        player.openMenu(new SimpleMenuProvider((containerId, inventory, p) -> {
+            ArcadiaChestMenu menu = new ArcadiaChestMenu(containerId, inventory, 3);
+            menu.setButton(0, guiItem(Items.ARROW, ChatFormatting.YELLOW + "Retour", "Retour hub donjon"), sp -> openDungeonAdminHubGui(sp, dungeon.id));
+            menu.setButton(10, guiItem(Items.BOOK, ChatFormatting.AQUA + "Info Runtime", "Afficher les infos debug du donjon"), sp -> {
+                sp.closeContainer();
+                AdminGuiActionService.debugInfo(sp, dungeon.id);
+            });
+            menu.setButton(11, guiItem(Items.WITHER_SKELETON_SKULL, ChatFormatting.RED + "Spawn Boss", "Forcer le spawn du prochain boss"), sp -> {
+                sp.closeContainer();
+                AdminGuiActionService.debugSpawnBoss(sp, dungeon.id);
+            });
+            menu.setButton(12, guiItem(Items.BARRIER, ChatFormatting.YELLOW + "Skip Boss", "Skip le boss actif"), sp -> {
+                sp.closeContainer();
+                AdminGuiActionService.debugSkipBoss(sp, dungeon.id);
+            });
+            menu.setButton(13, guiItem(Items.EMERALD_BLOCK, ChatFormatting.GREEN + "Completer", "Force la completion du donjon"), sp -> {
+                sp.closeContainer();
+                AdminGuiActionService.debugComplete(sp, dungeon.id);
+            });
+            menu.setButton(14, guiItem(Items.TNT, ChatFormatting.RED + "Force Reset", "Reset complet de l'instance active"), sp ->
+                    AdminGuiSupport.openConfirmationGui(sp, "Confirmer Force Reset", dungeon.name, confirm -> {
+                        confirm.closeContainer();
+                        AdminGuiActionService.forceResetDungeon(confirm, dungeon.id);
+                    }, cancel -> openDungeonDebugGui(cancel, dungeon.id)));
+            menu.setButton(15, guiItem(Items.LIME_DYE, ChatFormatting.GREEN + "Enable", "Activer le donjon"), sp -> {
+                sp.closeContainer();
+                AdminGuiActionService.setDungeonEnabled(sp, dungeon.id, true);
+            });
+            menu.setButton(16, guiItem(Items.GRAY_DYE, ChatFormatting.RED + "Disable", "Desactiver le donjon"), sp -> {
+                sp.closeContainer();
+                AdminGuiActionService.setDungeonEnabled(sp, dungeon.id, false);
+            });
+            return menu;
+        }, Component.literal("Debug: " + dungeon.name)));
     }
 
     public static void openDungeonCoreGui(ServerPlayer player, String dungeonId) {
@@ -120,8 +173,44 @@ public final class AdminDungeonGuiMenus {
             menu.setButton(33, guiItem(dungeon.settings.blockTeleportCommands ? Items.OBSIDIAN : Items.GLASS, ChatFormatting.DARK_PURPLE + "Bloc TP Cmd", String.valueOf(dungeon.settings.blockTeleportCommands)), sp -> toggleBool(dungeon.id, cfg -> cfg.settings.blockTeleportCommands = !cfg.settings.blockTeleportCommands, () -> openDungeonCoreGui(sp, dungeon.id)));
             menu.setButton(34, guiItem(dungeon.settings.difficultyScaling ? Items.ANVIL : Items.FEATHER, ChatFormatting.GOLD + "Difficulty Scaling", String.valueOf(dungeon.settings.difficultyScaling)), sp -> toggleBool(dungeon.id, cfg -> cfg.settings.difficultyScaling = !cfg.settings.difficultyScaling, () -> openDungeonCoreGui(sp, dungeon.id)));
             menu.setButton(35, guiItem(Items.CLOCK, ChatFormatting.YELLOW + "Timer Warnings", dungeon.settings.timerWarnings.isEmpty() ? "Aucun" : dungeon.settings.timerWarnings.toString()), sp -> openDungeonTimerWarningsGui(sp, dungeon.id, 0));
+            menu.setButton(24, guiItem(Items.REPEATER, ChatFormatting.AQUA + "Reglages Avances", "Scaling waves et anti-monopole"), sp -> openDungeonAdvancedSettingsGui(sp, dungeon.id));
+            menu.setButton(25, guiItem(Items.LAVA_BUCKET, ChatFormatting.RED + "Supprimer Donjon", "Supprime definitivement ce donjon"), sp ->
+                    AdminGuiSupport.openConfirmationGui(sp, "Confirmer Suppression Donjon", dungeon.name, confirm -> {
+                        DungeonConfig cfg = ConfigManager.getInstance().getDungeon(dungeon.id);
+                        if (cfg != null) {
+                            ConfigManager.getInstance().deleteDungeon(cfg.id);
+                        }
+                        AdminGuiRouter.openAdminHubGui(confirm, 0);
+                    }, cancel -> openDungeonCoreGui(cancel, dungeon.id)));
+            menu.setButton(26, guiItem(Items.BOOK, ChatFormatting.WHITE + "Info Chat", "Afficher le resume technique du donjon"), sp -> {
+                sp.closeContainer();
+                AdminGuiActionService.showDungeonInfo(sp, dungeon.id);
+            });
             return menu;
         }, Component.literal("Donjon Core: " + dungeon.name)));
+    }
+
+    public static void openDungeonAdvancedSettingsGui(ServerPlayer player, String dungeonId) {
+        DungeonConfig dungeon = ConfigManager.getInstance().getDungeon(dungeonId);
+        if (dungeon == null) {
+            player.sendSystemMessage(Component.literal("[Arcadia] Donjon introuvable: " + dungeonId).withStyle(ChatFormatting.RED));
+            return;
+        }
+        player.openMenu(new SimpleMenuProvider((containerId, inventory, p) -> {
+            ArcadiaChestMenu menu = new ArcadiaChestMenu(containerId, inventory, 3);
+            menu.setButton(0, guiItem(Items.ARROW, ChatFormatting.YELLOW + "Retour", "Retour coeur du donjon"), sp -> openDungeonCoreGui(sp, dungeon.id));
+            menu.setButton(10, guiItem(Items.HEART_OF_THE_SEA, ChatFormatting.AQUA + "Wave HP / joueur", String.valueOf(dungeon.settings.waveHealthMultiplierPerPlayer)), sp ->
+                    openDoublePrompt(sp, "Entre le multiplicateur de PV des waves par joueur", input -> AdminDungeonConfigService.applyDungeonDoubleValue(sp, dungeon.id, input, (cfg, value) -> cfg.settings.waveHealthMultiplierPerPlayer = Math.max(0.0, value), "[Arcadia] Wave HP/player mis a jour: "), reopen -> openDungeonAdvancedSettingsGui(reopen, dungeon.id)));
+            menu.setButton(11, guiItem(Items.IRON_SWORD, ChatFormatting.RED + "Wave DMG / joueur", String.valueOf(dungeon.settings.waveDamageMultiplierPerPlayer)), sp ->
+                    openDoublePrompt(sp, "Entre le multiplicateur de degats des waves par joueur", input -> AdminDungeonConfigService.applyDungeonDoubleValue(sp, dungeon.id, input, (cfg, value) -> cfg.settings.waveDamageMultiplierPerPlayer = Math.max(0.0, value), "[Arcadia] Wave DMG/player mis a jour: "), reopen -> openDungeonAdvancedSettingsGui(reopen, dungeon.id)));
+            menu.setButton(12, guiItem(Items.ZOMBIE_HEAD, ChatFormatting.GREEN + "Wave Count / joueur", String.valueOf(dungeon.settings.waveCountMultiplierPerPlayer)), sp ->
+                    openDoublePrompt(sp, "Entre le multiplicateur de count des waves par joueur", input -> AdminDungeonConfigService.applyDungeonDoubleValue(sp, dungeon.id, input, (cfg, value) -> cfg.settings.waveCountMultiplierPerPlayer = Math.max(0.0, value), "[Arcadia] Wave Count/player mis a jour: "), reopen -> openDungeonAdvancedSettingsGui(reopen, dungeon.id)));
+            menu.setButton(14, guiItem(dungeon.settings.antiMonopole ? Items.LIME_DYE : Items.GRAY_DYE, ChatFormatting.GOLD + "Anti-Monopole", String.valueOf(dungeon.settings.antiMonopole)), sp ->
+                    toggleBool(dungeon.id, cfg -> cfg.settings.antiMonopole = !cfg.settings.antiMonopole, () -> openDungeonAdvancedSettingsGui(sp, dungeon.id)));
+            menu.setButton(15, guiItem(Items.COMPARATOR, ChatFormatting.YELLOW + "Seuil Anti-Monopole", String.valueOf(dungeon.settings.antiMonopoleThreshold)), sp ->
+                    openIntPrompt(sp, "Entre le seuil anti-monopole hebdo", input -> AdminDungeonConfigService.applyDungeonIntValue(sp, dungeon.id, input, (cfg, value) -> cfg.settings.antiMonopoleThreshold = Math.max(1, value), "[Arcadia] Seuil anti-monopole mis a jour: "), reopen -> openDungeonAdvancedSettingsGui(reopen, dungeon.id)));
+            return menu;
+        }, Component.literal("Reglages avances: " + dungeon.name)));
     }
 
     public static void openDungeonTimerWarningsGui(ServerPlayer player, String dungeonId, int page) {
@@ -385,12 +474,11 @@ public final class AdminDungeonGuiMenus {
             });
             menu.setButton(13, guiItem(Items.WOODEN_AXE, ChatFormatting.AQUA + "Wand Zone", "Donne la wand de selection"), sp -> {
                 sp.closeContainer();
-                sp.server.getCommands().performPrefixedCommand(sp.createCommandSourceStack(), "arcadia_dungeon admin wand");
-                sp.server.getCommands().performPrefixedCommand(sp.createCommandSourceStack(), "arcadia_dungeon admin wand_select " + dungeon.id);
+                AdminGuiActionService.giveAreaWand(sp, dungeon.id);
             });
             menu.setButton(14, guiItem(Items.GOLDEN_HOE, ChatFormatting.LIGHT_PURPLE + "Wall Wand", "Donne la wand mur scripted"), sp -> {
                 sp.closeContainer();
-                sp.server.getCommands().performPrefixedCommand(sp.createCommandSourceStack(), "arcadia_dungeon admin wallwand");
+                AdminGuiActionService.giveWallWandOnly(sp);
             });
             menu.setButton(15, guiItem(Items.IRON_BARS, ChatFormatting.LIGHT_PURPLE + "Ajouter / Selectionner Mur", "Format: <wallId>"), sp ->
                     ArcadiaPendingInputManager.begin(sp, "Entre l'id du mur scripted a selectionner", (playerInput, input) -> {
@@ -422,7 +510,7 @@ public final class AdminDungeonGuiMenus {
             for (DungeonConfig.ScriptedWallConfig wall : dungeon.scriptedWalls.subList(start, end)) {
                 String wallId = wall.id;
                 int blockCount = wall.blocks == null ? 0 : wall.blocks.size();
-                menu.setButton(slot++, guiItem(Items.IRON_BARS, ChatFormatting.LIGHT_PURPLE + wallId, "Condition: " + safeText(wall.activationCondition, "Aucune"), "Blocs: " + blockCount, "Cliquer pour ouvrir"), sp -> openWallDetailGui(sp, dungeon.id, wallId));
+                menu.setButton(slot++, guiItem(Items.IRON_BARS, ChatFormatting.LIGHT_PURPLE + wallId, "Condition: " + safeText(wall.activationCondition, "Aucune"), "Blocs: " + blockCount, "Cliquer pour ouvrir"), sp -> openWallDetailGui(sp, dungeon.id, wallId, safePage));
             }
             if (safePage > 0) menu.setButton(36, guiItem(Items.ARROW, ChatFormatting.YELLOW + "Page precedente", "Page " + safePage), sp -> openDungeonAreaGui(sp, dungeon.id, safePage - 1));
             menu.setButton(40, guiItem(Items.PAPER, ChatFormatting.WHITE + "Page " + (safePage + 1) + "/" + totalPages, "Navigation"), null);
@@ -432,6 +520,10 @@ public final class AdminDungeonGuiMenus {
     }
 
     public static void openWallDetailGui(ServerPlayer player, String dungeonId, String wallId) {
+        openWallDetailGui(player, dungeonId, wallId, 0);
+    }
+
+    public static void openWallDetailGui(ServerPlayer player, String dungeonId, String wallId, int returnPage) {
         DungeonConfig dungeon = ConfigManager.getInstance().getDungeon(dungeonId);
         DungeonConfig.ScriptedWallConfig wall = dungeon == null ? null : findScriptedWall(dungeon, wallId);
         if (dungeon == null || wall == null) {
@@ -440,7 +532,7 @@ public final class AdminDungeonGuiMenus {
         }
         player.openMenu(new SimpleMenuProvider((containerId, inventory, p) -> {
             ArcadiaChestMenu menu = new ArcadiaChestMenu(containerId, inventory, 3);
-            menu.setButton(0, guiItem(Items.ARROW, ChatFormatting.YELLOW + "Retour", "Retour zone / murs"), sp -> openDungeonAreaGui(sp, dungeon.id, 0));
+            menu.setButton(0, guiItem(Items.ARROW, ChatFormatting.YELLOW + "Retour", "Retour zone / murs"), sp -> openDungeonAreaGui(sp, dungeon.id, returnPage));
             menu.setButton(10, guiItem(Items.WRITABLE_BOOK, ChatFormatting.AQUA + "Condition", safeText(wall.activationCondition, "Aucune")), sp ->
                     ArcadiaPendingInputManager.begin(sp, "Entre la condition du mur (ex: WAVE_COMPLETE:2) ou 'none'", (playerInput, input) -> {
                         DungeonConfig cfg = ConfigManager.getInstance().getDungeon(dungeon.id);
@@ -450,7 +542,7 @@ public final class AdminDungeonGuiMenus {
                         ConfigManager.getInstance().saveDungeon(cfg);
                         playerInput.sendSystemMessage(Component.literal("[Arcadia] Condition du mur mise a jour.").withStyle(ChatFormatting.GREEN));
                         return true;
-                    }, reopen -> openWallDetailGui(reopen, dungeon.id, wallId)));
+                    }, reopen -> openWallDetailGui(reopen, dungeon.id, wallId, returnPage)));
             menu.setButton(11, guiItem(Items.OBSERVER, ChatFormatting.GOLD + "Action", safeText(wall.action, "TOGGLE"), "Cliquer pour alterner TOGGLE/REMOVE"), sp -> {
                 DungeonConfig cfg = ConfigManager.getInstance().getDungeon(dungeon.id);
                 DungeonConfig.ScriptedWallConfig current = cfg == null ? null : findScriptedWall(cfg, wallId);
@@ -459,12 +551,11 @@ public final class AdminDungeonGuiMenus {
                     current.action = currentAction.equals("REMOVE") ? "TOGGLE" : "REMOVE";
                     ConfigManager.getInstance().saveDungeon(cfg);
                 }
-                openWallDetailGui(sp, dungeon.id, wallId);
+                openWallDetailGui(sp, dungeon.id, wallId, returnPage);
             });
             menu.setButton(12, guiItem(Items.GOLDEN_HOE, ChatFormatting.LIGHT_PURPLE + "Selection Wand", "Clique les blocs avec la hoe"), sp -> {
                 sp.closeContainer();
-                sp.server.getCommands().performPrefixedCommand(sp.createCommandSourceStack(), "arcadia_dungeon admin wallwand");
-                sp.server.getCommands().performPrefixedCommand(sp.createCommandSourceStack(), "arcadia_dungeon admin wall_select " + dungeon.id + " " + wallId);
+                AdminGuiActionService.giveWallWand(sp, dungeon.id, wallId);
             });
             menu.setButton(14, guiItem(Items.BARRIER, ChatFormatting.RED + "Clear Blocs", "Supprimer tous les blocs du mur"), sp -> {
                 DungeonConfig cfg = ConfigManager.getInstance().getDungeon(dungeon.id);
@@ -473,16 +564,17 @@ public final class AdminDungeonGuiMenus {
                     current.blocks.clear();
                     ConfigManager.getInstance().saveDungeon(cfg);
                 }
-                openWallDetailGui(sp, dungeon.id, wallId);
+                openWallDetailGui(sp, dungeon.id, wallId, returnPage);
             });
-            menu.setButton(16, guiItem(Items.LAVA_BUCKET, ChatFormatting.RED + "Supprimer Mur", wallId), sp -> {
-                DungeonConfig cfg = ConfigManager.getInstance().getDungeon(dungeon.id);
-                if (cfg != null) {
-                    cfg.scriptedWalls.removeIf(entry -> entry != null && wallId.equals(entry.id));
-                    ConfigManager.getInstance().saveDungeon(cfg);
-                }
-                openDungeonAreaGui(sp, dungeon.id, 0);
-            });
+            menu.setButton(16, guiItem(Items.LAVA_BUCKET, ChatFormatting.RED + "Supprimer Mur", wallId), sp ->
+                    AdminGuiSupport.openConfirmationGui(sp, "Confirmer Suppression Mur", wallId, confirm -> {
+                        DungeonConfig cfg = ConfigManager.getInstance().getDungeon(dungeon.id);
+                        if (cfg != null) {
+                            cfg.scriptedWalls.removeIf(entry -> entry != null && wallId.equals(entry.id));
+                            ConfigManager.getInstance().saveDungeon(cfg);
+                        }
+                        openDungeonAreaGui(confirm, dungeon.id, returnPage);
+                    }, cancel -> openWallDetailGui(cancel, dungeon.id, wallId, returnPage)));
             menu.setButton(22, guiItem(Items.PAPER, ChatFormatting.WHITE + "Blocs", String.valueOf(wall.blocks == null ? 0 : wall.blocks.size())), null);
             return menu;
         }, Component.literal("Mur: " + wallId)));
@@ -507,6 +599,10 @@ public final class AdminDungeonGuiMenus {
     }
 
     private static void openIntPrompt(ServerPlayer player, String prompt, java.util.function.Function<String, Boolean> handler, java.util.function.Consumer<ServerPlayer> reopen) {
+        ArcadiaPendingInputManager.begin(player, prompt, (playerInput, input) -> handler.apply(input), reopen);
+    }
+
+    private static void openDoublePrompt(ServerPlayer player, String prompt, java.util.function.Function<String, Boolean> handler, java.util.function.Consumer<ServerPlayer> reopen) {
         ArcadiaPendingInputManager.begin(player, prompt, (playerInput, input) -> handler.apply(input), reopen);
     }
 

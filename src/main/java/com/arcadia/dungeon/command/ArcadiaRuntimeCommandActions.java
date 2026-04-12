@@ -6,6 +6,7 @@ import com.arcadia.dungeon.boss.BossInstance;
 import com.arcadia.dungeon.boss.BossManager;
 import com.arcadia.dungeon.config.*;
 import com.arcadia.dungeon.dungeon.*;
+import com.arcadia.dungeon.service.admin.AdminGuiActionService;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
@@ -376,12 +377,7 @@ final class ArcadiaRuntimeCommandActions {
     // === DEBUG COMMANDS ===
 
     static int reloadConfigs(CommandContext<CommandSourceStack> ctx) {
-        ConfigManager.getInstance().loadAll();
-        PlayerProgressManager.getInstance().loadAll();
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Configs rechargees! " +
-                ConfigManager.getInstance().getDungeonConfigs().size() + " donjon(s), " +
-                PlayerProgressManager.getInstance().getAll().size() + " joueur(s).")
-                .withStyle(ChatFormatting.AQUA), true);
+        AdminGuiActionService.reloadConfigs(component -> ctx.getSource().sendSuccess(() -> component, true));
         return 1;
     }
 
@@ -462,86 +458,17 @@ final class ArcadiaRuntimeCommandActions {
     static int debugInfo(CommandContext<CommandSourceStack> ctx) {
         String dungeonId = StringArgumentType.getString(ctx, "dungeon");
         DungeonInstance instance = DungeonManager.getInstance().getInstance(dungeonId);
-
         if (instance == null) {
             ctx.getSource().sendFailure(Component.literal("[Arcadia Debug] Aucune instance active pour: " + dungeonId));
             return 0;
         }
-
-        // Snapshot values to avoid lambda issues
-        String state = instance.getState().toString();
-        int playerCount = instance.getPlayerCount();
-        long elapsed = instance.getElapsedSeconds();
-        int bossCount = instance.getActiveBosses().size();
-        int bossIndex = instance.getCurrentBossIndex();
-        int totalBosses = instance.getConfig().bosses.size();
-        boolean wavesComplete = instance.areWavesCompleted();
-        int waveIndex = instance.getCurrentWaveIndex();
-        int totalWaves = instance.getWaveInstances().size();
-
-        ctx.getSource().sendSuccess(() -> Component.literal("=== Debug " + dungeonId + " ===").withStyle(ChatFormatting.AQUA), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("  Etat: " + state).withStyle(ChatFormatting.WHITE), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("  Joueurs: " + playerCount).withStyle(ChatFormatting.WHITE), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("  Temps ecoule: " + formatTime(elapsed)).withStyle(ChatFormatting.WHITE), false);
-
-        // Wave info
-        if (totalWaves > 0) {
-            ctx.getSource().sendSuccess(() -> Component.literal("  Vagues: " + (wavesComplete ? "TERMINEES" : (waveIndex + 1) + "/" + totalWaves))
-                    .withStyle(wavesComplete ? ChatFormatting.GREEN : ChatFormatting.YELLOW), false);
-            if (!wavesComplete) {
-                WaveInstance currentWave = instance.getCurrentWave();
-                if (currentWave != null) {
-                    int remaining = currentWave.getRemainingMobs();
-                    ctx.getSource().sendSuccess(() -> Component.literal("    Vague actuelle: " + remaining + " mob(s) restant(s)")
-                            .withStyle(ChatFormatting.GRAY), false);
-                }
-            }
-        }
-
-        // Boss info
-        ctx.getSource().sendSuccess(() -> Component.literal("  Boss: " + bossIndex + "/" + totalBosses + " (actifs: " + bossCount + ")")
-                .withStyle(ChatFormatting.WHITE), false);
-
-        for (Map.Entry<String, BossInstance> entry : new ArrayList<>(instance.getActiveBosses().entrySet())) {
-            BossInstance boss = entry.getValue();
-            String bossId = entry.getKey();
-            boolean alive = boss.isBossAlive();
-            int phase = boss.getCurrentPhase() + 1;
-            String hp = "";
-            if (boss.getBossEntity() != null) {
-                hp = " HP: " + String.format("%.1f", boss.getBossEntity().getHealth()) + "/" + String.format("%.1f", boss.getBossEntity().getMaxHealth());
-            }
-            boolean trans = boss.isTransitioning();
-            boolean needKill = boss.requiresKillSummons();
-            String finalHp = hp;
-            ctx.getSource().sendSuccess(() -> Component.literal("    " + bossId + ": " + (alive ? "Vivant" : "Mort") + " Phase:" + phase + finalHp
-                    + (trans ? " [TRANSITION]" : "") + (needKill ? " [KILL SUMMONS]" : ""))
-                    .withStyle(alive ? ChatFormatting.GREEN : ChatFormatting.RED), false);
-        }
-
+        AdminGuiActionService.debugInfo(component -> ctx.getSource().sendSuccess(() -> component, false), dungeonId);
         return 1;
     }
 
     static int debugActive(CommandContext<CommandSourceStack> ctx) {
-        Map<String, DungeonInstance> active = DungeonManager.getInstance().getActiveInstances();
-        if (active.isEmpty()) {
-            ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia Debug] Aucun donjon actif.")
-                    .withStyle(ChatFormatting.YELLOW), false);
-            return 0;
-        }
-
-        ctx.getSource().sendSuccess(() -> Component.literal("=== Donjons Actifs ===").withStyle(ChatFormatting.AQUA), false);
-        for (Map.Entry<String, DungeonInstance> entry : new ArrayList<>(active.entrySet())) {
-            String key = entry.getKey();
-            DungeonInstance inst = entry.getValue();
-            String st = inst.getState().toString();
-            int pc = inst.getPlayerCount();
-            long el = inst.getElapsedSeconds();
-            ctx.getSource().sendSuccess(() -> Component.literal(" - " + key + " | Etat: " + st +
-                    " | Joueurs: " + pc + " | Temps: " + formatTime(el))
-                    .withStyle(ChatFormatting.WHITE), false);
-        }
-        return 1;
+        AdminGuiActionService.showActiveInstances(component -> ctx.getSource().sendSuccess(() -> component, false));
+        return DungeonManager.getInstance().getActiveInstances().isEmpty() ? 0 : 1;
     }
 
     static int debugSpawnBoss(CommandContext<CommandSourceStack> ctx) {

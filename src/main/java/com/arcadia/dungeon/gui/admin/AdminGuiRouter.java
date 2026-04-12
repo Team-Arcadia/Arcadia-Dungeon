@@ -5,6 +5,7 @@ import com.arcadia.dungeon.config.DungeonConfig;
 import com.arcadia.dungeon.config.SpawnPointConfig;
 import com.arcadia.dungeon.gui.ArcadiaChestMenu;
 import com.arcadia.dungeon.gui.ArcadiaPendingInputManager;
+import com.arcadia.dungeon.service.admin.AdminGuiActionService;
 import com.arcadia.dungeon.gui.admin.dungeon.AdminDungeonGuiMenus;
 import com.arcadia.dungeon.gui.admin.entity.AdminEntityGuiMenus;
 import com.arcadia.dungeon.gui.admin.progression.AdminProgressionGuiMenus;
@@ -26,32 +27,49 @@ public final class AdminGuiRouter {
 
     public static void openPlayerArcadiaGui(ServerPlayer player) {
         player.openMenu(new SimpleMenuProvider((containerId, inventory, p) -> {
-            ArcadiaChestMenu menu = new ArcadiaChestMenu(containerId, inventory, 3);
-            menu.setButton(10, guiItem(Items.PLAYER_HEAD, ChatFormatting.GOLD + "Profil Arcadia", "Voir ton profil"), sp -> {
-                sp.closeContainer();
-                sp.server.getCommands().performPrefixedCommand(sp.createCommandSourceStack(), "arcadia_dungeon profile");
-            });
+            ArcadiaChestMenu menu = new ArcadiaChestMenu(containerId, inventory, 4);
+            menu.setButton(10, guiItem(Items.PLAYER_HEAD, ChatFormatting.GOLD + "Profil Arcadia", "Ouvrir le sous-menu profil"), AdminGuiRouter::openPlayerProfileGui);
             menu.setButton(12, guiItem(Items.GOLD_INGOT, ChatFormatting.YELLOW + "Top Arcadia", "Voir le classement"), sp -> {
                 sp.closeContainer();
-                sp.server.getCommands().performPrefixedCommand(sp.createCommandSourceStack(), "arcadia_dungeon top");
+                AdminGuiActionService.showPlayerTop(sp);
             });
             menu.setButton(14, guiItem(Items.MAP, ChatFormatting.AQUA + "Progression", "Voir les donjons"), sp -> {
                 sp.closeContainer();
-                sp.server.getCommands().performPrefixedCommand(sp.createCommandSourceStack(), "arcadia_dungeon progression");
+                AdminGuiActionService.showPlayerProgression(sp);
             });
 
             List<DungeonConfig> dungeons = new ArrayList<>(ConfigManager.getInstance().getDungeonConfigs().values());
             dungeons.sort(Comparator.comparingInt(d -> d.order));
             int slot = 18;
             for (DungeonConfig dungeon : dungeons) {
-                if (!dungeon.enabled || slot >= 27) continue;
+                if (!dungeon.enabled || slot >= 36) continue;
                 menu.setButton(slot++, guiItem(Items.END_PORTAL_FRAME, ChatFormatting.GREEN + dungeon.name, "Lancer " + dungeon.id), sp -> {
                     sp.closeContainer();
-                    sp.server.getCommands().performPrefixedCommand(sp.createCommandSourceStack(), "arcadia_dungeon start " + dungeon.id);
+                    AdminGuiActionService.startDungeon(sp, dungeon.id);
                 });
             }
             return menu;
         }, Component.literal("Arcadia")));
+    }
+
+    public static void openPlayerProfileGui(ServerPlayer player) {
+        player.openMenu(new SimpleMenuProvider((containerId, inventory, p) -> {
+            ArcadiaChestMenu menu = new ArcadiaChestMenu(containerId, inventory, 3);
+            menu.setButton(0, guiItem(Items.ARROW, ChatFormatting.YELLOW + "Retour", "Retour au menu Arcadia Dungeon"), AdminGuiRouter::openPlayerArcadiaGui);
+            menu.setButton(10, guiItem(Items.PLAYER_HEAD, ChatFormatting.GOLD + "Profil", "Voir ton profil Arcadia"), sp -> {
+                sp.closeContainer();
+                AdminGuiActionService.showPlayerProfile(sp);
+            });
+            menu.setButton(12, guiItem(Items.BOOK, ChatFormatting.AQUA + "Stats", "Voir tes statistiques detaillees"), sp -> {
+                sp.closeContainer();
+                AdminGuiActionService.showPlayerStats(sp);
+            });
+            menu.setButton(14, guiItem(Items.GOLD_INGOT, ChatFormatting.YELLOW + "Top", "Voir le classement global"), sp -> {
+                sp.closeContainer();
+                AdminGuiActionService.showPlayerTop(sp);
+            });
+            return menu;
+        }, Component.literal("Profil Arcadia")));
     }
 
     public static void openAdminHubGui(ServerPlayer player, int page) {
@@ -85,6 +103,14 @@ public final class AdminGuiRouter {
                     ));
             menu.setButton(12, guiItem(Items.BOOK, ChatFormatting.AQUA + "Liste Donjons", "Selectionner un donjon"), null);
             menu.setButton(14, guiItem(Items.DIAMOND, ChatFormatting.LIGHT_PURPLE + "Arcadia", "Ouvrir les reglages Arcadia"), AdminGuiRouter::openArcadiaAdminGui);
+            menu.setButton(16, guiItem(Items.REDSTONE, ChatFormatting.YELLOW + "Reload Configs", "Recharger configs et playerdata"), sp -> {
+                sp.closeContainer();
+                AdminGuiActionService.reloadConfigs(sp);
+            });
+            menu.setButton(18, guiItem(Items.COMPASS, ChatFormatting.GREEN + "Instances Actives", "Afficher les donjons actifs dans le chat"), sp -> {
+                sp.closeContainer();
+                AdminGuiActionService.showActiveInstances(sp);
+            });
 
             List<DungeonConfig> dungeons = new ArrayList<>(ConfigManager.getInstance().getDungeonConfigs().values().stream()
                     .sorted(Comparator.comparingInt(d -> d.order))
@@ -128,6 +154,9 @@ public final class AdminGuiRouter {
     public static void openWaveMobDetailGui(ServerPlayer player, String dungeonId, int waveNumber, int mobIndex) { AdminEntityGuiMenus.openWaveMobDetailGui(player, dungeonId, waveNumber, mobIndex); }
     public static void openArcadiaAdminGui(ServerPlayer player) { AdminProgressionGuiMenus.openArcadiaAdminGui(player); }
     public static void openArcadiaAdminGui(ServerPlayer player, int page) { AdminProgressionGuiMenus.openArcadiaAdminGui(player, page); }
+    public static void openArcadiaPlayersGui(ServerPlayer player, int page) { AdminProgressionGuiMenus.openArcadiaPlayersGui(player, page); }
+    public static void openArcadiaPlayerAdminGui(ServerPlayer player, String playerName) { AdminProgressionGuiMenus.openArcadiaPlayerAdminGui(player, playerName, 0); }
+    public static void openArcadiaPlayerAdminGui(ServerPlayer player, String playerName, int returnPage) { AdminProgressionGuiMenus.openArcadiaPlayerAdminGui(player, playerName, returnPage); }
     public static void openDungeonArcadiaAdminGui(ServerPlayer player, String dungeonId) { AdminProgressionGuiMenus.openDungeonArcadiaAdminGui(player, dungeonId); }
     public static void openArcadiaRanksGui(ServerPlayer player) { AdminProgressionGuiMenus.openArcadiaRanksGui(player, 0); }
     public static void openArcadiaRanksGui(ServerPlayer player, int page) { AdminProgressionGuiMenus.openArcadiaRanksGui(player, page); }
