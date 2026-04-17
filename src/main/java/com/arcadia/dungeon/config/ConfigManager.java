@@ -2,6 +2,7 @@ package com.arcadia.dungeon.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -150,8 +151,13 @@ public class ConfigManager {
             }
             ArcadiaDungeon.LOGGER.info("Loaded Arcadia progression config: {} level threshold(s), {} rank threshold(s)",
                     progressionConfig.levels.size(), progressionConfig.ranks.size());
-        } catch (Exception e) {
-            ArcadiaDungeon.LOGGER.error("Failed to load arcadia-progression.json. Keeping previous progression config.", e);
+        } catch (IOException e) {
+            ArcadiaDungeon.LOGGER.error("Erreur I/O lors du chargement de arcadia-progression.json. Config précédente conservée.", e);
+            if (progressionConfig == null) {
+                progressionConfig = ArcadiaProgressionConfig.createDefault();
+            }
+        } catch (JsonParseException e) {
+            ArcadiaDungeon.LOGGER.error("arcadia-progression.json est corrompu (JSON invalide). Config précédente conservée.", e);
             if (progressionConfig == null) {
                 progressionConfig = ArcadiaProgressionConfig.createDefault();
             }
@@ -320,13 +326,21 @@ public class ConfigManager {
             validateConfig(config);
             loadedConfigs.put(config.id, config);
             ArcadiaDungeon.LOGGER.info("Loaded dungeon config: {}", config.id);
-        } catch (Exception e) {
+        } catch (IOException e) {
             DungeonConfig previous = previousConfigs.get(fallbackId);
             if (previous != null) {
                 loadedConfigs.put(fallbackId, previous);
-                ArcadiaDungeon.LOGGER.warn("Failed to reload dungeon config: {}. Keeping previous valid version.", fileName, e);
+                ArcadiaDungeon.LOGGER.warn("Erreur I/O lors du rechargement de {}. Version précédente conservée.", fileName, e);
             } else {
-                ArcadiaDungeon.LOGGER.warn("Failed to load dungeon config: {}. Skipping file.", fileName, e);
+                ArcadiaDungeon.LOGGER.warn("Erreur I/O lors du chargement de {}. Fichier ignoré.", fileName, e);
+            }
+        } catch (JsonParseException e) {
+            DungeonConfig previous = previousConfigs.get(fallbackId);
+            if (previous != null) {
+                loadedConfigs.put(fallbackId, previous);
+                ArcadiaDungeon.LOGGER.warn("Config {} corrompue (JSON invalide). Version précédente conservée.", fileName, e);
+            } else {
+                ArcadiaDungeon.LOGGER.warn("Config {} corrompue (JSON invalide). Fichier ignoré.", fileName, e);
             }
         }
     }
@@ -700,6 +714,7 @@ public class ConfigManager {
         props.add("waveDamageMultiplierPerPlayer", numberSchema(0.1, "Damage scaling per extra player."));
         props.add("waveCountMultiplierPerPlayer", numberSchema(0.2, "Mob count scaling per extra player."));
         props.add("maxDeaths", intSchema(3, "Maximum deaths before ejection."));
+        props.add("completionDelaySeconds", intSchema(10, "Seconds to wait before teleporting players back after dungeon completion. 0 = instant."));
         props.add("antiMonopole", boolSchema(true, "Enable anti-monopoly join rules."));
         props.add("antiMonopoleThreshold", intSchema(5, "Weekly completion threshold."));
         props.add("timerWarnings", arraySchema(intSchema(300, "Warning seconds"), "Timer warning milestones."));

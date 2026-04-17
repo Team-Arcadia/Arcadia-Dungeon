@@ -5,6 +5,7 @@ public enum DungeonState {
     WAITING,
     ACTIVE,
     BOSS_FIGHT,
+    CELEBRATING,
     COMPLETED,
     FAILED
 }

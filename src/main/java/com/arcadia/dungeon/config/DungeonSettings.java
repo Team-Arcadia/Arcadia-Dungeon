@@ -13,6 +13,7 @@ public class DungeonSettings {
     public double waveDamageMultiplierPerPlayer = 0.1;
     public double waveCountMultiplierPerPlayer = 0.2; // +20% mobs per extra player
     public int maxDeaths = 3;
+    public int completionDelaySeconds = 10;
     public boolean antiMonopole = true;
     public int antiMonopoleThreshold = 5;
     public List<Integer> timerWarnings = new ArrayList<>(List.of(300, 60, 30, 10));

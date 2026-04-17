@@ -6,7 +6,11 @@ import com.arcadia.dungeon.command.ArcadiaCommands;
 import com.arcadia.dungeon.util.ModCompat;
 import com.arcadia.dungeon.config.ConfigManager;
 import com.arcadia.dungeon.dungeon.DungeonManager;
-import com.arcadia.dungeon.event.DungeonEventHandler;
+import com.arcadia.dungeon.event.DungeonCombatEventHandler;
+import com.arcadia.dungeon.event.DungeonPlayerEventHandler;
+import com.arcadia.dungeon.event.DungeonTickHandler;
+import com.arcadia.dungeon.event.DungeonWandEventHandler;
+import com.arcadia.dungeon.event.DungeonWorldEventHandler;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
@@ -41,7 +45,12 @@ public class ArcadiaDungeon {
     public ArcadiaDungeon(IEventBus modEventBus) {
         modEventBus.addListener(this::onCommonSetup);
         NeoForge.EVENT_BUS.register(this);
-        NeoForge.EVENT_BUS.register(new DungeonEventHandler());
+        DungeonCombatEventHandler combatHandler = new DungeonCombatEventHandler();
+        NeoForge.EVENT_BUS.register(combatHandler);
+        NeoForge.EVENT_BUS.register(new DungeonTickHandler(combatHandler));
+        NeoForge.EVENT_BUS.register(new DungeonWandEventHandler());
+        NeoForge.EVENT_BUS.register(new DungeonWorldEventHandler());
+        NeoForge.EVENT_BUS.register(new DungeonPlayerEventHandler());
     }
 
     private void onCommonSetup(final FMLCommonSetupEvent event) {

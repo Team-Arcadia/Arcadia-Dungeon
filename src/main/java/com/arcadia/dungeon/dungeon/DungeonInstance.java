@@ -13,12 +13,14 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DungeonInstance {
     private final DungeonConfig config;
     private final MinecraftServer server;
-    private final Set<UUID> players = new LinkedHashSet<>();
-    private final Map<String, BossInstance> activeBosses = new LinkedHashMap<>();
+    // Thread-safe collections : accès possible depuis le tick thread et des event handlers simultanément
+    private final Set<UUID> players = ConcurrentHashMap.newKeySet();
+    private final Map<String, BossInstance> activeBosses = new ConcurrentHashMap<>();
     private DungeonState state = DungeonState.WAITING;
     private long startTime;
     private long recruitmentEndTime;
@@ -26,9 +28,10 @@ public class DungeonInstance {
     private final List<WaveInstance> waveInstances = new ArrayList<>();
     private int currentWaveIndex = 0;
     private boolean wavesCompleted = false;
-    private final Map<UUID, Integer> playerDeaths = new LinkedHashMap<>();
+    private final Map<UUID, Integer> playerDeaths = new ConcurrentHashMap<>();
     private boolean waitingForInterWaveBoss = false;
-    private final Set<String> triggeredWallConditions = new HashSet<>();
+    private final Set<String> triggeredWallConditions = ConcurrentHashMap.newKeySet();
+    private long celebrationEndsAt = 0L;
 
     public DungeonInstance(DungeonConfig config, MinecraftServer server) {
         this.config = config;
@@ -61,6 +64,20 @@ public class DungeonInstance {
     public void startDungeon() {
         state = DungeonState.ACTIVE;
         startTime = System.currentTimeMillis();
+    }
+
+    public void startCelebration(int delaySeconds) {
+        state = DungeonState.CELEBRATING;
+        celebrationEndsAt = System.currentTimeMillis() + (delaySeconds * 1000L);
+    }
+
+    public boolean isCelebrationOver() {
+        return celebrationEndsAt > 0 && System.currentTimeMillis() >= celebrationEndsAt;
+    }
+
+    public long getCelebrationRemainingSeconds() {
+        long remaining = (celebrationEndsAt - System.currentTimeMillis()) / 1000;
+        return Math.max(0, remaining);
     }
 
     // === PLAYERS ===

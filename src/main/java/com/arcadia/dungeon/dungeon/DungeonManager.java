@@ -37,7 +37,7 @@ public class DungeonManager {
     private final Map<String, Long> playerCooldowns = new ConcurrentHashMap<>();
     private final Map<UUID, SpawnPointConfig> playerReturnPoints = new ConcurrentHashMap<>();
     private final Map<String, Long> dungeonAvailability = new ConcurrentHashMap<>();
-    private final Set<String> availabilityAnnounced = new HashSet<>();
+    private final Set<String> availabilityAnnounced = ConcurrentHashMap.newKeySet();
     private final Map<String, Long> nextAvailabilityAnnouncements = new ConcurrentHashMap<>();
     private final Map<UUID, Map<String, Long>> allowedBeneficialEffects = new ConcurrentHashMap<>();
     // Reverse lookup: player UUID -> dungeon ID for O(1) lookups
@@ -279,8 +279,11 @@ public class DungeonManager {
 
         DungeonConfig config = instance.getConfig();
 
+        // Snapshot unique pour toutes les boucles — cohérence garantie pendant la transition recrutement → actif
+        List<UUID> recruitedPlayers = new ArrayList<>(instance.getPlayers());
+
         if (instance.getPlayerCount() < config.settings.minPlayers) {
-            for (UUID playerId : instance.getPlayers()) {
+            for (UUID playerId : recruitedPlayers) {
                 ServerPlayer player = server.getPlayerList().getPlayer(playerId);
                 if (player != null) {
                     teleportBack(player);
@@ -296,7 +299,7 @@ public class DungeonManager {
 
         if (!canResolveSpawn(config.spawnPoint)) {
             ArcadiaDungeon.LOGGER.error("Cannot finish recruitment for dungeon {}: invalid spawn point {}", dungeonId, config.spawnPoint == null ? "null" : config.spawnPoint.dimension);
-            for (UUID playerId : new ArrayList<>(instance.getPlayers())) {
+            for (UUID playerId : recruitedPlayers) {
                 ServerPlayer player = server.getPlayerList().getPlayer(playerId);
                 if (player != null) {
                     teleportBack(player);
@@ -313,7 +316,7 @@ public class DungeonManager {
         kickParasites(instance);
 
         // Start the actual dungeon
-        for (UUID playerId : instance.getPlayers()) {
+        for (UUID playerId : recruitedPlayers) {
             ServerPlayer player = server.getPlayerList().getPlayer(playerId);
             if (player != null) {
                 teleportToSpawn(player, config.spawnPoint);
@@ -341,7 +344,7 @@ public class DungeonManager {
             }
         }
 
-        for (UUID playerId : instance.getPlayers()) {
+        for (UUID playerId : recruitedPlayers) {
             ServerPlayer player = server.getPlayerList().getPlayer(playerId);
             if (player != null) {
                 player.sendSystemMessage(Component.literal("[Arcadia] Le donjon commence! " + instance.getPlayerCount() + " joueur(s)!")
@@ -364,12 +367,12 @@ public class DungeonManager {
         if (instance == null) return;
 
         DungeonConfig config = instance.getConfig();
-        instance.setState(DungeonState.COMPLETED);
 
         long completionTime = instance.getElapsedSeconds();
         long baseArcadiaXpReward = calculateArcadiaXpReward(config);
         long speedrunBonusXp = calculateSpeedrunBonusXp(config, completionTime);
 
+        // --- Immediate phase: rewards, XP, records, celebration messages ---
         for (UUID playerId : instance.getPlayers()) {
             ServerPlayer player = server.getPlayerList().getPlayer(playerId);
             if (player != null) {
@@ -390,10 +393,6 @@ public class DungeonManager {
                         playerId.toString(), player.getName().getString(), dungeonId, completionTime
                 );
 
-                if (config.teleportBackOnComplete) {
-                    teleportBack(player);
-                }
-
                 // Per-dungeon cooldown
                 playerCooldowns.put(playerId + ":" + dungeonId, System.currentTimeMillis());
 
@@ -406,22 +405,60 @@ public class DungeonManager {
         String localCompletionMsg = renderDungeonMessage(config.completionMessage, instance.getPlayerNames(server), config);
         MessageUtil.broadcast(instance, localCompletionMsg);
 
-        if (config.availableEverySeconds > 0) {
-            dungeonAvailability.put(dungeonId, System.currentTimeMillis());
-            availabilityAnnounced.remove(dungeonId);
-        }
-
         if (config.announceCompletion && server != null) {
             String playerNames = instance.getPlayerNames(server);
             String msg = renderDungeonMessage(config.completionMessage, playerNames, config);
             broadcastMessage(msg, instance.getPlayers());
         }
 
-        for (UUID pid : instance.getPlayers()) playerToDungeon.remove(pid);
-        for (UUID pid : instance.getPlayers()) clearAllowedBeneficialEffects(pid);
+        // --- Deferred phase: enter CELEBRATING state, TP after delay ---
+        int delaySeconds = config.settings.completionDelaySeconds;
+        if (delaySeconds > 0) {
+            instance.startCelebration(delaySeconds);
+            for (UUID playerId : instance.getPlayers()) {
+                ServerPlayer player = server.getPlayerList().getPlayer(playerId);
+                if (player != null) {
+                    player.sendSystemMessage(Component.literal("[Arcadia] Retour dans " + delaySeconds + " seconde(s)...")
+                            .withStyle(ChatFormatting.YELLOW));
+                }
+            }
+            ArcadiaDungeon.LOGGER.info("Dungeon {} entering celebration phase ({}s)", dungeonId, delaySeconds);
+        } else {
+            // No delay — finalize immediately
+            finalizeDungeon(dungeonId);
+        }
+    }
+
+    /**
+     * Called after the celebration timer expires (or immediately if delay=0).
+     * Teleports players back, releases tracking, and removes the instance.
+     */
+    public void finalizeDungeon(String dungeonId) {
+        DungeonInstance instance = activeInstances.get(dungeonId);
+        if (instance == null) return;
+
+        DungeonConfig config = instance.getConfig();
+        instance.setState(DungeonState.COMPLETED);
+
+        if (config.teleportBackOnComplete) {
+            for (UUID playerId : instance.getPlayers()) {
+                ServerPlayer player = server.getPlayerList().getPlayer(playerId);
+                if (player != null) teleportBack(player);
+            }
+        }
+
+        if (config.availableEverySeconds > 0) {
+            dungeonAvailability.put(dungeonId, System.currentTimeMillis());
+            availabilityAnnounced.remove(dungeonId);
+        }
+
+        // Snapshot avant cleanup pour éviter toute modification concurrente durant l'itération
+        List<UUID> completedPlayers = new ArrayList<>(instance.getPlayers());
+        for (UUID pid : completedPlayers) playerToDungeon.remove(pid);
+        for (UUID pid : completedPlayers) clearAllowedBeneficialEffects(pid);
         instance.cleanup();
         activeInstances.remove(dungeonId);
-        ArcadiaDungeon.LOGGER.info("Dungeon {} completed", dungeonId);
+        ArcadiaDungeon.LOGGER.info("Dungeon {} finalized", dungeonId);
     }
 
     private long calculateArcadiaXpReward(DungeonConfig config) {
@@ -562,10 +599,13 @@ public class DungeonManager {
         DungeonConfig config = instance.getConfig();
         instance.setState(DungeonState.FAILED);
 
+        // Snapshot avant toute modification : évite les ConcurrentModificationException
+        List<UUID> failedPlayers = new ArrayList<>(instance.getPlayers());
+
         // Capture player names BEFORE teleporting them back
         String playerNames = instance.getPlayerNames(server);
 
-        for (UUID playerId : instance.getPlayers()) {
+        for (UUID playerId : failedPlayers) {
             ServerPlayer player = server.getPlayerList().getPlayer(playerId);
             if (player != null) {
                 if (config.teleportBackOnComplete) {
@@ -585,11 +625,11 @@ public class DungeonManager {
 
         if (config.announceCompletion && server != null && !playerNames.isEmpty()) {
             String msg = renderDungeonMessage(config.failMessage, playerNames, config);
-            broadcastMessage(msg, instance.getPlayers());
+            broadcastMessage(msg, new HashSet<>(failedPlayers));
         }
 
-        for (UUID pid : instance.getPlayers()) playerToDungeon.remove(pid);
-        for (UUID pid : instance.getPlayers()) clearAllowedBeneficialEffects(pid);
+        for (UUID pid : failedPlayers) playerToDungeon.remove(pid);
+        for (UUID pid : failedPlayers) clearAllowedBeneficialEffects(pid);
         instance.cleanup();
         activeInstances.remove(dungeonId);
     }
@@ -598,7 +638,8 @@ public class DungeonManager {
         DungeonInstance instance = activeInstances.get(dungeonId);
         if (instance == null) return;
 
-        for (UUID playerId : instance.getPlayers()) {
+        List<UUID> stoppedPlayers = new ArrayList<>(instance.getPlayers());
+        for (UUID playerId : stoppedPlayers) {
             ServerPlayer player = server.getPlayerList().getPlayer(playerId);
             if (player != null) {
                 teleportBack(player);
@@ -606,8 +647,8 @@ public class DungeonManager {
             }
         }
 
-        for (UUID pid : instance.getPlayers()) playerToDungeon.remove(pid);
-        for (UUID pid : instance.getPlayers()) clearAllowedBeneficialEffects(pid);
+        for (UUID pid : stoppedPlayers) playerToDungeon.remove(pid);
+        for (UUID pid : stoppedPlayers) clearAllowedBeneficialEffects(pid);
         instance.cleanup();
         activeInstances.remove(dungeonId);
     }
@@ -622,7 +663,9 @@ public class DungeonManager {
         DungeonInstance instance = activeInstances.get(dungeonId);
         if (instance == null) return;
 
-        for (UUID playerId : new ArrayList<>(instance.getPlayers())) {
+        // Snapshot unique réutilisé pour toutes les boucles — cohérence garantie
+        List<UUID> resetPlayers = new ArrayList<>(instance.getPlayers());
+        for (UUID playerId : resetPlayers) {
             ServerPlayer player = server.getPlayerList().getPlayer(playerId);
             if (player != null) {
                 teleportBack(player);
@@ -632,7 +675,7 @@ public class DungeonManager {
         }
 
         instance.cleanup();
-        for (UUID playerId : instance.getPlayers()) clearAllowedBeneficialEffects(playerId);
+        for (UUID playerId : resetPlayers) clearAllowedBeneficialEffects(playerId);
         activeInstances.remove(dungeonId);
         ArcadiaDungeon.LOGGER.info("Dungeon {} force reset", dungeonId);
     }
@@ -769,22 +812,6 @@ public class DungeonManager {
         allowBeneficialEffect(player, (net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>) effect, amplifier, durationTicks);
     }
 
-    public boolean isBeneficialEffectAllowed(ServerPlayer player, net.minecraft.world.effect.MobEffectInstance effectInstance) {
-        if (player == null || effectInstance == null || !effectInstance.getEffect().value().isBeneficial()) return true;
-        String effectId = BuiltInRegistries.MOB_EFFECT.getKey(effectInstance.getEffect().value()).toString() + "#" + effectInstance.getAmplifier();
-        Map<String, Long> allowed = allowedBeneficialEffects.get(player.getUUID());
-        if (allowed == null) return false;
-        Long expiry = allowed.get(effectId);
-        if (expiry == null) return false;
-        if (expiry < System.currentTimeMillis()) {
-            allowed.remove(effectId);
-            if (allowed.isEmpty()) {
-                allowedBeneficialEffects.remove(player.getUUID());
-            }
-            return false;
-        }
-        return true;
-    }
 
     public void clearAllowedBeneficialEffects(UUID playerId) {
         allowedBeneficialEffects.remove(playerId);
@@ -994,7 +1021,11 @@ public class DungeonManager {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             if (dungeonPlayers.contains(player.getUUID())) continue;
             if (player.isSpectator() || player.hasPermissions(2)) continue;
-            try { if (net.neoforged.neoforge.server.permission.PermissionAPI.getPermission(player, ArcadiaDungeon.BYPASS_ANTIPARASITE)) continue; } catch (Exception ignored) {}
+            try {
+                if (net.neoforged.neoforge.server.permission.PermissionAPI.getPermission(player, ArcadiaDungeon.BYPASS_ANTIPARASITE)) continue;
+            } catch (Exception e) {
+                ArcadiaDungeon.LOGGER.debug("Arcadia: impossible de vérifier la permission bypass pour {} : {}", player.getName().getString(), e.getMessage());
+            }
 
             String playerDim = player.level().dimension().location().toString();
             if (config.isInArea(playerDim, player.getX(), player.getY(), player.getZ())) {

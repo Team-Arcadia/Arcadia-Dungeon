@@ -165,6 +165,7 @@ public final class AdminDungeonGuiMenus {
             menu.setButton(21, guiItem(Items.BELL, ChatFormatting.AQUA + "Recrutement", dungeon.recruitmentDurationSeconds + "s"), sp -> openIntPrompt(sp, "Entre la duree de recrutement en secondes", input -> AdminDungeonConfigService.applyDungeonIntValue(sp, dungeon.id, input, (cfg, value) -> cfg.recruitmentDurationSeconds = Math.max(0, value), "[Arcadia] Duree de recrutement mise a jour: "), reopen -> openDungeonCoreGui(reopen, dungeon.id)));
             menu.setButton(22, guiItem(Items.HOPPER, ChatFormatting.GOLD + "Temps Limite", dungeon.settings.timeLimitSeconds + "s"), sp -> openIntPrompt(sp, "Entre le temps limite en secondes", input -> AdminDungeonConfigService.applyDungeonIntValue(sp, dungeon.id, input, (cfg, value) -> cfg.settings.timeLimitSeconds = Math.max(0, value), "[Arcadia] Temps limite mis a jour: "), reopen -> openDungeonCoreGui(reopen, dungeon.id)));
             menu.setButton(23, guiItem(Items.TOTEM_OF_UNDYING, ChatFormatting.RED + "Max Morts", String.valueOf(dungeon.settings.maxDeaths)), sp -> openIntPrompt(sp, "Entre le nombre max de morts", input -> AdminDungeonConfigService.applyDungeonIntValue(sp, dungeon.id, input, (cfg, value) -> cfg.settings.maxDeaths = Math.max(0, value), "[Arcadia] Max morts mis a jour: "), reopen -> openDungeonCoreGui(reopen, dungeon.id)));
+            menu.setButton(24, guiItem(Items.FIREWORK_ROCKET, ChatFormatting.LIGHT_PURPLE + "Delai Fin Donjon", dungeon.settings.completionDelaySeconds + "s"), sp -> openIntPrompt(sp, "Entre le delai avant TP de fin (secondes, 0 = instantane)", input -> AdminDungeonConfigService.applyDungeonIntValue(sp, dungeon.id, input, (cfg, value) -> cfg.settings.completionDelaySeconds = Math.max(0, value), "[Arcadia] Delai de fin mis a jour: "), reopen -> openDungeonCoreGui(reopen, dungeon.id)));
             menu.setButton(28, guiItem(dungeon.announceStart ? Items.LIME_DYE : Items.GRAY_DYE, ChatFormatting.GREEN + "Annonce Start", String.valueOf(dungeon.announceStart)), sp -> toggleBool(dungeon.id, cfg -> cfg.announceStart = !cfg.announceStart, () -> openDungeonCoreGui(sp, dungeon.id)));
             menu.setButton(29, guiItem(dungeon.announceCompletion ? Items.LIME_DYE : Items.GRAY_DYE, ChatFormatting.GREEN + "Annonce Fin", String.valueOf(dungeon.announceCompletion)), sp -> toggleBool(dungeon.id, cfg -> cfg.announceCompletion = !cfg.announceCompletion, () -> openDungeonCoreGui(sp, dungeon.id)));
             menu.setButton(30, guiItem(dungeon.announceAvailability ? Items.LIME_DYE : Items.GRAY_DYE, ChatFormatting.GREEN + "Annonce Disponibilite", String.valueOf(dungeon.announceAvailability)), sp -> toggleBool(dungeon.id, cfg -> cfg.announceAvailability = !cfg.announceAvailability, () -> openDungeonCoreGui(sp, dungeon.id)));
@@ -496,8 +497,8 @@ public final class AdminDungeonGuiMenus {
                             cfg.scriptedWalls.add(wall);
                             ConfigManager.getInstance().saveDungeon(cfg);
                         }
-                        com.arcadia.dungeon.event.DungeonEventHandler.wandDungeon.put(playerInput.getUUID(), dungeon.id);
-                        com.arcadia.dungeon.event.DungeonEventHandler.wandWall.put(playerInput.getUUID(), wallId);
+                        com.arcadia.dungeon.event.DungeonWandEventHandler.wandDungeon.put(playerInput.getUUID(), dungeon.id);
+                        com.arcadia.dungeon.event.DungeonWandEventHandler.wandWall.put(playerInput.getUUID(), wallId);
                         playerInput.sendSystemMessage(Component.literal("[Arcadia] Mur scripted selectionne: " + wallId).withStyle(ChatFormatting.GREEN));
                         return true;
                     }, reopen -> openDungeonAreaGui(reopen, dungeon.id, page)));
