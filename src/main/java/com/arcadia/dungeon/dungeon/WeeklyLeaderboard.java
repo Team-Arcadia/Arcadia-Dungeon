@@ -80,7 +80,7 @@ public class WeeklyLeaderboard {
             }
             normalizeData();
         } catch (Exception e) {
-            ArcadiaDungeon.LOGGER.error("Failed to load weekly leaderboard", e);
+            ArcadiaDungeon.LOGGER.error("No se ha podido cargar la clasificación semanal", e);
             data = new WeeklyData();
         }
 
@@ -101,7 +101,7 @@ public class WeeklyLeaderboard {
                 Files.writeString(configFile, GSON.toJson(config));
             }
         } catch (Exception e) {
-            ArcadiaDungeon.LOGGER.error("Failed to load weekly config", e);
+            ArcadiaDungeon.LOGGER.error("No se ha podido cargar la configuración semanal", e);
         }
 
         String currentWeek = getCurrentWeekId();
@@ -119,7 +119,7 @@ public class WeeklyLeaderboard {
             Files.writeString(dataFile, GSON.toJson(data));
             dirty = false;
         } catch (IOException e) {
-            ArcadiaDungeon.LOGGER.error("Failed to save weekly leaderboard", e);
+            ArcadiaDungeon.LOGGER.error("No se ha podido guardar la clasificación semanal", e);
         }
     }
 
@@ -165,23 +165,23 @@ public class WeeklyLeaderboard {
 
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             player.sendSystemMessage(Component.literal("").withStyle(ChatFormatting.RESET));
-            player.sendSystemMessage(Component.literal("======= Top Joueurs de la Semaine =======").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
+            player.sendSystemMessage(Component.literal("======= Los mejores jugadores de la semana =======").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
 
             for (int i = 0; i < Math.min(3, sorted.size()); i++) {
                 Map.Entry<String, Integer> entry = sorted.get(i);
                 String name = data.playerNames.getOrDefault(entry.getKey(), "???");
                 int completions = entry.getValue();
                 ChatFormatting color = i == 0 ? ChatFormatting.GOLD : i == 1 ? ChatFormatting.GRAY : ChatFormatting.RED;
-                String medal = i == 0 ? "1er" : i == 1 ? "2eme" : "3eme";
+                String medal = i == 0 ? "1.º" : i == 1 ? "2.º" : "3.º";
 
                 player.sendSystemMessage(Component.literal("  " + medal + " - ")
                         .withStyle(color, ChatFormatting.BOLD)
                         .append(Component.literal(name).withStyle(ChatFormatting.WHITE))
-                        .append(Component.literal(" (" + completions + " completions)").withStyle(ChatFormatting.GRAY)));
+                        .append(Component.literal(" (" + completions + " finalizaciones)").withStyle(ChatFormatting.GRAY)));
             }
 
             if (sorted.isEmpty()) {
-                player.sendSystemMessage(Component.literal("  Aucune completion cette semaine!").withStyle(ChatFormatting.GRAY));
+                player.sendSystemMessage(Component.literal("  Esta semana no hay ninguna finalización!").withStyle(ChatFormatting.GRAY));
             }
 
             player.sendSystemMessage(Component.literal("==========================================").withStyle(ChatFormatting.GOLD));
@@ -220,15 +220,15 @@ public class WeeklyLeaderboard {
                     }
                 }
 
-                String medal = i == 0 ? "1er" : i == 1 ? "2eme" : "3eme";
-                player.sendSystemMessage(Component.literal("[Arcadia] Felicitations! Vous etes " + medal + " cette semaine! Recompenses recues!")
+                String medal = i == 0 ? "1.º" : i == 1 ? "2.º" : "3.º";
+                player.sendSystemMessage(Component.literal("[Arcadia] ¡Enhorabuena! Eres " + medal + " ¡Esta semana! Premios recibidos!")
                         .withStyle(ChatFormatting.GOLD));
             }
         }
 
         data.rewarded = true;
         dirty = true;
-        ArcadiaDungeon.LOGGER.info("Weekly leaderboard rewards distributed");
+        ArcadiaDungeon.LOGGER.info("Se han repartido las recompensas de la clasificación semanal");
     }
 
     public List<Map.Entry<String, Integer>> getTop(int limit) {
@@ -348,7 +348,7 @@ public class WeeklyLeaderboard {
             Files.createDirectories(configFile.getParent());
             Files.writeString(configFile, GSON.toJson(config));
         } catch (IOException e) {
-            ArcadiaDungeon.LOGGER.error("Failed to save weekly config", e);
+            ArcadiaDungeon.LOGGER.error("No se ha podido guardar la configuración semanal", e);
         }
     }
 

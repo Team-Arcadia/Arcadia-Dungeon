@@ -47,7 +47,7 @@ final class CuriosCompat {
                 stack.set(type, false);
                 outKeys.add("C:" + typeKey + ":" + idx);
                 ArcadiaDungeon.LOGGER.debug(
-                        "[Arcadia] Curios charm supprimé type={} slot={} joueur={}",
+                        "[Arcadia] Se ha eliminado el objeto «Curios charm» tipo={} ranura={} jugador={}",
                         typeKey, idx, player.getGameProfile().getName());
             }
         });
@@ -70,7 +70,7 @@ final class CuriosCompat {
                 stack.set(type, false);
                 outKeys.add(key);
                 ArcadiaDungeon.LOGGER.debug(
-                        "[Arcadia] Curios nouveau charm supprimé type={} slot={} joueur={}",
+                        "[Arcadia] Se ha eliminado el nuevo amuleto Curios: tipo={} ranura={} jugador={}",
                         typeKey, idx, player.getGameProfile().getName());
             }
         });
@@ -90,7 +90,7 @@ final class CuriosCompat {
         if (!stack.isEmpty() && stack.has(type)) {
             stack.set(type, true);
             ArcadiaDungeon.LOGGER.debug(
-                    "[Arcadia] Curios charm restauré type={} slot={} joueur={}",
+                    "[Arcadia] Amuleto restaurado tipo={} ranura={} jugador={}",
                     typeKey, idx, player.getGameProfile().getName());
         }
     }
@@ -118,7 +118,7 @@ final class CuriosCompat {
                 }
             }
         } catch (Exception e) {
-            ArcadiaDungeon.LOGGER.debug("[Arcadia] CuriosCompat.forEachSlot erreur: {}", e.getMessage());
+            ArcadiaDungeon.LOGGER.debug("[Arcadia] Error en CuriosCompat.forEachSlot: {}", e.getMessage());
         }
     }
 
@@ -136,7 +136,7 @@ final class CuriosCompat {
             if (stacksHandler == null) return null;
             return extractItemHandler(stacksHandler);
         } catch (Exception e) {
-            ArcadiaDungeon.LOGGER.debug("[Arcadia] CuriosCompat.getSlotHandler erreur: {}", e.getMessage());
+            ArcadiaDungeon.LOGGER.debug("[Arcadia] Error en CuriosCompat.getSlotHandlerr: {}", e.getMessage());
             return null;
         }
     }
@@ -162,7 +162,7 @@ final class CuriosCompat {
             } catch (Exception ignored) {}
         }
         ArcadiaDungeon.LOGGER.debug(
-                "[Arcadia] CuriosCompat: impossible d'extraire IItemHandlerModifiable depuis {}",
+                "[Arcadia] CuriosCompat: no se puede extraer IItemHandlerModifiable desde {}",
                 stacksHandler.getClass().getName());
         return null;
     }

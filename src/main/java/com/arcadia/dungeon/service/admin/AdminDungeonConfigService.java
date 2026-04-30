@@ -19,7 +19,7 @@ public final class AdminDungeonConfigService {
             int value = Integer.parseInt(input.trim());
             DungeonConfig cfg = ConfigManager.getInstance().getDungeon(dungeonId);
             if (cfg == null) {
-                player.sendSystemMessage(Component.literal("[Arcadia] Donjon introuvable.").withStyle(ChatFormatting.RED));
+                player.sendSystemMessage(Component.literal("[Arcadia] No se encuentra la mazmorra.").withStyle(ChatFormatting.RED));
                 return false;
             }
             setter.accept(cfg, value);
@@ -27,7 +27,7 @@ public final class AdminDungeonConfigService {
             player.sendSystemMessage(Component.literal(successPrefix + value).withStyle(ChatFormatting.GREEN));
             return true;
         } catch (NumberFormatException e) {
-            player.sendSystemMessage(Component.literal("[Arcadia] Valeur invalide.").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("[Arcadia] Valor no válido.").withStyle(ChatFormatting.RED));
             return false;
         }
     }
@@ -39,7 +39,7 @@ public final class AdminDungeonConfigService {
             double value = Double.parseDouble(input.trim());
             DungeonConfig cfg = ConfigManager.getInstance().getDungeon(dungeonId);
             if (cfg == null) {
-                player.sendSystemMessage(Component.literal("[Arcadia] Donjon introuvable.").withStyle(ChatFormatting.RED));
+                player.sendSystemMessage(Component.literal("[Arcadia] No se encuentra la mazmorra.").withStyle(ChatFormatting.RED));
                 return false;
             }
             setter.accept(cfg, value);
@@ -47,13 +47,13 @@ public final class AdminDungeonConfigService {
             player.sendSystemMessage(Component.literal(successPrefix + value).withStyle(ChatFormatting.GREEN));
             return true;
         } catch (NumberFormatException e) {
-            player.sendSystemMessage(Component.literal("[Arcadia] Valeur invalide.").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("[Arcadia] Valor no válido.").withStyle(ChatFormatting.RED));
             return false;
         }
     }
 
     public static String buildRewardSummary(RewardConfig reward) {
-        if (reward == null) return "Reward vide";
+        if (reward == null) return "Recompensa";
         if (reward.item != null && !reward.item.isBlank()) {
             return reward.item + " x" + reward.count + " (" + reward.chance + ")";
         }

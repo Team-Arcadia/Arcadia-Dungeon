@@ -46,7 +46,7 @@ public class DungeonWorldEventHandler {
 
                 event.setCanceled(true);
                 if (DungeonEventUtil.isDebugEnabled(config)) {
-                    ArcadiaDungeon.LOGGER.debug("Blocked unmanaged entity {} inside active dungeon {}", entity.getType(), config.id);
+                    ArcadiaDungeon.LOGGER.debug("Entidad no gestionada {} bloqueada dentro de una mazmorra activa {}", entity.getType(), config.id);
                 }
                 return;
             }

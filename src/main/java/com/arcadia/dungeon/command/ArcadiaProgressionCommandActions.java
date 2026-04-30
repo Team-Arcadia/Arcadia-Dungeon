@@ -34,11 +34,11 @@ final class ArcadiaProgressionCommandActions {
     static int showArcadiaProfile(CommandContext<CommandSourceStack> ctx, String playerName) {
         ServerPlayer sourcePlayer = ctx.getSource().getPlayer();
         if (sourcePlayer == null && playerName == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] ¡Solo para jugadores!"));
             return 0;
         }
         if (playerName != null && PlayerProgressManager.getInstance().findByName(playerName) == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Joueur introuvable: " + playerName));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra el jugador: " + playerName));
             return 0;
         }
         String fallbackUuid = sourcePlayer != null ? sourcePlayer.getUUID().toString() : playerName;
@@ -50,13 +50,13 @@ final class ArcadiaProgressionCommandActions {
     static int showArcadiaPlayerAdminMenu(CommandContext<CommandSourceStack> ctx) {
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] ¡Solo para jugadores!"));
             return 0;
         }
         String playerName = StringArgumentType.getString(ctx, "player");
         PlayerProgress progress = PlayerProgressManager.getInstance().findByName(playerName);
         if (progress == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Joueur introuvable: " + playerName));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra el jugador: " + playerName));
             return 0;
         }
         openArcadiaPlayerAdminGui(player, progress.uuid);
@@ -75,7 +75,7 @@ final class ArcadiaProgressionCommandActions {
         progress.arcadiaProgress.arcadiaXp = Math.max(0L, xpForLevel);
         progress.arcadiaProgress.arcadiaRank = config.getRankForLevel(progress.arcadiaProgress.arcadiaLevel);
         PlayerProgressManager.getInstance().saveNow(progress.uuid);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Niveau de " + progress.playerName + " = " + progress.arcadiaProgress.arcadiaLevel)
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Nivel de " + progress.playerName + " = " + progress.arcadiaProgress.arcadiaLevel)
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -121,7 +121,7 @@ final class ArcadiaProgressionCommandActions {
         progress.normalize();
         progress.arcadiaProgress.weeklyStreak = Math.max(0, weeks);
         PlayerProgressManager.getInstance().saveNow(progress.uuid);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Streak de " + progress.playerName + " = " + progress.arcadiaProgress.weeklyStreak + " semaine(s)")
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Racha de " + progress.playerName + " = " + progress.arcadiaProgress.weeklyStreak + " semana(s)")
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -143,7 +143,7 @@ final class ArcadiaProgressionCommandActions {
         double value = DoubleArgumentType.getDouble(ctx, "value");
         config.difficultyMultiplier = value;
         ConfigManager.getInstance().saveDungeon(config);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Multiplicateur XP de " + config.name + " = " + value)
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Multiplicador de XP de " + config.name + " = " + value)
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -154,7 +154,7 @@ final class ArcadiaProgressionCommandActions {
         int level = IntegerArgumentType.getInteger(ctx, "level");
         config.requiredArcadiaLevel = level;
         ConfigManager.getInstance().saveDungeon(config);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Niveau Arcadia requis pour " + config.name + " = " + level)
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Nivel de Arcadia requerido para " + config.name + " = " + level)
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -167,7 +167,7 @@ final class ArcadiaProgressionCommandActions {
         config.speedrunBonusSeconds = seconds;
         config.speedrunBonusXp = xp;
         ConfigManager.getInstance().saveDungeon(config);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Bonus speedrun de " + config.name + " = +" + xp + " XP sous " + seconds + "s")
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Bonus speedrun de " + config.name + " = +" + xp + " XP en " + seconds + "s")
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -177,7 +177,7 @@ final class ArcadiaProgressionCommandActions {
         ArcadiaProgressionConfig config = ConfigManager.getInstance().getProgressionConfig();
         config.defaultDungeonXp = xp;
         ConfigManager.getInstance().saveProgressionConfig();
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] XP Arcadia par defaut = " + xp)
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] XP Arcadia por defecto = " + xp)
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -201,7 +201,7 @@ final class ArcadiaProgressionCommandActions {
         }
         config.normalize();
         ConfigManager.getInstance().saveProgressionConfig();
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Rang sauvegarde: niveau " + minLevel + " -> " + name + " (" + color + ")")
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Nivel de seguridad: nivel " + minLevel + " -> " + name + " (" + color + ")")
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -211,12 +211,12 @@ final class ArcadiaProgressionCommandActions {
         ArcadiaProgressionConfig config = ConfigManager.getInstance().getProgressionConfig();
         boolean removed = config.ranks.removeIf(rank -> rank != null && rank.minLevel == minLevel);
         if (!removed) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Aucun rang pour le niveau " + minLevel));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No hay clasificación para este nivel " + minLevel));
             return 0;
         }
         config.normalize();
         ConfigManager.getInstance().saveProgressionConfig();
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Rang supprime au niveau " + minLevel)
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Rango elimina a nivel " + minLevel)
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -237,7 +237,7 @@ final class ArcadiaProgressionCommandActions {
         }
         config.normalize();
         ConfigManager.getInstance().saveProgressionConfig();
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Milestone sauvegarde pour le niveau " + level)
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Hito de guardado para el nivel " + level)
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -247,12 +247,12 @@ final class ArcadiaProgressionCommandActions {
         ArcadiaProgressionConfig config = ConfigManager.getInstance().getProgressionConfig();
         boolean removed = config.milestoneRewards.removeIf(milestone -> milestone != null && milestone.level == level);
         if (!removed) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Aucun milestone pour le niveau " + level));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No hay hitos para este nivel " + level));
             return 0;
         }
         config.normalize();
         ConfigManager.getInstance().saveProgressionConfig();
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Milestone supprime pour le niveau " + level)
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Milestone elimina para el nivel " + level)
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -275,7 +275,7 @@ final class ArcadiaProgressionCommandActions {
         }
         config.normalize();
         ConfigManager.getInstance().saveProgressionConfig();
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Bonus streak " + weeks + " semaine(s) = +" + xp + " XP")
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Racha de bonificaciones " + weeks + " semana(s) = +" + xp + " XP")
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -292,7 +292,7 @@ final class ArcadiaProgressionCommandActions {
         milestone.rewards.add(reward);
         ConfigManager.getInstance().getProgressionConfig().normalize();
         ConfigManager.getInstance().saveProgressionConfig();
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Reward item ajoute au milestone niveau " + level)
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] El objeto de recompensa se añade al hito de nivel " + level)
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -311,7 +311,7 @@ final class ArcadiaProgressionCommandActions {
         milestone.rewards.add(reward);
         ConfigManager.getInstance().getProgressionConfig().normalize();
         ConfigManager.getInstance().saveProgressionConfig();
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Reward XP ajoute au milestone niveau " + level)
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Reward XP se suma al hito de nivel " + level)
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -330,7 +330,7 @@ final class ArcadiaProgressionCommandActions {
         milestone.rewards.add(reward);
         ConfigManager.getInstance().getProgressionConfig().normalize();
         ConfigManager.getInstance().saveProgressionConfig();
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Reward commande ajoute au milestone niveau " + level)
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] La recompensa del pedido se suma al hito de nivel " + level)
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -343,7 +343,7 @@ final class ArcadiaProgressionCommandActions {
         milestone.rewards.clear();
         ConfigManager.getInstance().getProgressionConfig().normalize();
         ConfigManager.getInstance().saveProgressionConfig();
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Rewards du milestone niveau " + level + " supprimes")
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Recompensas por alcanzar el hito de nivel " + level + " elimina")
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -353,12 +353,12 @@ final class ArcadiaProgressionCommandActions {
         ArcadiaProgressionConfig config = ConfigManager.getInstance().getProgressionConfig();
         boolean removed = config.streakBonuses.removeIf(streak -> streak != null && streak.weeks == weeks);
         if (!removed) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Aucun bonus streak pour " + weeks + " semaine(s)"));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No hay racha de bonificaciones para " + weeks + " semana(s)"));
             return 0;
         }
         config.normalize();
         ConfigManager.getInstance().saveProgressionConfig();
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Bonus streak supprime pour " + weeks + " semaine(s)")
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] La racha de bonificaciones se elimina para " + weeks + " semana(s)")
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -371,14 +371,14 @@ final class ArcadiaProgressionCommandActions {
     static int showArcadiaAdminMenu(CommandContext<CommandSourceStack> ctx, String dungeonId) {
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] ¡Solo para jugadores!"));
             return 0;
         }
 
         if (dungeonId != null) {
             DungeonConfig dungeon = ConfigManager.getInstance().getDungeon(dungeonId);
             if (dungeon == null) {
-                ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + dungeonId));
+                ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorra: " + dungeonId));
                 return 0;
             }
             openDungeonArcadiaAdminGui(player, dungeon.id);
@@ -392,7 +392,7 @@ final class ArcadiaProgressionCommandActions {
     static int showAdminGui(CommandContext<CommandSourceStack> ctx) {
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Solo para jugadores!"));
             return 0;
         }
         openAdminHubGui(player, 0);
@@ -402,7 +402,7 @@ final class ArcadiaProgressionCommandActions {
     static int showDungeonAdminGui(CommandContext<CommandSourceStack> ctx, String dungeonId) {
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Solo para jugadores!"));
             return 0;
         }
         openDungeonAdminHubGui(player, dungeonId);
@@ -412,7 +412,7 @@ final class ArcadiaProgressionCommandActions {
     static int showPlayerMenu(CommandContext<CommandSourceStack> ctx) {
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Solo para jugadores!"));
             return 0;
         }
         openPlayerArcadiaGui(player);
@@ -423,7 +423,7 @@ final class ArcadiaProgressionCommandActions {
         String playerName = StringArgumentType.getString(ctx, "player");
         PlayerProgress progress = PlayerProgressManager.getInstance().findByName(playerName);
         if (progress == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Joueur introuvable: " + playerName));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra el jugador: " + playerName));
             return null;
         }
         progress.normalize();
@@ -443,7 +443,7 @@ final class ArcadiaProgressionCommandActions {
     static int showProgression(CommandContext<CommandSourceStack> ctx) {
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Solo para jugadores!"));
             return 0;
         }
         AdminGuiActionService.showPlayerProgression(component -> ctx.getSource().sendSuccess(() -> component, false), player.getUUID().toString(), player.getName().getString());
@@ -455,16 +455,16 @@ final class ArcadiaProgressionCommandActions {
             // Top for specific dungeon
             DungeonConfig config = ConfigManager.getInstance().getDungeon(dungeonId);
             if (config == null) {
-                ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + dungeonId));
+                ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorra: " + dungeonId));
                 return 0;
             }
 
             List<Map.Entry<String, Long>> top = WeeklyLeaderboard.getInstance().getTopForDungeon(dungeonId, 10);
 
-            ctx.getSource().sendSuccess(() -> Component.literal("=== Top hebdo " + config.name + " ===").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), false);
+            ctx.getSource().sendSuccess(() -> Component.literal("=== Lo más destacado de la semana " + config.name + " ===").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), false);
 
             if (top.isEmpty()) {
-                ctx.getSource().sendSuccess(() -> Component.literal("Aucun temps hebdo enregistre.").withStyle(ChatFormatting.GRAY), false);
+                ctx.getSource().sendSuccess(() -> Component.literal("No se ha registrado ningún tiempo semanal.").withStyle(ChatFormatting.GRAY), false);
                 return 1;
             }
 
@@ -492,11 +492,11 @@ final class ArcadiaProgressionCommandActions {
     static int showStats(CommandContext<CommandSourceStack> ctx, String playerName) {
         ServerPlayer sourcePlayer = ctx.getSource().getPlayer();
         if (sourcePlayer == null && playerName == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] Solo para jugadores!"));
             return 0;
         }
         if (playerName != null && PlayerProgressManager.getInstance().findByName(playerName) == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Joueur introuvable: " + playerName));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra el jugador: " + playerName));
             return 0;
         }
         String fallbackUuid = sourcePlayer != null ? sourcePlayer.getUUID().toString() : playerName;

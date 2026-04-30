@@ -44,7 +44,7 @@ public class DungeonWandEventHandler {
             String input = event.getRawText() == null ? "" : event.getRawText().trim();
             if (input.equalsIgnoreCase("cancel")) {
                 ArcadiaPendingInputManager.clear(player);
-                player.sendSystemMessage(Component.literal("[Arcadia] Saisie annulee.").withStyle(ChatFormatting.YELLOW));
+                player.sendSystemMessage(Component.literal("[Arcadia] Embargo anulado.").withStyle(ChatFormatting.YELLOW));
                 reopenPendingMenu(player, pending);
                 return;
             }
@@ -78,7 +78,7 @@ public class DungeonWandEventHandler {
             toggleScriptedWallBlock(player, pos);
         } else {
             wandPos1.put(player.getUUID(), pos);
-            player.sendSystemMessage(Component.literal("[Arcadia Wand] Pos1 definie: " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ()).withStyle(ChatFormatting.GREEN));
+            player.sendSystemMessage(Component.literal("[Varita Arcadia] Posición 1 definida: " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ()).withStyle(ChatFormatting.GREEN));
             trySaveWandArea(player);
         }
         event.setCanceled(true);
@@ -96,7 +96,7 @@ public class DungeonWandEventHandler {
             toggleScriptedWallBlock(player, pos);
         } else {
             wandPos2.put(player.getUUID(), pos);
-            player.sendSystemMessage(Component.literal("[Arcadia Wand] Pos2 definie: " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ()).withStyle(ChatFormatting.AQUA));
+            player.sendSystemMessage(Component.literal("[Arcadia Wand] Definición de Pos2: " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ()).withStyle(ChatFormatting.AQUA));
             trySaveWandArea(player);
         }
         event.setCanceled(true);
@@ -111,11 +111,11 @@ public class DungeonWandEventHandler {
 
     private boolean ensureWandSelection(ServerPlayer player, String toolTag) {
         if (!wandDungeon.containsKey(player.getUUID())) {
-            player.sendSystemMessage(Component.literal("[Arcadia] Aucun donjon selectionne pour cet outil.").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("[Arcadia] No hay ninguna mazmorra seleccionada para esta herramienta.").withStyle(ChatFormatting.RED));
             return false;
         }
         if (WALL_WAND_TAG.equals(toolTag) && !wandWall.containsKey(player.getUUID())) {
-            player.sendSystemMessage(Component.literal("[Arcadia] Selectionnez un mur scripté avec /arcadia_dungeon admin wall_select <dungeon> <wallId>.").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("[Arcadia] Selecciona una pared con script mediante /arcadia_dungeon admin wall_select <dungeon> <wallId>.").withStyle(ChatFormatting.RED));
             return false;
         }
         return true;
@@ -142,7 +142,7 @@ public class DungeonWandEventHandler {
         int sx = Math.abs(p2.getX() - p1.getX()) + 1;
         int sy = Math.abs(p2.getY() - p1.getY()) + 1;
         int sz = Math.abs(p2.getZ() - p1.getZ()) + 1;
-        player.sendSystemMessage(Component.literal("[Arcadia Wand] Zone sauvegardee pour " + label + "! " + sx + "x" + sy + "x" + sz + " (" + (sx * sy * sz) + " blocs)")
+        player.sendSystemMessage(Component.literal("[Varita de Arcadia] Zona protegida para " + label + "! " + sx + "x" + sy + "x" + sz + " (" + (sx * sy * sz) + " bloques)")
                 .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
 
         wandPos1.remove(player.getUUID());
@@ -166,10 +166,10 @@ public class DungeonWandEventHandler {
                 .findFirst().orElse(null);
         if (existing != null) {
             wall.blocks.remove(existing);
-            player.sendSystemMessage(Component.literal("[Arcadia Wall] Bloc retire: " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ()).withStyle(ChatFormatting.YELLOW));
+            player.sendSystemMessage(Component.literal("[Arcadia Wall] Bloque retirado: " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ()).withStyle(ChatFormatting.YELLOW));
         } else {
             wall.blocks.add(new DungeonConfig.AreaPos(dim, pos.getX(), pos.getY(), pos.getZ()));
-            player.sendSystemMessage(Component.literal("[Arcadia Wall] Bloc ajoute: " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ()).withStyle(ChatFormatting.GREEN));
+            player.sendSystemMessage(Component.literal("[Arcadia Wall] Bloc añade: " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ()).withStyle(ChatFormatting.GREEN));
         }
         ConfigManager.getInstance().saveDungeon(config);
     }

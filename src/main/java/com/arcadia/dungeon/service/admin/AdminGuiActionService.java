@@ -59,16 +59,16 @@ public final class AdminGuiActionService {
         ChatFormatting rankColor = ArcadiaCommandHelper.parseLegacyColor(progressionConfig.getRankColorForLevel(arcadia.arcadiaLevel));
         String displayName = displayPlayer(progress);
 
-        send(sink, Component.literal("========= Profil Arcadia =========").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
-        send(sink, Component.literal(" Joueur: ").withStyle(ChatFormatting.GRAY).append(Component.literal(displayName).withStyle(ChatFormatting.WHITE)));
-        send(sink, Component.literal(" Niveau: ").withStyle(ChatFormatting.GRAY).append(Component.literal(String.valueOf(arcadia.arcadiaLevel)).withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD)));
-        send(sink, Component.literal(" Rang: ").withStyle(ChatFormatting.GRAY).append(Component.literal(arcadia.arcadiaRank).withStyle(rankColor, ChatFormatting.BOLD)));
+        send(sink, Component.literal("========= Perfil Arcadia =========").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
+        send(sink, Component.literal(" Jugador: ").withStyle(ChatFormatting.GRAY).append(Component.literal(displayName).withStyle(ChatFormatting.WHITE)));
+        send(sink, Component.literal(" Nivel: ").withStyle(ChatFormatting.GRAY).append(Component.literal(String.valueOf(arcadia.arcadiaLevel)).withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD)));
+        send(sink, Component.literal(" Rango: ").withStyle(ChatFormatting.GRAY).append(Component.literal(arcadia.arcadiaRank).withStyle(rankColor, ChatFormatting.BOLD)));
         send(sink, Component.literal(" XP: ").withStyle(ChatFormatting.GRAY)
                 .append(Component.literal(String.valueOf(arcadia.arcadiaXp)).withStyle(ChatFormatting.GREEN))
-                .append(Component.literal(nextXp > 0 ? " (" + nextXp + " avant niveau suivant)" : " (niveau max config)").withStyle(ChatFormatting.DARK_GRAY)));
-        send(sink, Component.literal(" Streak hebdo: ").withStyle(ChatFormatting.GRAY)
-                .append(Component.literal(arcadia.weeklyStreak + " semaine(s)").withStyle(ChatFormatting.AQUA)));
-        send(sink, Component.literal(" Completions: ").withStyle(ChatFormatting.GRAY)
+                .append(Component.literal(nextXp > 0 ? " (" + nextXp + " para el siguiente nivel)" : " (nivel max config)").withStyle(ChatFormatting.DARK_GRAY)));
+        send(sink, Component.literal(" Racha semanal: ").withStyle(ChatFormatting.GRAY)
+                .append(Component.literal(arcadia.weeklyStreak + " semana(s)").withStyle(ChatFormatting.AQUA)));
+        send(sink, Component.literal(" Completaciones: ").withStyle(ChatFormatting.GRAY)
                 .append(Component.literal(String.valueOf(progress.getTotalCompletions())).withStyle(ChatFormatting.WHITE)));
         send(sink, Component.literal("==================================").withStyle(ChatFormatting.GOLD));
     }
@@ -81,9 +81,9 @@ public final class AdminGuiActionService {
     public static void showPlayerTop(MessageSink sink) {
         if (sink == null) return;
         List<PlayerProgress> top = PlayerProgressManager.getInstance().getTopPlayers(10);
-        send(sink, Component.literal("=== Top Joueurs Arcadia ===").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
+        send(sink, Component.literal("=== Top Jugadores Arcadia ===").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
         if (top.isEmpty()) {
-            send(sink, Component.literal("Aucune completion enregistree.").withStyle(ChatFormatting.GRAY));
+            send(sink, Component.literal("Ninguna completacion registrada.").withStyle(ChatFormatting.GRAY));
             return;
         }
         for (int i = 0; i < top.size(); i++) {
@@ -100,7 +100,7 @@ public final class AdminGuiActionService {
                     .append(Component.literal(" | ").withStyle(ChatFormatting.GRAY))
                     .append(Component.literal(pp.arcadiaProgress.arcadiaRank).withStyle(arcadiaRankColor))
                     .append(Component.literal(" | " + pp.arcadiaProgress.arcadiaXp + " XP").withStyle(ChatFormatting.GREEN))
-                    .append(Component.literal(" | " + pp.getTotalCompletions() + " completions").withStyle(ChatFormatting.GRAY)));
+                    .append(Component.literal(" | " + pp.getTotalCompletions() + " completaciones").withStyle(ChatFormatting.GRAY)));
         }
     }
 
@@ -117,10 +117,10 @@ public final class AdminGuiActionService {
         if (sink == null || fallbackUuid == null || fallbackName == null) return;
         PlayerProgress progress = resolveProgress(playerRef, fallbackUuid, fallbackName);
         send(sink, Component.literal("=== Stats: " + displayPlayer(progress) + " ===").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
-        send(sink, Component.literal("Completions totales: " + progress.getTotalCompletions()).withStyle(ChatFormatting.AQUA));
-        send(sink, Component.literal("Donjons completes: " + progress.completedDungeons.size()).withStyle(ChatFormatting.AQUA));
+        send(sink, Component.literal("Completaciones totales: " + progress.getTotalCompletions()).withStyle(ChatFormatting.AQUA));
+        send(sink, Component.literal("Mazmorras completadas: " + progress.completedDungeons.size()).withStyle(ChatFormatting.AQUA));
         if (!progress.completedDungeons.isEmpty()) {
-            send(sink, Component.literal("Details:").withStyle(ChatFormatting.YELLOW));
+            send(sink, Component.literal("Detalles:").withStyle(ChatFormatting.YELLOW));
             for (Map.Entry<String, PlayerProgress.DungeonProgress> entry : progress.completedDungeons.entrySet()) {
                 String dId = entry.getKey();
                 PlayerProgress.DungeonProgress dp = entry.getValue();
@@ -145,7 +145,7 @@ public final class AdminGuiActionService {
         List<DungeonConfig> dungeons = new ArrayList<>(ConfigManager.getInstance().getDungeonConfigs().values());
         dungeons.sort(Comparator.comparingInt(d -> d.order));
 
-        send(sink, Component.literal("========= Donjons Arcadia =========").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
+        send(sink, Component.literal("========= Mazmorras Arcadia =========").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
         for (DungeonConfig dungeon : dungeons) {
             if (!dungeon.enabled) continue;
             boolean completed = progress.hasCompleted(dungeon.id);
@@ -159,21 +159,21 @@ public final class AdminGuiActionService {
             if (completed) {
                 bar = "##########";
                 color = ChatFormatting.GREEN;
-                status = "COMPLETE";
+                status = "COMPLETA";
                 details = dp.completions + "x | Record: " + ArcadiaCommandHelper.formatTime(dp.bestTimeSeconds);
             } else if (unlocked) {
                 bar = ">>--------";
                 color = ChatFormatting.YELLOW;
                 status = "DISPONIBLE";
-                details = "Clique pour entrer";
+                details = "Haz clic para entrar";
             } else {
                 bar = "----------";
                 color = ChatFormatting.RED;
-                status = "VERROUILLE";
+                status = "BLOQUEADA";
                 DungeonConfig req = ConfigManager.getInstance().getDungeon(dungeon.requiredDungeon);
                 details = dungeon.requiredArcadiaLevel > progress.arcadiaProgress.arcadiaLevel
-                        ? "Niveau Arcadia requis: " + dungeon.requiredArcadiaLevel
-                        : "Requis: " + (req != null ? req.name : dungeon.requiredDungeon);
+                        ? "Nivel Arcadia requerido: " + dungeon.requiredArcadiaLevel
+                        : "Requerido: " + (req != null ? req.name : dungeon.requiredDungeon);
             }
 
             MutableComponent line = Component.literal(" ")
@@ -190,7 +190,7 @@ public final class AdminGuiActionService {
         int completedCount = (int) dungeons.stream().filter(d -> d.enabled && progress.hasCompleted(d.id)).count();
         int totalEnabled = (int) dungeons.stream().filter(d -> d.enabled).count();
         send(sink, Component.literal("====================================").withStyle(ChatFormatting.GOLD));
-        send(sink, Component.literal(" Progression: " + completedCount + "/" + totalEnabled + " donjons | " + total + " completions totales").withStyle(ChatFormatting.AQUA));
+        send(sink, Component.literal(" Progreso: " + completedCount + "/" + totalEnabled + " mazmorras | " + total + " completaciones totales").withStyle(ChatFormatting.AQUA));
     }
 
     public static void showArcadiaAdminOverview(ServerPlayer player) {
@@ -203,21 +203,21 @@ public final class AdminGuiActionService {
         ArcadiaProgressionConfig config = ConfigManager.getInstance().getProgressionConfig();
         config.normalize();
         send(sink, Component.literal("======= Arcadia Admin =======").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
-        send(sink, Component.literal(" XP par defaut: " + config.defaultDungeonXp).withStyle(ChatFormatting.YELLOW));
-        send(sink, Component.literal(" Rangs:").withStyle(ChatFormatting.AQUA));
+        send(sink, Component.literal(" XP por defecto: " + config.defaultDungeonXp).withStyle(ChatFormatting.YELLOW));
+        send(sink, Component.literal(" Rangos:").withStyle(ChatFormatting.AQUA));
         for (ArcadiaProgressionConfig.RankThreshold rank : config.ranks) {
             ChatFormatting rankColor = ArcadiaCommandHelper.parseLegacyColor(rank.color);
             send(sink, Component.literal("  - niv " + rank.minLevel + ": ").withStyle(ChatFormatting.GRAY)
                     .append(Component.literal(rank.rankName + " (" + rank.color + ")").withStyle(rankColor)));
         }
-        send(sink, Component.literal(" Milestones:").withStyle(ChatFormatting.AQUA));
+        send(sink, Component.literal(" Hitos:").withStyle(ChatFormatting.AQUA));
         for (ArcadiaProgressionConfig.MilestoneReward milestone : config.milestoneRewards) {
             int rewardCount = milestone.rewards == null ? 0 : milestone.rewards.size();
-            send(sink, Component.literal("  - niv " + milestone.level + ": " + rewardCount + " reward(s)").withStyle(ChatFormatting.GRAY));
+            send(sink, Component.literal("  - niv " + milestone.level + ": " + rewardCount + " recompensa(s)").withStyle(ChatFormatting.GRAY));
         }
-        send(sink, Component.literal(" Streaks:").withStyle(ChatFormatting.AQUA));
+        send(sink, Component.literal(" Rachas:").withStyle(ChatFormatting.AQUA));
         for (ArcadiaProgressionConfig.StreakBonus streak : config.streakBonuses) {
-            send(sink, Component.literal("  - " + streak.weeks + " semaine(s): +" + streak.xpBonus + " XP").withStyle(ChatFormatting.GRAY));
+            send(sink, Component.literal("  - " + streak.weeks + " semana(s): +" + streak.xpBonus + " XP").withStyle(ChatFormatting.GRAY));
         }
     }
 
@@ -229,9 +229,9 @@ public final class AdminGuiActionService {
     public static void reloadConfigs(MessageSink sink) {
         ConfigManager.getInstance().loadAll();
         PlayerProgressManager.getInstance().loadAll();
-        send(sink, Component.literal("[Arcadia] Configs rechargees! " +
-                ConfigManager.getInstance().getDungeonConfigs().size() + " donjon(s), " +
-                PlayerProgressManager.getInstance().getAll().size() + " joueur(s).").withStyle(ChatFormatting.AQUA));
+        send(sink, Component.literal("[Arcadia] Configuraciones recargadas! " +
+                ConfigManager.getInstance().getDungeonConfigs().size() + " mazmorra(s), " +
+                PlayerProgressManager.getInstance().getAll().size() + " jugador(es).").withStyle(ChatFormatting.AQUA));
     }
 
     public static void showActiveInstances(ServerPlayer player) {
@@ -243,15 +243,15 @@ public final class AdminGuiActionService {
         if (sink == null) return;
         Map<String, DungeonInstance> active = DungeonManager.getInstance().getActiveInstances();
         if (active.isEmpty()) {
-            send(sink, Component.literal("[Arcadia Debug] Aucun donjon actif.").withStyle(ChatFormatting.YELLOW));
+            send(sink, Component.literal("[Arcadia Debug] Ninguna mazmorra activa.").withStyle(ChatFormatting.YELLOW));
             return;
         }
-        send(sink, Component.literal("=== Donjons Actifs ===").withStyle(ChatFormatting.AQUA));
+        send(sink, Component.literal("=== Mazmorras Activas ===").withStyle(ChatFormatting.AQUA));
         for (Map.Entry<String, DungeonInstance> entry : new ArrayList<>(active.entrySet())) {
             String key = entry.getKey();
             DungeonInstance inst = entry.getValue();
-            send(sink, Component.literal(" - " + key + " | Etat: " + inst.getState() +
-                    " | Joueurs: " + inst.getPlayerCount() + " | Temps: " + ArcadiaCommandHelper.formatTime(inst.getElapsedSeconds()))
+            send(sink, Component.literal(" - " + key + " | Estado: " + inst.getState() +
+                    " | Jugadores: " + inst.getPlayerCount() + " | Tiempo: " + ArcadiaCommandHelper.formatTime(inst.getElapsedSeconds()))
                     .withStyle(ChatFormatting.WHITE));
         }
     }
@@ -265,38 +265,38 @@ public final class AdminGuiActionService {
         if (sink == null) return;
         DungeonConfig config = ConfigManager.getInstance().getDungeon(dungeonId);
         if (config == null) {
-            send(sink, Component.literal("[Arcadia] Donjon introuvable: " + dungeonId).withStyle(ChatFormatting.RED));
+            send(sink, Component.literal("[Arcadia] Mazmorra no encontrada: " + dungeonId).withStyle(ChatFormatting.RED));
             return;
         }
         send(sink, Component.literal("=== " + config.name + " ===").withStyle(ChatFormatting.GOLD));
         send(sink, Component.literal("ID: " + config.id).withStyle(ChatFormatting.GRAY));
         send(sink, Component.literal("Cooldown: " + config.cooldownSeconds + "s").withStyle(ChatFormatting.GRAY));
-        send(sink, Component.literal("Disponible toutes les: " + (config.availableEverySeconds > 0 ? config.availableEverySeconds + "s" : "toujours")).withStyle(ChatFormatting.GRAY));
-        send(sink, Component.literal("Annonce periodique: " + (config.announceIntervalMinutes > 0 ? config.announceIntervalMinutes + " min" : "desactivee")).withStyle(ChatFormatting.GRAY));
-        send(sink, Component.literal("TP retour: " + (config.teleportBackOnComplete ? "Oui" : "Non")).withStyle(ChatFormatting.GRAY));
-        send(sink, Component.literal("Annonce debut: " + (config.announceStart ? "Oui" : "Non")).withStyle(ChatFormatting.GRAY));
-        send(sink, Component.literal("Annonce fin: " + (config.announceCompletion ? "Oui" : "Non")).withStyle(ChatFormatting.GRAY));
-        send(sink, Component.literal("Joueurs max: " + config.settings.maxPlayers).withStyle(ChatFormatting.GRAY));
-        send(sink, Component.literal("Temps limite: " + config.settings.timeLimitSeconds + "s").withStyle(ChatFormatting.GRAY));
+        send(sink, Component.literal("Disponible cada: " + (config.availableEverySeconds > 0 ? config.availableEverySeconds + "s" : "siempre")).withStyle(ChatFormatting.GRAY));
+        send(sink, Component.literal("Anuncio periodico: " + (config.announceIntervalMinutes > 0 ? config.announceIntervalMinutes + " min" : "desactivado")).withStyle(ChatFormatting.GRAY));
+        send(sink, Component.literal("TP al completar: " + (config.teleportBackOnComplete ? "Si" : "No")).withStyle(ChatFormatting.GRAY));
+        send(sink, Component.literal("Anunciar inicio: " + (config.announceStart ? "Si" : "No")).withStyle(ChatFormatting.GRAY));
+        send(sink, Component.literal("Anunciar fin: " + (config.announceCompletion ? "Si" : "No")).withStyle(ChatFormatting.GRAY));
+        send(sink, Component.literal("Jugadores max: " + config.settings.maxPlayers).withStyle(ChatFormatting.GRAY));
+        send(sink, Component.literal("Tiempo limite: " + config.settings.timeLimitSeconds + "s").withStyle(ChatFormatting.GRAY));
         if (config.spawnPoint != null) {
             send(sink, Component.literal("Spawn: " + config.spawnPoint.dimension + " [" +
                     (int) config.spawnPoint.x + ", " + (int) config.spawnPoint.y + ", " + (int) config.spawnPoint.z + "]").withStyle(ChatFormatting.GRAY));
         }
-        send(sink, Component.literal("Boss (" + config.bosses.size() + "):").withStyle(ChatFormatting.YELLOW));
+        send(sink, Component.literal("Jefes (" + config.bosses.size() + "):").withStyle(ChatFormatting.YELLOW));
         for (BossConfig boss : config.bosses) {
             send(sink, Component.literal("  - " + boss.customName + " (" + boss.entityType + ") HP:" + boss.baseHealth + " DMG:" + boss.baseDamage +
-                    " Phases:" + boss.phases.size() + " Rewards:" + boss.rewards.size()).withStyle(ChatFormatting.GRAY));
+                    " Fases:" + boss.phases.size() + " Recompensas:" + boss.rewards.size()).withStyle(ChatFormatting.GRAY));
         }
     }
 
     public static void forceResetDungeon(ServerPlayer player, String dungeonId) {
         DungeonInstance instance = DungeonManager.getInstance().getInstance(dungeonId);
         if (instance == null) {
-            send(player, Component.literal("[Arcadia] Aucune instance active: " + dungeonId).withStyle(ChatFormatting.RED));
+            send(player, Component.literal("[Arcadia] Ninguna instancia activa: " + dungeonId).withStyle(ChatFormatting.RED));
             return;
         }
         DungeonManager.getInstance().forceReset(dungeonId);
-        send(player, Component.literal("[Arcadia] Donjon " + dungeonId + " reinitialise. Joueurs expulses, mobs supprimes.").withStyle(ChatFormatting.GREEN));
+        send(player, Component.literal("[Arcadia] Mazmorra " + dungeonId + " reiniciada. Jugadores expulsados, mobs eliminados.").withStyle(ChatFormatting.GREEN));
     }
 
     public static void debugInfo(ServerPlayer player, String dungeonId) {
@@ -308,15 +308,15 @@ public final class AdminGuiActionService {
         if (sink == null) return;
         DungeonInstance instance = DungeonManager.getInstance().getInstance(dungeonId);
         if (instance == null) {
-            send(sink, Component.literal("[Arcadia Debug] Aucune instance active: " + dungeonId).withStyle(ChatFormatting.RED));
+            send(sink, Component.literal("[Arcadia Debug] Ninguna instancia activa: " + dungeonId).withStyle(ChatFormatting.RED));
             return;
         }
         DungeonConfig config = instance.getConfig();
         int totalBosses = config.bosses == null ? 0 : config.bosses.size();
         int bossCount = instance.getActiveBosses().size();
         send(sink, Component.literal("=== Debug " + config.name + " ===").withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD));
-        send(sink, Component.literal("  Etat: " + instance.getState() + " | Joueurs: " + instance.getPlayerCount() + " | Temps: " + ArcadiaCommandHelper.formatTime(instance.getElapsedSeconds())).withStyle(ChatFormatting.WHITE));
-        send(sink, Component.literal("  Boss total: " + totalBosses + " (actifs: " + bossCount + ")").withStyle(ChatFormatting.WHITE));
+        send(sink, Component.literal("  Estado: " + instance.getState() + " | Jugadores: " + instance.getPlayerCount() + " | Tiempo: " + ArcadiaCommandHelper.formatTime(instance.getElapsedSeconds())).withStyle(ChatFormatting.WHITE));
+        send(sink, Component.literal("  Jefes total: " + totalBosses + " (activos: " + bossCount + ")").withStyle(ChatFormatting.WHITE));
         for (Map.Entry<String, BossInstance> entry : new ArrayList<>(instance.getActiveBosses().entrySet())) {
             BossInstance boss = entry.getValue();
             String bossId = entry.getKey();
@@ -328,29 +328,29 @@ public final class AdminGuiActionService {
             }
             boolean trans = boss.isTransitioning();
             boolean needKill = boss.requiresKillSummons();
-            send(sink, Component.literal("    " + bossId + ": " + (alive ? "Vivant" : "Mort") + " Phase:" + phase + hp
-                    + (trans ? " [TRANSITION]" : "") + (needKill ? " [KILL SUMMONS]" : "")).withStyle(alive ? ChatFormatting.GREEN : ChatFormatting.RED));
+            send(sink, Component.literal("    " + bossId + ": " + (alive ? "Vivo" : "Muerto") + " Fase:" + phase + hp
+                    + (trans ? " [TRANSICION]" : "") + (needKill ? " [MATAR INVOCACIONES]" : "")).withStyle(alive ? ChatFormatting.GREEN : ChatFormatting.RED));
         }
     }
 
     public static void debugSpawnBoss(ServerPlayer player, String dungeonId) {
         DungeonInstance instance = DungeonManager.getInstance().getInstance(dungeonId);
         if (instance == null) {
-            send(player, Component.literal("[Arcadia Debug] Aucune instance active: " + dungeonId).withStyle(ChatFormatting.RED));
+            send(player, Component.literal("[Arcadia Debug] Ninguna instancia activa: " + dungeonId).withStyle(ChatFormatting.RED));
             return;
         }
         boolean spawned = BossManager.getInstance().spawnNextBoss(instance);
-        send(player, Component.literal("[Arcadia Debug] Boss spawn: " + (spawned ? "Oui" : "Non (plus de boss)")).withStyle(ChatFormatting.AQUA));
+        send(player, Component.literal("[Arcadia Debug] Jefe spawneado: " + (spawned ? "Si" : "No (no hay mas jefes)")).withStyle(ChatFormatting.AQUA));
     }
 
     public static void debugSkipBoss(ServerPlayer player, String dungeonId) {
         DungeonInstance instance = DungeonManager.getInstance().getInstance(dungeonId);
         if (instance == null) {
-            send(player, Component.literal("[Arcadia Debug] Aucune instance active: " + dungeonId).withStyle(ChatFormatting.RED));
+            send(player, Component.literal("[Arcadia Debug] Ninguna instancia activa: " + dungeonId).withStyle(ChatFormatting.RED));
             return;
         }
         if (instance.getActiveBosses().isEmpty()) {
-            send(player, Component.literal("[Arcadia Debug] Aucun boss actif a skip!").withStyle(ChatFormatting.RED));
+            send(player, Component.literal("[Arcadia Debug] Ningun jefe activo para saltear!").withStyle(ChatFormatting.RED));
             return;
         }
 
@@ -362,7 +362,7 @@ public final class AdminGuiActionService {
                 ServerPlayer member = DungeonManager.getInstance().getServer().getPlayerList().getPlayer(playerId);
                 if (member != null) {
                     instance.giveRewards(member, boss.getConfig().rewards);
-                    send(member, Component.literal("[Arcadia Debug] Boss " + boss.getConfig().customName + " skip!").withStyle(ChatFormatting.AQUA));
+                    send(member, Component.literal("[Arcadia Debug] Jefe " + boss.getConfig().customName + " salteado!").withStyle(ChatFormatting.AQUA));
                 }
             }
             boss.cleanup();
@@ -375,80 +375,80 @@ public final class AdminGuiActionService {
             if (instance.areWavesCompleted()) {
                 if (instance.hasNextBoss()) {
                     BossManager.getInstance().spawnNextBoss(instance);
-                    send(player, Component.literal("[Arcadia Debug] Boss inter-vague skip, progression reprise.").withStyle(ChatFormatting.AQUA));
+                    send(player, Component.literal("[Arcadia Debug] Jefe entre-oleadas salteado, progresion reanudada.").withStyle(ChatFormatting.AQUA));
                 } else if (instance.allRequiredBossesDefeated()) {
                     DungeonManager.getInstance().completeDungeon(dungeonId);
-                    send(player, Component.literal("[Arcadia Debug] Boss inter-vague skip, donjon termine!").withStyle(ChatFormatting.AQUA));
+                    send(player, Component.literal("[Arcadia Debug] Jefe entre-oleadas salteado, mazmorra terminada!").withStyle(ChatFormatting.AQUA));
                 }
             } else {
-                send(player, Component.literal("[Arcadia Debug] Boss inter-vague skip, vague suivante reprise.").withStyle(ChatFormatting.AQUA));
+                send(player, Component.literal("[Arcadia Debug] Jefe entre-oleadas salteado, siguiente oleada reanudada.").withStyle(ChatFormatting.AQUA));
             }
         } else if (instance.hasNextBoss()) {
             BossManager.getInstance().spawnNextBoss(instance);
-            send(player, Component.literal("[Arcadia Debug] Boss skip, prochain boss spawn!").withStyle(ChatFormatting.AQUA));
+            send(player, Component.literal("[Arcadia Debug] Jefe salteado, siguiente jefe spawneado!").withStyle(ChatFormatting.AQUA));
         } else if (instance.allRequiredBossesDefeated() && (!instance.hasWaves() || instance.areWavesCompleted())) {
             DungeonManager.getInstance().completeDungeon(dungeonId);
-            send(player, Component.literal("[Arcadia Debug] Boss skip, donjon termine!").withStyle(ChatFormatting.AQUA));
+            send(player, Component.literal("[Arcadia Debug] Jefe salteado, mazmorra terminada!").withStyle(ChatFormatting.AQUA));
         } else {
             instance.setState(DungeonState.ACTIVE);
-            send(player, Component.literal("[Arcadia Debug] Boss skip, progression du donjon reprise.").withStyle(ChatFormatting.AQUA));
+            send(player, Component.literal("[Arcadia Debug] Jefe salteado, progresion de la mazmorra reanudada.").withStyle(ChatFormatting.AQUA));
         }
     }
 
     public static void debugComplete(ServerPlayer player, String dungeonId) {
         DungeonInstance instance = DungeonManager.getInstance().getInstance(dungeonId);
         if (instance == null) {
-            send(player, Component.literal("[Arcadia Debug] Aucune instance active: " + dungeonId).withStyle(ChatFormatting.RED));
+            send(player, Component.literal("[Arcadia Debug] Ninguna instancia activa: " + dungeonId).withStyle(ChatFormatting.RED));
             return;
         }
         DungeonManager.getInstance().completeDungeon(dungeonId);
-        send(player, Component.literal("[Arcadia Debug] Donjon " + dungeonId + " force complete! Mobs nettoyes, joueurs TP.").withStyle(ChatFormatting.AQUA));
+        send(player, Component.literal("[Arcadia Debug] Mazmorra " + dungeonId + " forzada como completa! Mobs limpiados, jugadores TP.").withStyle(ChatFormatting.AQUA));
     }
 
     public static void setDungeonEnabled(ServerPlayer player, String dungeonId, boolean enabled) {
         DungeonConfig config = ConfigManager.getInstance().getDungeon(dungeonId);
         if (config == null) {
-            send(player, Component.literal("[Arcadia] Donjon introuvable: " + dungeonId).withStyle(ChatFormatting.RED));
+            send(player, Component.literal("[Arcadia] Mazmorra no encontrada: " + dungeonId).withStyle(ChatFormatting.RED));
             return;
         }
         config.enabled = enabled;
         ConfigManager.getInstance().saveDungeon(config);
-        send(player, Component.literal("[Arcadia] Donjon " + (enabled ? "active" : "desactive") + ": " + config.name).withStyle(ChatFormatting.GREEN));
+        send(player, Component.literal("[Arcadia] Mazmorra " + (enabled ? "activada" : "desactivada") + ": " + config.name).withStyle(ChatFormatting.GREEN));
     }
 
     public static void resetPlayerProgress(ServerPlayer player, String playerRef) {
         PlayerProgress progress = PlayerProgressManager.getInstance().findByName(playerRef);
         if (progress == null) {
-            send(player, Component.literal("[Arcadia] Joueur introuvable: " + playerRef).withStyle(ChatFormatting.RED));
+            send(player, Component.literal("[Arcadia] Jugador no encontrado: " + playerRef).withStyle(ChatFormatting.RED));
             return;
         }
         PlayerProgressManager.getInstance().resetPlayer(progress.uuid);
-        send(player, Component.literal("[Arcadia] Progression de " + displayPlayer(progress) + " entierement reinitialisee.").withStyle(ChatFormatting.GREEN));
+        send(player, Component.literal("[Arcadia] Progresion de " + displayPlayer(progress) + " completamente reiniciada.").withStyle(ChatFormatting.GREEN));
     }
 
     public static boolean setPlayerDungeonProgress(ServerPlayer player, String playerRef, String dungeonId, int completions, long bestTime) {
         PlayerProgress progress = PlayerProgressManager.getInstance().findByName(playerRef);
         if (progress == null) {
-            send(player, Component.literal("[Arcadia] Joueur introuvable: " + playerRef).withStyle(ChatFormatting.RED));
+            send(player, Component.literal("[Arcadia] Jugador no encontrado: " + playerRef).withStyle(ChatFormatting.RED));
             return false;
         }
         PlayerProgressManager.getInstance().setPlayerDungeon(progress.uuid, displayPlayer(progress), dungeonId, completions, bestTime);
         DungeonConfig dc = ConfigManager.getInstance().getDungeon(dungeonId);
         String dName = dc != null ? dc.name : dungeonId;
-        send(player, Component.literal("[Arcadia] " + displayPlayer(progress) + " -> " + dName + ": " + completions + " completions, record " + ArcadiaCommandHelper.formatTime(bestTime) + ".").withStyle(ChatFormatting.GREEN));
+        send(player, Component.literal("[Arcadia] " + displayPlayer(progress) + " -> " + dName + ": " + completions + " completaciones, record " + ArcadiaCommandHelper.formatTime(bestTime) + ".").withStyle(ChatFormatting.GREEN));
         return true;
     }
 
     public static boolean resetPlayerDungeonProgress(ServerPlayer player, String playerRef, String dungeonId) {
         PlayerProgress progress = PlayerProgressManager.getInstance().findByName(playerRef);
         if (progress == null) {
-            send(player, Component.literal("[Arcadia] Joueur introuvable: " + playerRef).withStyle(ChatFormatting.RED));
+            send(player, Component.literal("[Arcadia] Jugador no encontrado: " + playerRef).withStyle(ChatFormatting.RED));
             return false;
         }
         PlayerProgressManager.getInstance().resetPlayerDungeon(progress.uuid, dungeonId);
         DungeonConfig dc = ConfigManager.getInstance().getDungeon(dungeonId);
         String dName = dc != null ? dc.name : dungeonId;
-        send(player, Component.literal("[Arcadia] Progression de " + displayPlayer(progress) + " pour " + dName + " reinitialisee.").withStyle(ChatFormatting.GREEN));
+        send(player, Component.literal("[Arcadia] Progresion de " + displayPlayer(progress) + " para " + dName + " reiniciada.").withStyle(ChatFormatting.GREEN));
         return true;
     }
 
@@ -470,7 +470,7 @@ public final class AdminGuiActionService {
         DungeonEventHandler.wandWall.remove(player.getUUID());
         DungeonEventHandler.wandPos1.remove(player.getUUID());
         DungeonEventHandler.wandPos2.remove(player.getUUID());
-        send(player, Component.literal("[Arcadia Wand] Donjon selectionne: " + config.name).withStyle(ChatFormatting.GOLD));
+        send(player, Component.literal("[Arcadia Wand] Mazmorra seleccionada: " + config.name).withStyle(ChatFormatting.GOLD));
     }
 
     public static void giveWallWand(ServerPlayer player, String dungeonId, String wallId) {
@@ -492,7 +492,7 @@ public final class AdminGuiActionService {
         if (!player.getInventory().add(wand)) {
             player.drop(wand, false);
         }
-        send(player, Component.literal("[Arcadia] Hoe recue! Selectionnez ensuite un mur scripted.").withStyle(ChatFormatting.GOLD));
+        send(player, Component.literal("[Arcadia] Azada recibida! Selecciona luego un muro scripteado.").withStyle(ChatFormatting.GOLD));
     }
 
     public static void selectWallWand(ServerPlayer player, String dungeonId, String wallId) {
@@ -510,7 +510,7 @@ public final class AdminGuiActionService {
         DungeonEventHandler.wandPos1.remove(player.getUUID());
         DungeonEventHandler.wandPos2.remove(player.getUUID());
         int count = wall.blocks == null ? 0 : wall.blocks.size();
-        send(player, Component.literal("[Arcadia Wall] Mur scripte selectionne: " + wallId + " (" + count + " bloc(s))").withStyle(ChatFormatting.GOLD));
+        send(player, Component.literal("[Arcadia Wall] Muro scripteado seleccionado: " + wallId + " (" + count + " bloque(s))").withStyle(ChatFormatting.GOLD));
     }
 
     private static String displayPlayer(PlayerProgress progress) {

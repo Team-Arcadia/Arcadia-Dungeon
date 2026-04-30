@@ -74,20 +74,20 @@ public class ArcadiaProgressionConfig {
         }
 
         config.ranks.clear();
-        config.ranks.add(new RankThreshold(1, "Novice", "&7"));
-        config.ranks.add(new RankThreshold(5, "Aventurier", "&a"));
-        config.ranks.add(new RankThreshold(10, "Chasseur", "&9"));
-        config.ranks.add(new RankThreshold(20, "Legende", "&6"));
+        config.ranks.add(new RankThreshold(1, "Noticias", "&7"));
+        config.ranks.add(new RankThreshold(5, "Aventurero", "&a"));
+        config.ranks.add(new RankThreshold(10, "Cazador", "&9"));
+        config.ranks.add(new RankThreshold(20, "Leyenda", "&6"));
 
         config.milestoneRewards.clear();
-        config.milestoneRewards.add(new MilestoneReward(5, "&6[Arcadia] &ePalier niveau 5 atteint!"));
-        config.milestoneRewards.add(new MilestoneReward(10, "&6[Arcadia] &ePalier niveau 10 atteint!"));
-        config.milestoneRewards.add(new MilestoneReward(25, "&6[Arcadia] &ePalier niveau 25 atteint!"));
+        config.milestoneRewards.add(new MilestoneReward(5, "&6[Arcadia] ¡Se ha alcanzado el nivel 5!"));
+        config.milestoneRewards.add(new MilestoneReward(10, "&6[Arcadia] ¡Se ha alcanzado el nivel 10!"));
+        config.milestoneRewards.add(new MilestoneReward(25, "&6[Arcadia] ¡He alcanzado el nivel 25!"));
 
         config.streakBonuses.clear();
-        config.streakBonuses.add(new StreakBonus(3, 50, "&6[Arcadia] &eStreak 3 semaines! &a+50 XP Arcadia"));
-        config.streakBonuses.add(new StreakBonus(7, 150, "&6[Arcadia] &eStreak 7 semaines! &a+150 XP Arcadia"));
-        config.streakBonuses.add(new StreakBonus(14, 400, "&6[Arcadia] &eStreak 14 semaines! &a+400 XP Arcadia"));
+        config.streakBonuses.add(new StreakBonus(3, 50, "&6[Arcadia] ¡3 semanas seguidas! +50 XP Arcadia"));
+        config.streakBonuses.add(new StreakBonus(7, 150, "&6[Arcadia] ¡7 semanas seguidas! +150 XP Arcadia"));
+        config.streakBonuses.add(new StreakBonus(14, 400, "&6[Arcadia] ¡14 semanas seguidas! +400 XP Arcadia"));
 
         config.defaultDungeonXp = 100;
         return config;

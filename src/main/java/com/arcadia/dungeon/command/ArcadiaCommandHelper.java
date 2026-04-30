@@ -26,7 +26,7 @@ public final class ArcadiaCommandHelper {
     public static BossConfig findBoss(CommandContext<CommandSourceStack> ctx, String dungeonId, String bossId) {
         DungeonConfig config = ConfigManager.getInstance().getDungeon(dungeonId);
         if (config == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + dungeonId));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorra: " + dungeonId));
             return null;
         }
         for (BossConfig boss : config.bosses) {
@@ -34,7 +34,7 @@ public final class ArcadiaCommandHelper {
                 return boss;
             }
         }
-        ctx.getSource().sendFailure(Component.literal("[Arcadia] Boss introuvable: " + bossId));
+        ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra el jefe: " + bossId));
         return null;
     }
 
@@ -42,7 +42,7 @@ public final class ArcadiaCommandHelper {
         String dungeonId = StringArgumentType.getString(ctx, "dungeon");
         DungeonConfig config = ConfigManager.getInstance().getDungeon(dungeonId);
         if (config == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + dungeonId));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorra: " + dungeonId));
             return null;
         }
         return config;
@@ -155,7 +155,7 @@ public final class ArcadiaCommandHelper {
 
     public static void warnIfClamped(String key, double requested, double applied) {
         if (Double.compare(requested, applied) != 0) {
-            com.arcadia.dungeon.ArcadiaDungeon.LOGGER.warn("Combat tuning value clamped for {}: requested={}, applied={}", key, requested, applied);
+            com.arcadia.dungeon.ArcadiaDungeon.LOGGER.warn("Valor de ajuste de combate fijado en {}: requested={}, applied={}", key, requested, applied);
         }
     }
 }

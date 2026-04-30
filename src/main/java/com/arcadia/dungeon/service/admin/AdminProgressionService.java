@@ -13,7 +13,7 @@ public final class AdminProgressionService {
     public static boolean applyRankInput(ServerPlayer player, String input) {
         String[] parts = input.trim().split("\\s+", 3);
         if (parts.length < 3) {
-            player.sendSystemMessage(Component.literal("[Arcadia] Format attendu: <niveau> <nom> <couleur>").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("[Arcadia] Formato esperado: <nivel> <nombre> <color>").withStyle(ChatFormatting.RED));
             return false;
         }
         try {
@@ -24,10 +24,10 @@ public final class AdminProgressionService {
             config.ranks.add(new ArcadiaProgressionConfig.RankThreshold(minLevel, parts[1], parts[2]));
             config.normalize();
             ConfigManager.getInstance().saveProgressionConfig();
-            player.sendSystemMessage(Component.literal("[Arcadia] Rang ajoute ou mis a jour.").withStyle(ChatFormatting.GREEN));
+            player.sendSystemMessage(Component.literal("[Arcadia] Rango añadido o actualizado.").withStyle(ChatFormatting.GREEN));
             return true;
         } catch (NumberFormatException e) {
-            player.sendSystemMessage(Component.literal("[Arcadia] Niveau invalide.").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("[Arcadia] Nivel no válido.").withStyle(ChatFormatting.RED));
             return false;
         }
     }
@@ -39,15 +39,15 @@ public final class AdminProgressionService {
             config.normalize();
             boolean removed = config.ranks.removeIf(rank -> rank != null && rank.minLevel == minLevel);
             if (!removed) {
-                player.sendSystemMessage(Component.literal("[Arcadia] Rang introuvable.").withStyle(ChatFormatting.RED));
+                player.sendSystemMessage(Component.literal("[Arcadia] Rango no encontrado.").withStyle(ChatFormatting.RED));
                 return false;
             }
             config.normalize();
             ConfigManager.getInstance().saveProgressionConfig();
-            player.sendSystemMessage(Component.literal("[Arcadia] Rang supprime.").withStyle(ChatFormatting.GREEN));
+            player.sendSystemMessage(Component.literal("[Arcadia] Rango eliminado.").withStyle(ChatFormatting.GREEN));
             return true;
         } catch (NumberFormatException e) {
-            player.sendSystemMessage(Component.literal("[Arcadia] Niveau invalide.").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("[Arcadia] Nivel no válido.").withStyle(ChatFormatting.RED));
             return false;
         }
     }
@@ -55,7 +55,7 @@ public final class AdminProgressionService {
     public static boolean applyMilestoneInput(ServerPlayer player, String input) {
         String[] parts = input.trim().split("\\s+", 2);
         if (parts.length < 2) {
-            player.sendSystemMessage(Component.literal("[Arcadia] Format attendu: <niveau> <message>").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("[Arcadia] Formato esperado: <nivel> <mensaje>").withStyle(ChatFormatting.RED));
             return false;
         }
         try {
@@ -71,10 +71,10 @@ public final class AdminProgressionService {
             }
             config.normalize();
             ConfigManager.getInstance().saveProgressionConfig();
-            player.sendSystemMessage(Component.literal("[Arcadia] Milestone ajoute ou mis a jour.").withStyle(ChatFormatting.GREEN));
+            player.sendSystemMessage(Component.literal("[Arcadia] Hito añadido o actualizado.").withStyle(ChatFormatting.GREEN));
             return true;
         } catch (NumberFormatException e) {
-            player.sendSystemMessage(Component.literal("[Arcadia] Niveau invalide.").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("[Arcadia] Nivel no válido.").withStyle(ChatFormatting.RED));
             return false;
         }
     }
@@ -86,14 +86,14 @@ public final class AdminProgressionService {
             config.normalize();
             boolean removed = config.milestoneRewards.removeIf(entry -> entry != null && entry.level == level);
             if (!removed) {
-                player.sendSystemMessage(Component.literal("[Arcadia] Milestone introuvable.").withStyle(ChatFormatting.RED));
+                player.sendSystemMessage(Component.literal("[Arcadia] No se ha encontrado el hito.").withStyle(ChatFormatting.RED));
                 return false;
             }
             ConfigManager.getInstance().saveProgressionConfig();
-            player.sendSystemMessage(Component.literal("[Arcadia] Milestone supprime.").withStyle(ChatFormatting.GREEN));
+            player.sendSystemMessage(Component.literal("[Arcadia] Milestone elimina.").withStyle(ChatFormatting.GREEN));
             return true;
         } catch (NumberFormatException e) {
-            player.sendSystemMessage(Component.literal("[Arcadia] Niveau invalide.").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("[Arcadia] Nivel no válido.").withStyle(ChatFormatting.RED));
             return false;
         }
     }
@@ -101,7 +101,7 @@ public final class AdminProgressionService {
     public static boolean applyMilestoneItemRewardInput(ServerPlayer player, int level, String input) {
         String[] parts = input.trim().split("\\s+");
         if (parts.length != 3) {
-            player.sendSystemMessage(Component.literal("[Arcadia] Format attendu: <item> <count> <chance>").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("[Arcadia] Formato esperado: <elemento> <cantidad> <probabilidad>").withStyle(ChatFormatting.RED));
             return false;
         }
         try {
@@ -110,16 +110,16 @@ public final class AdminProgressionService {
             ArcadiaProgressionConfig config = ConfigManager.getInstance().getProgressionConfig();
             ArcadiaProgressionConfig.MilestoneReward milestone = findMilestone(level);
             if (milestone == null) {
-                player.sendSystemMessage(Component.literal("[Arcadia] Milestone introuvable.").withStyle(ChatFormatting.RED));
+                player.sendSystemMessage(Component.literal("[Arcadia] No se ha encontrado el hito.").withStyle(ChatFormatting.RED));
                 return false;
             }
             milestone.rewards.add(reward);
             config.normalize();
             ConfigManager.getInstance().saveProgressionConfig();
-            player.sendSystemMessage(Component.literal("[Arcadia] Reward item ajoute au milestone.").withStyle(ChatFormatting.GREEN));
+            player.sendSystemMessage(Component.literal("[Arcadia] Se ha añadido un objeto de recompensa al hito.").withStyle(ChatFormatting.GREEN));
             return true;
         } catch (NumberFormatException e) {
-            player.sendSystemMessage(Component.literal("[Arcadia] Valeurs invalides.").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("[Arcadia] Valores no válidos.").withStyle(ChatFormatting.RED));
             return false;
         }
     }
@@ -130,7 +130,7 @@ public final class AdminProgressionService {
             ArcadiaProgressionConfig config = ConfigManager.getInstance().getProgressionConfig();
             ArcadiaProgressionConfig.MilestoneReward milestone = findMilestone(level);
             if (milestone == null) {
-                player.sendSystemMessage(Component.literal("[Arcadia] Milestone introuvable.").withStyle(ChatFormatting.RED));
+                player.sendSystemMessage(Component.literal("[Arcadia] No se ha encontrado el hito.").withStyle(ChatFormatting.RED));
                 return false;
             }
             RewardConfig reward = new RewardConfig();
@@ -141,10 +141,10 @@ public final class AdminProgressionService {
             milestone.rewards.add(reward);
             config.normalize();
             ConfigManager.getInstance().saveProgressionConfig();
-            player.sendSystemMessage(Component.literal("[Arcadia] Reward XP ajoute au milestone.").withStyle(ChatFormatting.GREEN));
+            player.sendSystemMessage(Component.literal("[Arcadia] La XP de recompensa se suma al hito.").withStyle(ChatFormatting.GREEN));
             return true;
         } catch (NumberFormatException e) {
-            player.sendSystemMessage(Component.literal("[Arcadia] XP invalide.").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("[Arcadia] XP no válido.").withStyle(ChatFormatting.RED));
             return false;
         }
     }
@@ -153,7 +153,7 @@ public final class AdminProgressionService {
         ArcadiaProgressionConfig config = ConfigManager.getInstance().getProgressionConfig();
         ArcadiaProgressionConfig.MilestoneReward milestone = findMilestone(level);
         if (milestone == null) {
-            player.sendSystemMessage(Component.literal("[Arcadia] Milestone introuvable.").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("[Arcadia] No se ha encontrado el hito.").withStyle(ChatFormatting.RED));
             return false;
         }
         RewardConfig reward = new RewardConfig();
@@ -164,14 +164,14 @@ public final class AdminProgressionService {
         milestone.rewards.add(reward);
         config.normalize();
         ConfigManager.getInstance().saveProgressionConfig();
-        player.sendSystemMessage(Component.literal("[Arcadia] Reward commande ajoute au milestone.").withStyle(ChatFormatting.GREEN));
+        player.sendSystemMessage(Component.literal("[Arcadia] Se añade la recompensa del pedido al hito.").withStyle(ChatFormatting.GREEN));
         return true;
     }
 
     public static boolean applyStreakInput(ServerPlayer player, String input) {
         String[] parts = input.trim().split("\\s+", 3);
         if (parts.length < 3) {
-            player.sendSystemMessage(Component.literal("[Arcadia] Format attendu: <semaines> <xp> <message>").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("[Arcadia] Formato esperado: <semanas> <xp> <mensaje>").withStyle(ChatFormatting.RED));
             return false;
         }
         try {
@@ -189,10 +189,10 @@ public final class AdminProgressionService {
             }
             config.normalize();
             ConfigManager.getInstance().saveProgressionConfig();
-            player.sendSystemMessage(Component.literal("[Arcadia] Streak bonus ajoute ou mis a jour.").withStyle(ChatFormatting.GREEN));
+            player.sendSystemMessage(Component.literal("[Arcadia] Se ha añadido o actualizado la bonificación por racha.").withStyle(ChatFormatting.GREEN));
             return true;
         } catch (NumberFormatException e) {
-            player.sendSystemMessage(Component.literal("[Arcadia] Valeurs invalides.").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("[Arcadia] Valores no válidos.").withStyle(ChatFormatting.RED));
             return false;
         }
     }
@@ -204,14 +204,14 @@ public final class AdminProgressionService {
             config.normalize();
             boolean removed = config.streakBonuses.removeIf(entry -> entry != null && entry.weeks == weeks);
             if (!removed) {
-                player.sendSystemMessage(Component.literal("[Arcadia] Streak introuvable.").withStyle(ChatFormatting.RED));
+                player.sendSystemMessage(Component.literal("[Arcadia] No se encuentra Streak.").withStyle(ChatFormatting.RED));
                 return false;
             }
             ConfigManager.getInstance().saveProgressionConfig();
-            player.sendSystemMessage(Component.literal("[Arcadia] Streak bonus supprime.").withStyle(ChatFormatting.GREEN));
+            player.sendSystemMessage(Component.literal("[Arcadia] Se ha eliminado la bonificación por racha.").withStyle(ChatFormatting.GREEN));
             return true;
         } catch (NumberFormatException e) {
-            player.sendSystemMessage(Component.literal("[Arcadia] Valeur invalide.").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("[Arcadia] Valor no válido.").withStyle(ChatFormatting.RED));
             return false;
         }
     }

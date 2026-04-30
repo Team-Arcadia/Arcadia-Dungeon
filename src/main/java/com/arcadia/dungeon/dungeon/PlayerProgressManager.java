@@ -32,7 +32,7 @@ public class PlayerProgressManager {
         try {
             Files.createDirectories(dataDir);
         } catch (IOException e) {
-            ArcadiaDungeon.LOGGER.error("Failed to create playerdata directory", e);
+            ArcadiaDungeon.LOGGER.error("No se ha podido crear el directorio «playerdata»", e);
             return;
         }
 
@@ -49,14 +49,14 @@ public class PlayerProgressManager {
                         playerData.put(progress.uuid, progress);
                     }
                 } catch (Exception e) {
-                    ArcadiaDungeon.LOGGER.error("Failed to load player progress: {}", file.getFileName(), e);
+                    ArcadiaDungeon.LOGGER.error("No se ha podido cargar el progreso del jugador: {}", file.getFileName(), e);
                 }
             }
         } catch (IOException e) {
-            ArcadiaDungeon.LOGGER.error("Failed to read playerdata directory", e);
+            ArcadiaDungeon.LOGGER.error("No se ha podido leer el directorio «playerdata»", e);
         }
 
-        ArcadiaDungeon.LOGGER.info("Loaded {} player progress files", playerData.size());
+        ArcadiaDungeon.LOGGER.info("Se ha cargado el archivo de progreso del jugador {}s", playerData.size());
     }
 
     public void save(PlayerProgress progress) {
@@ -66,7 +66,7 @@ public class PlayerProgressManager {
             String json = GSON.toJson(progress);
             Files.writeString(file, json);
         } catch (IOException e) {
-            ArcadiaDungeon.LOGGER.error("Failed to save player progress: {}", progress.uuid, e);
+            ArcadiaDungeon.LOGGER.error("No se ha podido guardar el progreso del jugador: {}", progress.uuid, e);
         }
     }
 

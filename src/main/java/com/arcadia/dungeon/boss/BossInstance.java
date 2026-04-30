@@ -58,7 +58,7 @@ public class BossInstance {
     public boolean spawn() {
         Optional<EntityType<?>> typeOpt = EntityType.byString(config.entityType);
         if (typeOpt.isEmpty()) {
-            ArcadiaDungeon.LOGGER.error("Unknown entity type: {}", config.entityType);
+            ArcadiaDungeon.LOGGER.error("Tipo de entidad desconocido: {}", config.entityType);
             return false;
         }
 
@@ -66,17 +66,17 @@ public class BossInstance {
         try {
             entity = typeOpt.get().create(level);
         } catch (Exception e) {
-            ArcadiaDungeon.LOGGER.error("Failed to create entity: {}", config.entityType, e);
+            ArcadiaDungeon.LOGGER.error("No se ha podido crear la entidad: {}", config.entityType, e);
             return false;
         }
 
         if (entity == null) {
-            ArcadiaDungeon.LOGGER.error("Entity creation returned null: {}", config.entityType);
+            ArcadiaDungeon.LOGGER.error("La creación de la entidad ha devuelto un valor nulo: {}", config.entityType);
             return false;
         }
 
         if (!(entity instanceof LivingEntity living)) {
-            ArcadiaDungeon.LOGGER.error("Entity type {} is not a LivingEntity", config.entityType);
+            ArcadiaDungeon.LOGGER.error("El tipo de entidad {} no es una LivingEntity", config.entityType);
             entity.discard();
             return false;
         }
@@ -156,7 +156,7 @@ public class BossInstance {
             currentPhase = 0;
         }
 
-        ArcadiaDungeon.LOGGER.info("Spawned boss {} at {},{},{}", config.id,
+        ArcadiaDungeon.LOGGER.info("Se ha generado el jefe {} en {},{},{}", config.id,
                 config.spawnPoint.x, config.spawnPoint.y, config.spawnPoint.z);
         return true;
     }
@@ -515,19 +515,19 @@ public class BossInstance {
             }
             ResourceLocation attrLoc = ResourceLocation.tryParse(entry.getKey());
             if (attrLoc == null) {
-                ArcadiaDungeon.LOGGER.warn("Invalid attribute key: {}", entry.getKey());
+                ArcadiaDungeon.LOGGER.warn("Clave de atributo no válida: {}", entry.getKey());
                 continue;
             }
             Optional<Attribute> attrOpt = BuiltInRegistries.ATTRIBUTE.getOptional(attrLoc);
             if (attrOpt.isEmpty()) {
-                ArcadiaDungeon.LOGGER.warn("Unknown attribute: {}", entry.getKey());
+                ArcadiaDungeon.LOGGER.warn("Atributo desconocido: {}", entry.getKey());
                 continue;
             }
             var attrInstance = living.getAttribute(BuiltInRegistries.ATTRIBUTE.wrapAsHolder(attrOpt.get()));
             if (attrInstance != null) {
                 attrInstance.setBaseValue(entry.getValue());
             } else {
-                ArcadiaDungeon.LOGGER.warn("Entity {} does not have attribute: {}", living.getType().toShortString(), entry.getKey());
+                ArcadiaDungeon.LOGGER.warn("La entidad {} no tiene el atributo: {}", living.getType().toShortString(), entry.getKey());
             }
         }
     }

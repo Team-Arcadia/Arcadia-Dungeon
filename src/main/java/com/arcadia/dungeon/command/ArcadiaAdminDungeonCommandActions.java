@@ -21,7 +21,7 @@ final class ArcadiaAdminDungeonCommandActions {
         String name = StringArgumentType.getString(ctx, "name");
 
         if (ConfigManager.getInstance().getDungeon(id) != null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Un donjon avec l'id '" + id + "' existe deja!"));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] ¡Ya existe una mazmorra con el ID «« + id + »»!"));
             return 0;
         }
 
@@ -37,7 +37,7 @@ final class ArcadiaAdminDungeonCommandActions {
         }
 
         ConfigManager.getInstance().saveDungeon(config);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Donjon '" + name + "' cree avec succes! (id: " + id + ")")
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Mazmorra '" + name + "' crear con éxito! (id: " + id + ")")
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -45,27 +45,27 @@ final class ArcadiaAdminDungeonCommandActions {
     static int deleteDungeon(CommandContext<CommandSourceStack> ctx) {
         String id = StringArgumentType.getString(ctx, "dungeon");
         if (ConfigManager.getInstance().deleteDungeon(id)) {
-            ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Donjon '" + id + "' supprime.")
+            ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Mazmorra '" + id + "' supprime.")
                     .withStyle(ChatFormatting.GREEN), true);
             return 1;
         }
-        ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + id));
+        ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorra: " + id));
         return 0;
     }
 
     static int listDungeons(CommandContext<CommandSourceStack> ctx) {
         java.util.Map<String, DungeonConfig> configs = ConfigManager.getInstance().getDungeonConfigs();
         if (configs.isEmpty()) {
-            ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Aucun donjon configure.")
+            ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] No hay mazmorras configuradas.")
                     .withStyle(ChatFormatting.YELLOW), false);
             return 0;
         }
 
-        ctx.getSource().sendSuccess(() -> Component.literal("=== Donjons Arcadia ===").withStyle(ChatFormatting.GOLD), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("=== Mazmorras de Arcadia ===").withStyle(ChatFormatting.GOLD), false);
         for (DungeonConfig config : configs.values()) {
-            String status = config.enabled ? "&aActif" : "&cDesactive";
+            String status = config.enabled ? "&aActivar" : "&cDesactivar";
             DungeonInstance active = DungeonManager.getInstance().getInstance(config.id);
-            String running = active != null ? " &e[EN COURS]" : "";
+            String running = active != null ? " &e[EN CURSO]" : "";
             ctx.getSource().sendSuccess(() -> DungeonManager.parseColorCodes(
                     " &7- &f" + config.name + " &7(id: " + config.id + ") " + status + running
             ), false);
@@ -77,7 +77,7 @@ final class ArcadiaAdminDungeonCommandActions {
         String id = StringArgumentType.getString(ctx, "dungeon");
         DungeonConfig config = ConfigManager.getInstance().getDungeon(id);
         if (config == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + id));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorra: " + id));
             return 0;
         }
         AdminGuiActionService.showDungeonInfo(component -> ctx.getSource().sendSuccess(() -> component, false), id);
@@ -88,13 +88,13 @@ final class ArcadiaAdminDungeonCommandActions {
         String id = StringArgumentType.getString(ctx, "dungeon");
         DungeonConfig config = ConfigManager.getInstance().getDungeon(id);
         if (config == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + id));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorra: " + id));
             return 0;
         }
 
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] ¡Solo pedidos de jugadores!"));
             return 0;
         }
 
@@ -104,7 +104,7 @@ final class ArcadiaAdminDungeonCommandActions {
                 player.getYRot(), player.getXRot()
         );
         ConfigManager.getInstance().saveDungeon(config);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Spawn du donjon defini a votre position!")
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] ¡La aparición de la mazmorra se establece en tu posición!")
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -114,12 +114,12 @@ final class ArcadiaAdminDungeonCommandActions {
         int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
         DungeonConfig config = ConfigManager.getInstance().getDungeon(id);
         if (config == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + id));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorra: " + id));
             return 0;
         }
         config.cooldownSeconds = seconds;
         ConfigManager.getInstance().saveDungeon(config);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Cooldown defini a " + seconds + "s.")
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Tiempo de recarga establecido en " + seconds + "s.")
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -129,12 +129,12 @@ final class ArcadiaAdminDungeonCommandActions {
         int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
         DungeonConfig config = ConfigManager.getInstance().getDungeon(id);
         if (config == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + id));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorra: " + id));
             return 0;
         }
         config.availableEverySeconds = seconds;
         ConfigManager.getInstance().saveDungeon(config);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Disponibilite definie a toutes les " + seconds + "s (0 = toujours).")
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Disponibilidad definida en todas las " + seconds + "s (0 = siempre).")
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -144,7 +144,7 @@ final class ArcadiaAdminDungeonCommandActions {
         boolean enabled = BoolArgumentType.getBool(ctx, "enabled");
         DungeonConfig config = ConfigManager.getInstance().getDungeon(id);
         if (config == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + id));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorra: " + id));
             return 0;
         }
         if ("start".equals(type)) {
@@ -155,7 +155,7 @@ final class ArcadiaAdminDungeonCommandActions {
             config.announceCompletion = enabled;
         }
         ConfigManager.getInstance().saveDungeon(config);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Annonce " + type + " " + (enabled ? "activee" : "desactivee") + ".")
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Anuncio " + type + " " + (enabled ? "activada" : "desactivada") + ".")
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -165,12 +165,12 @@ final class ArcadiaAdminDungeonCommandActions {
         String msg = StringArgumentType.getString(ctx, "msg");
         DungeonConfig config = ConfigManager.getInstance().getDungeon(id);
         if (config == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + id));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorra: " + id));
             return 0;
         }
         config.availabilityMessage = msg;
         ConfigManager.getInstance().saveDungeon(config);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Message de disponibilite mis a jour.")
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Mensaje de disponibilidad actualizado.")
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -179,7 +179,7 @@ final class ArcadiaAdminDungeonCommandActions {
         String id = StringArgumentType.getString(ctx, "dungeon");
         DungeonConfig config = ConfigManager.getInstance().getDungeon(id);
         if (config == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + id));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorra: " + id));
             return 0;
         }
 
@@ -199,7 +199,7 @@ final class ArcadiaAdminDungeonCommandActions {
         }
 
         ConfigManager.getInstance().saveDungeon(config);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Parametre " + setting + " mis a jour.")
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Parámetro " + setting + " actualizado.")
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -208,7 +208,7 @@ final class ArcadiaAdminDungeonCommandActions {
         String id = StringArgumentType.getString(ctx, "dungeon");
         DungeonConfig config = ConfigManager.getInstance().getDungeon(id);
         if (config == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + id));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorra: " + id));
             return 0;
         }
         double value = DoubleArgumentType.getDouble(ctx, "value");
@@ -220,7 +220,7 @@ final class ArcadiaAdminDungeonCommandActions {
         }
 
         ConfigManager.getInstance().saveDungeon(config);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Parametre " + setting + " = " + value)
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Parámetro " + setting + " = " + value)
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -230,7 +230,7 @@ final class ArcadiaAdminDungeonCommandActions {
         String msg = StringArgumentType.getString(ctx, "msg");
         DungeonConfig config = ConfigManager.getInstance().getDungeon(id);
         if (config == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + id));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorrad: " + id));
             return 0;
         }
         switch (type) {
@@ -240,7 +240,7 @@ final class ArcadiaAdminDungeonCommandActions {
             case "recruitment" -> config.recruitmentMessage = msg;
         }
         ConfigManager.getInstance().saveDungeon(config);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Message " + type + " mis a jour.")
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Mensaje " + type + " actualizado.")
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -250,12 +250,12 @@ final class ArcadiaAdminDungeonCommandActions {
         String name = StringArgumentType.getString(ctx, "name");
         DungeonConfig config = ConfigManager.getInstance().getDungeon(id);
         if (config == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + id));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorra: " + id));
             return 0;
         }
         config.name = name;
         ConfigManager.getInstance().saveDungeon(config);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Donjon renomme: " + name)
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Renombrar mazmorra: " + name)
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -268,13 +268,13 @@ final class ArcadiaAdminDungeonCommandActions {
 
         DungeonConfig config = ConfigManager.getInstance().getDungeon(dungeonId);
         if (config == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + dungeonId));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorra: " + dungeonId));
             return 0;
         }
 
         config.completionRewards.add(new RewardConfig(item, count, chance));
         ConfigManager.getInstance().saveDungeon(config);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Recompense de completion ajoutee: " + count + "x " + item + " (" + (chance * 100) + "%)")
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Se ha añadido una recompensa por completar: " + count + "x " + item + " (" + (chance * 100) + "%)")
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -285,12 +285,12 @@ final class ArcadiaAdminDungeonCommandActions {
 
         DungeonConfig config = ConfigManager.getInstance().getDungeon(id);
         if (config == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + id));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorra: " + id));
             return 0;
         }
         config.order = order;
         ConfigManager.getInstance().saveDungeon(config);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Ordre du donjon defini a " + order + ".")
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Orden de la mazmorra definida en " + order + ".")
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -301,18 +301,18 @@ final class ArcadiaAdminDungeonCommandActions {
 
         DungeonConfig config = ConfigManager.getInstance().getDungeon(id);
         if (config == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + id));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorra: " + id));
             return 0;
         }
         if (ConfigManager.getInstance().getDungeon(required) == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon requis introuvable: " + required));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No se ha encontrado la mazmorra requerida: " + required));
             return 0;
         }
 
         config.requiredDungeon = required;
         ConfigManager.getInstance().saveDungeon(config);
         DungeonConfig req = ConfigManager.getInstance().getDungeon(required);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] " + config.name + " necessite maintenant: " + req.name)
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] " + config.name + " Ahora se necesita: " + req.name)
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -321,12 +321,12 @@ final class ArcadiaAdminDungeonCommandActions {
         String id = StringArgumentType.getString(ctx, "dungeon");
         DungeonConfig config = ConfigManager.getInstance().getDungeon(id);
         if (config == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + id));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorra: " + id));
             return 0;
         }
         config.requiredDungeon = "";
         ConfigManager.getInstance().saveDungeon(config);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Prerequis supprime pour " + config.name + ".")
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Requisitos previos eliminados para " + config.name + ".")
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }

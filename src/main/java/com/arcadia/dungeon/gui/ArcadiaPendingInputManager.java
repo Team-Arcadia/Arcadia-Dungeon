@@ -36,7 +36,7 @@ public final class ArcadiaPendingInputManager {
         PENDING_INPUTS.put(player.getUUID(), new PendingInput(prompt, applyAction, reopenAction, reopenOnSuccess));
         player.closeContainer();
         player.sendSystemMessage(Component.literal("[Arcadia] " + prompt).withStyle(ChatFormatting.GOLD));
-        player.sendSystemMessage(Component.literal("[Arcadia] Tape 'cancel' pour annuler.").withStyle(ChatFormatting.GRAY));
+        player.sendSystemMessage(Component.literal("[Arcadia] Pulsa «cancel» para cancelar.").withStyle(ChatFormatting.GRAY));
     }
 
     public static PendingInput get(ServerPlayer player) {

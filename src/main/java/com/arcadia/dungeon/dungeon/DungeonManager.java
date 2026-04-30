@@ -72,17 +72,17 @@ public class DungeonManager {
     public DungeonInstance startDungeon(String dungeonId, ServerPlayer initiator) {
         DungeonConfig config = ConfigManager.getInstance().getDungeon(dungeonId);
         if (config == null) {
-            initiator.sendSystemMessage(Component.literal("[Arcadia] Donjon inconnu: " + dungeonId).withStyle(ChatFormatting.RED));
+            initiator.sendSystemMessage(Component.literal("[Arcadia] Mazmorra desconocida:  " + dungeonId).withStyle(ChatFormatting.RED));
             return null;
         }
 
         if (!config.enabled) {
-            initiator.sendSystemMessage(Component.literal("[Arcadia] Ce donjon est desactive.").withStyle(ChatFormatting.RED));
+            initiator.sendSystemMessage(Component.literal("[Arcadia] Esta mazmorra está desactivada.").withStyle(ChatFormatting.RED));
             return null;
         }
 
         if (activeInstances.containsKey(dungeonId)) {
-            initiator.sendSystemMessage(Component.literal("[Arcadia] Ce donjon est deja en cours!").withStyle(ChatFormatting.RED));
+            initiator.sendSystemMessage(Component.literal("[Arcadia] ¡Esta mazmorra ya está en marcha!").withStyle(ChatFormatting.RED));
             return null;
         }
 
@@ -92,7 +92,7 @@ public class DungeonManager {
                 DungeonConfig required = ConfigManager.getInstance().getDungeon(config.requiredDungeon);
                 String requiredName = required != null ? required.name : config.requiredDungeon;
                 initiator.sendSystemMessage(Component.literal(
-                        "[Arcadia] Vous devez d'abord completer: " + requiredName
+                        "[Arcadia] Primero debes completar: " + requiredName
                 ).withStyle(ChatFormatting.RED));
                 return null;
             }
@@ -119,7 +119,7 @@ public class DungeonManager {
             if (elapsed < config.cooldownSeconds) {
                 long remaining = config.cooldownSeconds - elapsed;
                 initiator.sendSystemMessage(Component.literal(
-                        "[Arcadia] Cooldown: " + formatTime(remaining) + " restant(s)."
+                        "[Arcadia] Tiempo de recarga: " + formatTime(remaining) + " restante(s)."
                 ).withStyle(ChatFormatting.YELLOW));
                 return null;
             }
@@ -133,7 +133,7 @@ public class DungeonManager {
                 if (elapsed < config.availableEverySeconds) {
                     long remaining = config.availableEverySeconds - elapsed;
                     initiator.sendSystemMessage(Component.literal(
-                            "[Arcadia] Ce donjon sera disponible dans " + formatTime(remaining) + "."
+                            "[Arcadia] Esta mazmorra estará disponible en " + formatTime(remaining) + "."
                     ).withStyle(ChatFormatting.YELLOW));
                     return null;
                 }
@@ -141,8 +141,8 @@ public class DungeonManager {
         }
 
         if (!canResolveSpawn(config.spawnPoint)) {
-            ArcadiaDungeon.LOGGER.error("Cannot start dungeon {}: invalid spawn point {} in {}", dungeonId, config.spawnPoint == null ? "null" : config.spawnPoint.dimension, config.name);
-            initiator.sendSystemMessage(Component.literal("[Arcadia] Spawn du donjon invalide. Demarrage annule.").withStyle(ChatFormatting.RED));
+            ArcadiaDungeon.LOGGER.error("No se puede iniciar la mazmorra {}: punto de aparición no válido {} en {}", dungeonId, config.spawnPoint == null ? "null" : config.spawnPoint.dimension, config.name);
+            initiator.sendSystemMessage(Component.literal("[Arcadia] Generación de la mazmorra no válida. Inicio cancelado.").withStyle(ChatFormatting.RED));
             return null;
         }
 
@@ -157,14 +157,14 @@ public class DungeonManager {
         if (config.recruitmentDurationSeconds > 0) {
             instance.startRecruitment();
             broadcastClickableJoin(config, initiator.getName().getString(), config.recruitmentDurationSeconds);
-            MutableComponent recruitMsg = Component.literal("[Arcadia] Recrutement ouvert! Vos amis ont " + config.recruitmentDurationSeconds + "s pour rejoindre. ")
+            MutableComponent recruitMsg = Component.literal("[Arcadia] ¡Se buscan nuevos miembros! ¿Tus amigos han " + config.recruitmentDurationSeconds + "para llegar a. ")
                     .withStyle(ChatFormatting.GREEN);
-            MutableComponent leaveBtn2 = Component.literal("[QUITTER]").withStyle(style -> style
+            MutableComponent leaveBtn2 = Component.literal("[SALIR]").withStyle(style -> style
                     .withColor(ChatFormatting.RED)
                     .withBold(true)
                     .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/arcadia_dungeon abandon"))
                     .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                            Component.literal("Cliquez pour quitter le donjon").withStyle(ChatFormatting.GRAY)))
+                            Component.literal("Haz clic para salir de la mazmorra").withStyle(ChatFormatting.GRAY)))
             );
             initiator.sendSystemMessage(recruitMsg.append(leaveBtn2));
         } else {
@@ -177,21 +177,21 @@ public class DungeonManager {
             }
         }
 
-        ArcadiaDungeon.LOGGER.info("Dungeon {} started by {}", dungeonId, initiator.getName().getString());
+        ArcadiaDungeon.LOGGER.info("La mazmorra {} fue creada por {}", dungeonId, initiator.getName().getString());
         return instance;
     }
 
     public boolean joinDungeon(String dungeonId, ServerPlayer player) {
         DungeonInstance instance = activeInstances.get(dungeonId);
         if (instance == null) {
-            player.sendSystemMessage(Component.literal("[Arcadia] Aucun donjon actif: " + dungeonId).withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("[Arcadia] No hay mazmorras activas: " + dungeonId).withStyle(ChatFormatting.RED));
             return false;
         }
 
         DungeonConfig config = instance.getConfig();
 
         if (!config.enabled) {
-            player.sendSystemMessage(Component.literal("[Arcadia] Ce donjon est desactive.").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("[Arcadia] Esta mazmorra está desactivada.").withStyle(ChatFormatting.RED));
             return false;
         }
 
@@ -200,7 +200,7 @@ public class DungeonManager {
                 DungeonConfig required = ConfigManager.getInstance().getDungeon(config.requiredDungeon);
                 String requiredName = required != null ? required.name : config.requiredDungeon;
                 player.sendSystemMessage(Component.literal(
-                        "[Arcadia] Vous devez d'abord completer: " + requiredName
+                        "[Arcadia] Primero debes completar: " + requiredName
                 ).withStyle(ChatFormatting.RED));
                 return false;
             }
@@ -211,18 +211,18 @@ public class DungeonManager {
 
         // Allow joining only during recruitment phase
         if (instance.getState() != DungeonState.RECRUITING) {
-            player.sendSystemMessage(Component.literal("[Arcadia] Les portes de " + config.name + " sont fermees!").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("[Arcadia] Las puertas de " + config.name + " ¡están cerradas!").withStyle(ChatFormatting.RED));
             return false;
         }
 
         if (instance.getPlayers().size() >= config.settings.maxPlayers) {
-            player.sendSystemMessage(Component.literal("[Arcadia] Donjon plein!").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("[Arcadia] Mazmorra llena!").withStyle(ChatFormatting.RED));
             return false;
         }
 
         // Check if already in a dungeon
         if (getPlayerDungeon(player.getUUID()) != null) {
-            player.sendSystemMessage(Component.literal("[Arcadia] Vous etes deja dans un donjon!").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("[Arcadia] ¡Ya estás en una mazmorra!").withStyle(ChatFormatting.RED));
             return false;
         }
 
@@ -237,8 +237,8 @@ public class DungeonManager {
                 if (remaining > halfTime) {
                     long waitSeconds = remaining - halfTime;
                     player.sendSystemMessage(Component.literal(
-                            "[Arcadia] Vous avez deja fait " + weeklyCount + " donjons cette semaine. " +
-                            "Priorite aux nouveaux joueurs! Revenez dans " + formatTime(waitSeconds) + ".")
+                            "[Arcadia] ¿Ya lo has hecho? " + weeklyCount + " mazmorras esta semana. " +
+                            "¡Prioridad para los nuevos jugadores! Vuelve a " + formatTime(waitSeconds) + ".")
                             .withStyle(ChatFormatting.YELLOW));
                     return false;
                 }
@@ -249,13 +249,13 @@ public class DungeonManager {
         instance.addPlayer(player);
         playerToDungeon.put(player.getUUID(), dungeonId);
 
-        MutableComponent joinMsg = Component.literal("[Arcadia] Vous avez rejoint " + config.name + "! ").withStyle(ChatFormatting.GREEN);
-        MutableComponent leaveBtn = Component.literal("[QUITTER]").withStyle(style -> style
+        MutableComponent joinMsg = Component.literal("[Arcadia] Te has unido " + config.name + "! ").withStyle(ChatFormatting.GREEN);
+        MutableComponent leaveBtn = Component.literal("[SALIR]").withStyle(style -> style
                 .withColor(ChatFormatting.RED)
                 .withBold(true)
                 .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/arcadia_dungeon abandon"))
                 .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                        Component.literal("Cliquez pour quitter le donjon").withStyle(ChatFormatting.GRAY)))
+                        Component.literal("Haz clic para salir de la mazmorra").withStyle(ChatFormatting.GRAY)))
         );
         player.sendSystemMessage(joinMsg.append(leaveBtn));
 
@@ -264,7 +264,7 @@ public class DungeonManager {
             if (!otherId.equals(player.getUUID())) {
                 ServerPlayer other = server.getPlayerList().getPlayer(otherId);
                 if (other != null) {
-                    other.sendSystemMessage(Component.literal("[Arcadia] " + player.getName().getString() + " a rejoint le donjon!")
+                    other.sendSystemMessage(Component.literal("[Arcadia] " + player.getName().getString() + " se ha unido a la mazmorra!")
                             .withStyle(ChatFormatting.GREEN));
                 }
             }
@@ -287,8 +287,8 @@ public class DungeonManager {
                 ServerPlayer player = server.getPlayerList().getPlayer(playerId);
                 if (player != null) {
                     teleportBack(player);
-                    player.sendSystemMessage(Component.literal("[Arcadia] Pas assez de joueurs (" + instance.getPlayerCount()
-                            + "/" + config.settings.minPlayers + "). Donjon annule.").withStyle(ChatFormatting.RED));
+                    player.sendSystemMessage(Component.literal("[Arcadia] No hay suficientes jugadores (" + instance.getPlayerCount()
+                            + "/" + config.settings.minPlayers + "). «Se cancela la mazmorra».").withStyle(ChatFormatting.RED));
                 }
                 playerToDungeon.remove(playerId);
             }
@@ -298,12 +298,12 @@ public class DungeonManager {
         }
 
         if (!canResolveSpawn(config.spawnPoint)) {
-            ArcadiaDungeon.LOGGER.error("Cannot finish recruitment for dungeon {}: invalid spawn point {}", dungeonId, config.spawnPoint == null ? "null" : config.spawnPoint.dimension);
+            ArcadiaDungeon.LOGGER.error("No se puede completar el reclutamiento para la mazmorra {}: punto de aparición no válido {}", dungeonId, config.spawnPoint == null ? "null" : config.spawnPoint.dimension);
             for (UUID playerId : recruitedPlayers) {
                 ServerPlayer player = server.getPlayerList().getPlayer(playerId);
                 if (player != null) {
                     teleportBack(player);
-                    player.sendSystemMessage(Component.literal("[Arcadia] Spawn du donjon invalide. Donjon annule.").withStyle(ChatFormatting.RED));
+                    player.sendSystemMessage(Component.literal("[Arcadia] Generación de la mazmorra no válida. Mazmorra cancelada.").withStyle(ChatFormatting.RED));
                 }
                 playerToDungeon.remove(playerId);
             }
@@ -347,7 +347,7 @@ public class DungeonManager {
         for (UUID playerId : recruitedPlayers) {
             ServerPlayer player = server.getPlayerList().getPlayer(playerId);
             if (player != null) {
-                player.sendSystemMessage(Component.literal("[Arcadia] Le donjon commence! " + instance.getPlayerCount() + " joueur(s)!")
+                player.sendSystemMessage(Component.literal("[Arcadia] ¡Empieza la mazmorra! " + instance.getPlayerCount() + " ¡jugador(es)!")
                         .withStyle(ChatFormatting.GOLD));
             }
         }
@@ -356,7 +356,7 @@ public class DungeonManager {
         MessageUtil.broadcast(instance, startMsg);
 
         if (config.announceStart) {
-            String msg = "&6[Donjon] &7Les portes de &e" + config.name + "&7 se ferment! &f" + instance.getPlayerCount() + "&7 joueur(s) a l'interieur.";
+            String msg = "&6[Mazmorra] &7Las puertas de &e" + config.name + "¡&7 se cierran! &f" + instance.getPlayerCount() + «Hay 7 jugadores en el campo.";
             MessageUtil.broadcast(instance, msg);
             broadcastMessage(msg);
         }
@@ -396,7 +396,7 @@ public class DungeonManager {
                 // Per-dungeon cooldown
                 playerCooldowns.put(playerId + ":" + dungeonId, System.currentTimeMillis());
 
-                player.sendSystemMessage(Component.literal("[Arcadia] Donjon termine! Felicitations! (Temps: " + formatTime(completionTime) + ")")
+                player.sendSystemMessage(Component.literal("[Arcadia] ¡Mazmorra completada! ¡Enhorabuena! (Tiempo: " + formatTime(completionTime) + ")")
                         .withStyle(ChatFormatting.GOLD));
                 sendArcadiaXpMessages(player, totalArcadiaXpReward, speedrunBonusXp, streakBonus, levelUpResult);
             }
@@ -418,11 +418,11 @@ public class DungeonManager {
             for (UUID playerId : instance.getPlayers()) {
                 ServerPlayer player = server.getPlayerList().getPlayer(playerId);
                 if (player != null) {
-                    player.sendSystemMessage(Component.literal("[Arcadia] Retour dans " + delaySeconds + " seconde(s)...")
+                    player.sendSystemMessage(Component.literal("[Arcadia] De vuelta a " + delaySeconds + " segundo(s)...")
                             .withStyle(ChatFormatting.YELLOW));
                 }
             }
-            ArcadiaDungeon.LOGGER.info("Dungeon {} entering celebration phase ({}s)", dungeonId, delaySeconds);
+            ArcadiaDungeon.LOGGER.info("Mazmorra {} entrando en la fase de celebración ({}s)", dungeonId, delaySeconds);
         } else {
             // No delay — finalize immediately
             finalizeDungeon(dungeonId);
@@ -495,8 +495,8 @@ public class DungeonManager {
         if (playerLevel >= config.requiredArcadiaLevel) {
             return true;
         }
-        player.sendSystemMessage(Component.literal("[Arcadia] Ce donjon requiert le niveau Arcadia "
-                + config.requiredArcadiaLevel + " (votre niveau: " + playerLevel + ").").withStyle(ChatFormatting.RED));
+        player.sendSystemMessage(Component.literal("[Arcadia] Esta mazmorra requiere el nivel Arcadia "
+                + config.requiredArcadiaLevel + " (tu nivel: " + playerLevel + ").").withStyle(ChatFormatting.RED));
         return false;
     }
 
@@ -571,24 +571,24 @@ public class DungeonManager {
             MessageUtil.send(player, "&6[Arcadia] &a+" + xpReward + " XP Arcadia");
         }
         if (speedrunBonusXp > 0) {
-            MessageUtil.send(player, "&6[Arcadia] &bBonus speedrun! &a+" + speedrunBonusXp + " XP Arcadia");
+            MessageUtil.send(player, "&6[Arcadia] &b¡Bonus speedrun! &a+" + speedrunBonusXp + " XP Arcadia");
         }
         if (streakBonus != null && streakBonus.xpBonus > 0) {
             if (streakBonus.message != null && !streakBonus.message.isBlank()) {
                 MessageUtil.send(player, streakBonus.message);
             } else {
-                MessageUtil.send(player, "&6[Arcadia] &eStreak hebdo! &a+" + streakBonus.xpBonus + " XP Arcadia");
+                MessageUtil.send(player, "&6[Arcadia] &e¡Racha semanal! &a+" + streakBonus.xpBonus + " XP Arcadia");
             }
         }
         if (result == null || !result.leveledUp) {
             return;
         }
 
-        MessageUtil.send(player, "&6[Arcadia] &eNiveau Arcadia " + result.newLevel + " atteint!");
+        MessageUtil.send(player, "&6[Arcadia] &Nivel Arcadia " + result.newLevel + " alcanzado!");
         if (result.rankChanged) {
             String color = ConfigManager.getInstance().getProgressionConfig().getRankColorForLevel(result.newLevel);
-            MessageUtil.send(player, "&6[Arcadia] &bNouveau rang: " + color + result.newRank);
-            broadcastMessage("&6[Arcadia] &e" + player.getName().getString() + " &7vient d'atteindre le rang " + color + result.newRank + "&7!");
+            MessageUtil.send(player, "&6[Arcadia] &bNuevo rango: " + color + result.newRank);
+            broadcastMessage("&6[Arcadia] &e" + player.getName().getString() + " &7acaba de alcanzar el rango " + color + result.newRank + "&7!");
         }
     }
 
@@ -611,7 +611,7 @@ public class DungeonManager {
                 if (config.teleportBackOnComplete) {
                     teleportBack(player);
                 }
-                player.sendSystemMessage(Component.literal("[Arcadia] Donjon echoue!").withStyle(ChatFormatting.RED));
+                player.sendSystemMessage(Component.literal("[Arcadia] ¡Fracaso en la mazmorra!").withStyle(ChatFormatting.RED));
             }
         }
 
@@ -643,7 +643,7 @@ public class DungeonManager {
             ServerPlayer player = server.getPlayerList().getPlayer(playerId);
             if (player != null) {
                 teleportBack(player);
-                player.sendSystemMessage(Component.literal("[Arcadia] Donjon arrete par un administrateur.").withStyle(ChatFormatting.YELLOW));
+                player.sendSystemMessage(Component.literal("[Arcadia] Mazmorra cerrada por un administrador.").withStyle(ChatFormatting.YELLOW));
             }
         }
 
@@ -669,7 +669,7 @@ public class DungeonManager {
             ServerPlayer player = server.getPlayerList().getPlayer(playerId);
             if (player != null) {
                 teleportBack(player);
-                player.sendSystemMessage(Component.literal("[Arcadia] Le donjon a ete reinitialise.").withStyle(ChatFormatting.RED));
+                player.sendSystemMessage(Component.literal("[Arcadia] La mazmorra se ha reiniciado.").withStyle(ChatFormatting.RED));
             }
             playerToDungeon.remove(playerId);
         }
@@ -677,7 +677,7 @@ public class DungeonManager {
         instance.cleanup();
         for (UUID playerId : resetPlayers) clearAllowedBeneficialEffects(playerId);
         activeInstances.remove(dungeonId);
-        ArcadiaDungeon.LOGGER.info("Dungeon {} force reset", dungeonId);
+        ArcadiaDungeon.LOGGER.info("Restablecimiento forzado de la mazmorra {}", dungeonId);
     }
 
     public void scheduleRemoval(String dungeonId) {
@@ -772,8 +772,8 @@ public class DungeonManager {
             for (UUID otherId : instance.getPlayers()) {
                 ServerPlayer other = server.getPlayerList().getPlayer(otherId);
                 if (other != null) {
-                    other.sendSystemMessage(Component.literal("[Arcadia] " + finalName + " a quitte le donjon! ("
-                            + instance.getPlayerCount() + " joueur(s) restant(s))")
+                    other.sendSystemMessage(Component.literal("[Arcadia] " + finalName + " ¡Se va de la mazmorra! ("
+                            + instance.getPlayerCount() + " jugador(es) restante(s)")
                             .withStyle(ChatFormatting.YELLOW));
                 }
             }
@@ -872,7 +872,7 @@ public class DungeonManager {
         if (server == null || spawn == null) return;
         ResourceLocation dimLoc = ResourceLocation.tryParse(spawn.dimension);
         if (dimLoc == null) {
-            ArcadiaDungeon.LOGGER.error("Invalid dimension: {}", spawn.dimension);
+            ArcadiaDungeon.LOGGER.error("Dimensión no válida: {}", spawn.dimension);
             return;
         }
         ResourceKey<net.minecraft.world.level.Level> dimKey = ResourceKey.create(Registries.DIMENSION, dimLoc);
@@ -959,7 +959,7 @@ public class DungeonManager {
                         .withBold(true)
                         .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/arcadia_dungeon start " + config.id))
                         .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                                Component.literal("Cliquez pour lancer " + config.name).withStyle(ChatFormatting.YELLOW)))
+                                Component.literal("Haz clic para iniciar " + config.name).withStyle(ChatFormatting.YELLOW)))
                 );
         Component full = text.append(button);
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
@@ -1024,7 +1024,7 @@ public class DungeonManager {
             try {
                 if (net.neoforged.neoforge.server.permission.PermissionAPI.getPermission(player, ArcadiaDungeon.BYPASS_ANTIPARASITE)) continue;
             } catch (Exception e) {
-                ArcadiaDungeon.LOGGER.debug("Arcadia: impossible de vérifier la permission bypass pour {} : {}", player.getName().getString(), e.getMessage());
+                ArcadiaDungeon.LOGGER.debug("Arcadia: no se puede verificar el permiso de omisión para {} : {}", player.getName().getString(), e.getMessage());
             }
 
             String playerDim = player.level().dimension().location().toString();
@@ -1032,9 +1032,9 @@ public class DungeonManager {
                 ServerLevel overworld = server.overworld();
                 net.minecraft.core.BlockPos spawnPos = overworld.getSharedSpawnPos();
                 player.teleportTo(overworld, spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5, 0, 0);
-                player.sendSystemMessage(Component.literal("[Arcadia] Un donjon demarre dans cette zone! Vous avez ete teleporte au spawn.")
+                player.sendSystemMessage(Component.literal("[Arcadia] ¡Comienza una mazmorra en esta zona! Has sido teletransportado al punto de aparición.")
                         .withStyle(ChatFormatting.RED));
-                ArcadiaDungeon.LOGGER.info("Kicked parasite {} from dungeon area {}", player.getName().getString(), config.id);
+                ArcadiaDungeon.LOGGER.info("He expulsado al parásito {} de la zona de la mazmorra {}", player.getName().getString(), config.id);
             }
         }
 
@@ -1104,7 +1104,7 @@ public class DungeonManager {
             }
         }
 
-        ArcadiaDungeon.LOGGER.info("Applied scripted wall {} for dungeon {} with action {}", wall.id, config.id, action);
+        ArcadiaDungeon.LOGGER.info("Se ha aplicado el guion de pared {} para la mazmorra {} con la acción {}", wall.id, config.id, action);
     }
 
     private void clearMobsInArea(DungeonConfig config) {
@@ -1133,7 +1133,7 @@ public class DungeonManager {
         }
 
         if (cleared > 0) {
-            ArcadiaDungeon.LOGGER.info("Cleared {} mobs from dungeon area {}", cleared, config.id);
+            ArcadiaDungeon.LOGGER.info("He eliminado {} enemigos de la zona de la mazmorra {}", cleared, config.id);
         }
     }
 
@@ -1142,17 +1142,17 @@ public class DungeonManager {
         String cmd = "/arcadia_dungeon join " + config.id;
 
         net.minecraft.network.chat.MutableComponent msg = Component.empty()
-                .append(Component.literal("[Donjon] ").withStyle(ChatFormatting.GOLD))
+                .append(Component.literal("[Mazmorra] ").withStyle(ChatFormatting.GOLD))
                 .append(Component.literal(playerName).withStyle(ChatFormatting.YELLOW))
-                .append(Component.literal(" lance ").withStyle(ChatFormatting.GRAY))
+                .append(Component.literal(" lanza ").withStyle(ChatFormatting.GRAY))
                 .append(Component.literal(config.name).withStyle(ChatFormatting.YELLOW))
                 .append(Component.literal("! ").withStyle(ChatFormatting.GRAY))
-                .append(Component.literal("[REJOINDRE (" + secondsLeft + "s)]")
+                .append(Component.literal("[UNIRSE (" + secondsLeft + "s)]")
                         .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD)
                         .withStyle(style -> style
                                 .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, cmd))
                                 .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                                        Component.literal("Cliquez pour rejoindre " + config.name + "!\n" + cmd)
+                                        Component.literal("Haz clic para unirte " + config.name + "!\n" + cmd)
                                                 .withStyle(ChatFormatting.GREEN)))
                         )
                 );
@@ -1167,17 +1167,17 @@ public class DungeonManager {
         String cmd = "/arcadia_dungeon join " + config.id;
 
         net.minecraft.network.chat.MutableComponent msg = Component.empty()
-                .append(Component.literal("[Donjon] ").withStyle(ChatFormatting.GOLD))
+                .append(Component.literal("[Mazmorra] ").withStyle(ChatFormatting.GOLD))
                 .append(Component.literal(config.name).withStyle(ChatFormatting.YELLOW))
-                .append(Component.literal(" - encore ").withStyle(ChatFormatting.GRAY))
+                .append(Component.literal(" - otra vez ").withStyle(ChatFormatting.GRAY))
                 .append(Component.literal(secondsLeft + "s").withStyle(ChatFormatting.WHITE))
                 .append(Component.literal("! ").withStyle(ChatFormatting.GRAY))
-                .append(Component.literal("[REJOINDRE]")
+                .append(Component.literal("[UNIRSE]")
                         .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD)
                         .withStyle(style -> style
                                 .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, cmd))
                                 .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                                        Component.literal("Cliquez pour rejoindre!\n" + cmd)
+                                        Component.literal("Haz clic para unirte!\n" + cmd)
                                                 .withStyle(ChatFormatting.GREEN)))
                         )
                 );

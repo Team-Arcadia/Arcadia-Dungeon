@@ -56,13 +56,13 @@ public class WaveInstance {
         for (MobSpawnConfig mobConfig : config.mobs) {
             Optional<EntityType<?>> typeOpt = EntityType.byString(mobConfig.entityType);
             if (typeOpt.isEmpty()) {
-                ArcadiaDungeon.LOGGER.error("Unknown entity type for wave mob: {}", mobConfig.entityType);
+                ArcadiaDungeon.LOGGER.error("Tipo de entidad desconocido para el monstruo de olas: {}", mobConfig.entityType);
                 continue;
             }
 
             ResourceLocation dimLoc = ResourceLocation.tryParse(mobConfig.spawnPoint.dimension);
             if (dimLoc == null) {
-                ArcadiaDungeon.LOGGER.error("Invalid dimension: {}", mobConfig.spawnPoint.dimension);
+                ArcadiaDungeon.LOGGER.error("Dimensión no válida: {}", mobConfig.spawnPoint.dimension);
                 continue;
             }
 
@@ -80,7 +80,7 @@ public class WaveInstance {
                 try {
                     entity = typeOpt.get().create(level);
                 } catch (Exception e) {
-                    ArcadiaDungeon.LOGGER.error("Failed to create wave mob: {}", mobConfig.entityType, e);
+                    ArcadiaDungeon.LOGGER.error("No se ha podido crear el grupo de oleadas: {}", mobConfig.entityType, e);
                     continue;
                 }
                 if (entity == null) continue;
@@ -160,12 +160,12 @@ public class WaveInstance {
         }
 
         if (successfulSpawns == 0 && !config.mobs.isEmpty()) {
-            ArcadiaDungeon.LOGGER.warn("Wave {} failed to spawn any mobs! Check entity types.", config.waveNumber);
+            ArcadiaDungeon.LOGGER.warn("¡La onda {} no ha generado ningún monstruo! Comprueba los tipos de entidad.", config.waveNumber);
             cleared = true;
         }
 
         spawnTimeMillis = System.currentTimeMillis();
-        ArcadiaDungeon.LOGGER.info("Spawned wave {} with {} mobs", config.waveNumber, successfulSpawns);
+        ArcadiaDungeon.LOGGER.info("Se ha generado una oleada {} con {} criaturas", config.waveNumber, successfulSpawns);
         return true;
     }
 

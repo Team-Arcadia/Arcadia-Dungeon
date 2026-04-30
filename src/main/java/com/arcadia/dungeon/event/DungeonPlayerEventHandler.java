@@ -39,7 +39,7 @@ public class DungeonPlayerEventHandler {
 
         event.setCanceled(true);
         player.sendSystemMessage(
-                Component.literal("[Arcadia] Les charms sont désactivés pendant le donjon.")
+                Component.literal("[Arcadia] Los encantamientos están desactivados durante la mazmorra.")
                         .withStyle(ChatFormatting.RED));
     }
 
@@ -61,7 +61,7 @@ public class DungeonPlayerEventHandler {
             for (String blocked : instance.getConfig().settings.blockedCommands) {
                 if (rootCmd.equals(blocked) || cmdNoPrefix.equals(blocked)) {
                     event.setCanceled(true);
-                    player.sendSystemMessage(Component.literal("[Arcadia] Cette commande est bloquee pendant le donjon!").withStyle(ChatFormatting.RED));
+                    player.sendSystemMessage(Component.literal("[Arcadia] ¡Este comando está bloqueado durante la mazmorra!").withStyle(ChatFormatting.RED));
                     return;
                 }
             }
@@ -102,8 +102,8 @@ public class DungeonPlayerEventHandler {
         if (instance == null) return;
 
         DungeonManager.getInstance().teleportToSpawn(player, instance.getConfig().spawnPoint);
-        player.sendSystemMessage(Component.literal("[Arcadia] Respawn au debut du donjon. ("
-                + instance.getRemainingLives(player.getUUID()) + " vie(s) restante(s))")
+        player.sendSystemMessage(Component.literal("[Arcadia] Reaparecer al inicio de la mazmorra. ("
+                + instance.getRemainingLives(player.getUUID()) + " (vida(s) restante(s))")
                 .withStyle(ChatFormatting.YELLOW));
     }
 }

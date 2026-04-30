@@ -28,18 +28,18 @@ final class ArcadiaAdminSupportCommandActions {
     static int giveAreaWand(CommandContext<CommandSourceStack> ctx) {
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] ¡Solo para jugadores!"));
             return 0;
         }
 
         net.minecraft.world.item.ItemStack wand = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.GOLDEN_SHOVEL);
         wand.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,
-                Component.literal(com.arcadia.dungeon.event.DungeonEventHandler.AREA_WAND_TAG + " - Arcadia Dungeon Area Wand").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
+                Component.literal(com.arcadia.dungeon.event.DungeonEventHandler.AREA_WAND_TAG + " - Varita de la zona de mazmorras de Arcadia").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
 
         // Ask which dungeon
         Map<String, DungeonConfig> dungeons = ConfigManager.getInstance().getDungeonConfigs();
         if (dungeons.isEmpty()) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Aucun donjon configure!"));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] ¡No hay mazmorras configuradas!"));
             return 0;
         }
 
@@ -52,12 +52,12 @@ final class ArcadiaAdminSupportCommandActions {
         String firstId = dungeons.keySet().iterator().next();
         com.arcadia.dungeon.event.DungeonEventHandler.wandDungeon.put(player.getUUID(), firstId);
 
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Wand recue! Donjon: " + firstId).withStyle(ChatFormatting.GOLD), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("  Clic gauche = Pos1 | Clic droit = Pos2").withStyle(ChatFormatting.GRAY), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("  /arcadia_dungeon admin wand_select <dungeon> pour la zone du donjon").withStyle(ChatFormatting.GRAY), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("  La pelle en or sert uniquement a la zone globale du donjon").withStyle(ChatFormatting.GRAY), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("  Les zones de boss/vagues ont ete retirees pour ne plus casser l'IA").withStyle(ChatFormatting.GRAY), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("  Changer de donjon:").withStyle(ChatFormatting.GRAY), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] ¡Varita mágica! Mazmorra: " + firstId).withStyle(ChatFormatting.GOLD), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("  Clic izquierdo = Pos1 | Clic derecho = Pos2").withStyle(ChatFormatting.GRAY), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("  /arcadia_dungeon admin wand_select <dungeon> para la zona de la mazmorra").withStyle(ChatFormatting.GRAY), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("  La pala de oro solo sirve para la zona general de la mazmorra").withStyle(ChatFormatting.GRAY), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("  Se han eliminado las zonas de jefes y oleadas para que la IA ya no se bloquee").withStyle(ChatFormatting.GRAY), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("  Cambiar de mazmorra:").withStyle(ChatFormatting.GRAY), false);
 
         for (DungeonConfig cfg : dungeons.values()) {
             MutableComponent line = Component.literal("    [" + cfg.name + "]").withStyle(ChatFormatting.YELLOW)
@@ -65,7 +65,7 @@ final class ArcadiaAdminSupportCommandActions {
                             .withClickEvent(new net.minecraft.network.chat.ClickEvent(net.minecraft.network.chat.ClickEvent.Action.RUN_COMMAND,
                                     "/arcadia_dungeon admin wand_select " + cfg.id))
                             .withHoverEvent(new net.minecraft.network.chat.HoverEvent(net.minecraft.network.chat.HoverEvent.Action.SHOW_TEXT,
-                                    Component.literal("Cliquer pour selectionner " + cfg.name))));
+                                    Component.literal("Haz clic para seleccionar " + cfg.name))));
             ctx.getSource().sendSuccess(() -> line, false);
         }
 
@@ -76,18 +76,18 @@ final class ArcadiaAdminSupportCommandActions {
 
     static int wandSelect(CommandContext<CommandSourceStack> ctx) {
         ServerPlayer player = ctx.getSource().getPlayer();
-        if (player == null) { ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!")); return 0; }
+        if (player == null) { ctx.getSource().sendFailure(Component.literal("[Arcadia] Solo para jugadores!")); return 0; }
 
         String dungeonId = StringArgumentType.getString(ctx, "dungeon");
         DungeonConfig config = ConfigManager.getInstance().getDungeon(dungeonId);
-        if (config == null) { ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + dungeonId)); return 0; }
+        if (config == null) { ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorra: " + dungeonId)); return 0; }
 
         com.arcadia.dungeon.event.DungeonEventHandler.wandDungeon.put(player.getUUID(), dungeonId);
         com.arcadia.dungeon.event.DungeonEventHandler.wandWall.remove(player.getUUID());
         com.arcadia.dungeon.event.DungeonEventHandler.wandPos1.remove(player.getUUID());
         com.arcadia.dungeon.event.DungeonEventHandler.wandPos2.remove(player.getUUID());
 
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia Wand] Donjon selectionne: " + config.name)
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia Wand] Selección de mazmorras: " + config.name)
                 .withStyle(ChatFormatting.GOLD), false);
         return 1;
     }
@@ -95,7 +95,7 @@ final class ArcadiaAdminSupportCommandActions {
     static int giveWallWand(CommandContext<CommandSourceStack> ctx) {
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] ¡Solo para jugadores!"));
             return 0;
         }
 
@@ -107,21 +107,21 @@ final class ArcadiaAdminSupportCommandActions {
             player.drop(wand, false);
         }
 
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Hoe recue! Selectionnez un mur avec /arcadia_dungeon admin wall_select <dungeon> <wallId>, puis cliquez sur les blocs.")
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] ¡Vaya! Selecciona una pared con /arcadia_dungeon admin wall_select <dungeon> <wallId> y, a continuación, haz clic en los bloques.")
                 .withStyle(ChatFormatting.GOLD), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Les murs scriptes reagissent aux conditions configurees comme DUNGEON_START ou WAVE_COMPLETE:<n>.")
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Las paredes de script reaccionan ante las condiciones configuradas como DUNGEON_START o WAVE_COMPLETE:<n>.")
                 .withStyle(ChatFormatting.YELLOW), false);
         return 1;
     }
 
     static int wallSelect(CommandContext<CommandSourceStack> ctx) {
         ServerPlayer player = ctx.getSource().getPlayer();
-        if (player == null) { ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!")); return 0; }
+        if (player == null) { ctx.getSource().sendFailure(Component.literal("[Arcadia] Solo para jugadores!")); return 0; }
 
         String dungeonId = StringArgumentType.getString(ctx, "dungeon");
         String wallId = StringArgumentType.getString(ctx, "wallId");
         DungeonConfig config = ConfigManager.getInstance().getDungeon(dungeonId);
-        if (config == null) { ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + dungeonId)); return 0; }
+        if (config == null) { ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorra: " + dungeonId)); return 0; }
 
         var wall = config.scriptedWalls.stream().filter(w -> w.id.equals(wallId)).findFirst().orElse(null);
         if (wall == null) {
@@ -137,11 +137,11 @@ final class ArcadiaAdminSupportCommandActions {
         com.arcadia.dungeon.event.DungeonEventHandler.wandPos2.remove(player.getUUID());
 
         int count = wall.blocks == null ? 0 : wall.blocks.size();
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia Wall] Mur scripte selectionne: " + wallId + " (" + count + " bloc(s))")
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia Wall] Muro de guiones seleccionados: " + wallId + " (" + count + " bloque(s))")
                 .withStyle(ChatFormatting.GOLD), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia Wall] Cliquez sur les blocs avec la hoe en or pour les ajouter/retirer.")
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia Wall] Haz clic en los bloques con la azada dorada para añadirlos o eliminarlos.")
                 .withStyle(ChatFormatting.GRAY), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia Wall] Configure une condition comme DUNGEON_START ou WAVE_COMPLETE:2 pour declencher le mur.")
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia Wall] Configura una condición como DUNGEON_START o WAVE_COMPLETE:2 para activar la pared.")
                 .withStyle(ChatFormatting.YELLOW), false);
         return 1;
     }
@@ -160,12 +160,12 @@ final class ArcadiaAdminSupportCommandActions {
         if (boss == null) return 0;
 
         PhaseConfig phase = boss.phases.stream().filter(p -> p.phase == phaseNum).findFirst().orElse(null);
-        if (phase == null) { ctx.getSource().sendFailure(Component.literal("[Arcadia] Phase introuvable: " + phaseNum)); return 0; }
+        if (phase == null) { ctx.getSource().sendFailure(Component.literal("[Arcadia] Fase no encontrada: " + phaseNum)); return 0; }
 
         phase.playerEffects.add(new PhaseConfig.PhaseEffect(effect, duration, amplifier));
         ConfigManager.getInstance().saveDungeon(ConfigManager.getInstance().getDungeon(dungeonId));
 
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Effet " + effect + " (lvl " + (amplifier + 1) + ", " + duration + "s) ajoute a la phase " + phaseNum)
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Efecto " + effect + " (lvl " + (amplifier + 1) + ", " + duration + "s) añadir a la fase " + phaseNum)
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -180,12 +180,12 @@ final class ArcadiaAdminSupportCommandActions {
         if (boss == null) return 0;
 
         PhaseConfig phase = boss.phases.stream().filter(p -> p.phase == phaseNum).findFirst().orElse(null);
-        if (phase == null) { ctx.getSource().sendFailure(Component.literal("[Arcadia] Phase introuvable: " + phaseNum)); return 0; }
+        if (phase == null) { ctx.getSource().sendFailure(Component.literal("[Arcadia] Fase no encontrada: " + phaseNum)); return 0; }
 
         phase.phaseCommands.add(cmd);
         ConfigManager.getInstance().saveDungeon(ConfigManager.getInstance().getDungeon(dungeonId));
 
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Commande ajoutee a la phase " + phaseNum + ": " + cmd)
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Orden añadida a la fase " + phaseNum + ": " + cmd)
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -198,7 +198,7 @@ final class ArcadiaAdminSupportCommandActions {
         int count = IntegerArgumentType.getInteger(ctx, "count");
 
         WeeklyLeaderboard.getInstance().setReward(top, item, count);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Recompense top " + top + " definie: " + count + "x " + item)
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Premio principal " + top + " definida: " + count + "x " + item)
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -208,10 +208,10 @@ final class ArcadiaAdminSupportCommandActions {
         try {
             java.time.DayOfWeek day = java.time.DayOfWeek.valueOf(dayStr);
             WeeklyLeaderboard.getInstance().setResetDay(day);
-            ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Jour de reset: " + dayStr).withStyle(ChatFormatting.GREEN), true);
+            ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Día de reinicio: " + dayStr).withStyle(ChatFormatting.GREEN), true);
             return 1;
         } catch (IllegalArgumentException e) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Jour invalide! (MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY)"));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] ¡Día no válido! (LUNES, MARTES, MIÉRCOLES, JUEVES, VIERNES, SÁBADO, DOMINGO)"));
             return 0;
         }
     }
@@ -219,7 +219,7 @@ final class ArcadiaAdminSupportCommandActions {
     static int setWeeklyHour(CommandContext<CommandSourceStack> ctx) {
         int hour = IntegerArgumentType.getInteger(ctx, "hour");
         WeeklyLeaderboard.getInstance().setAnnounceHour(hour);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Heure d'annonce: " + hour + "h").withStyle(ChatFormatting.GREEN), true);
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Hora del anuncio: " + hour + "h").withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
 
@@ -227,12 +227,12 @@ final class ArcadiaAdminSupportCommandActions {
         var config = WeeklyLeaderboard.getInstance().getConfig();
         var data = WeeklyLeaderboard.getInstance().getData();
 
-        ctx.getSource().sendSuccess(() -> Component.literal("=== Leaderboard Hebdo ===").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("  Semaine: " + data.weekId).withStyle(ChatFormatting.WHITE), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("  Reset: " + config.resetDay + " a " + config.announceHour + "h").withStyle(ChatFormatting.WHITE), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("  Joueurs: " + data.playerCompletions.size()).withStyle(ChatFormatting.WHITE), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("  Donjons suivis: " + data.dungeonBestTimes.size()).withStyle(ChatFormatting.WHITE), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("  Recompenses:").withStyle(ChatFormatting.YELLOW), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("=== Clasificación semanal ===").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("  Semana: " + data.weekId).withStyle(ChatFormatting.WHITE), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("  Reinicio: " + config.resetDay + " a " + config.announceHour + "h").withStyle(ChatFormatting.WHITE), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("  Jugadores: " + data.playerCompletions.size()).withStyle(ChatFormatting.WHITE), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("  Mazmorras seguidas: " + data.dungeonBestTimes.size()).withStyle(ChatFormatting.WHITE), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("  Premios:").withStyle(ChatFormatting.YELLOW), false);
 
         for (int i = 1; i <= 3; i++) {
             List<com.arcadia.dungeon.config.RewardConfig> rewards = switch (i) {
@@ -254,7 +254,7 @@ final class ArcadiaAdminSupportCommandActions {
 
     static int weeklyForceReset(CommandContext<CommandSourceStack> ctx) {
         WeeklyLeaderboard.getInstance().forceReset(ctx.getSource().getServer());
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Leaderboard hebdo reset! Annonce envoyee et recompenses distribuees.")
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] ¡Se ha reiniciado la clasificación semanal! Se ha enviado el anuncio y se han repartido las recompensas.")
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
@@ -265,14 +265,14 @@ final class ArcadiaAdminSupportCommandActions {
         String id = StringArgumentType.getString(ctx, "dungeon");
         int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
         DungeonConfig config = ConfigManager.getInstance().getDungeon(id);
-        if (config == null) { ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + id)); return 0; }
+        if (config == null) { ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorra: " + id)); return 0; }
 
         if (!config.settings.timerWarnings.contains(seconds)) {
             config.settings.timerWarnings.add(seconds);
             config.settings.timerWarnings.sort(java.util.Collections.reverseOrder());
             ConfigManager.getInstance().saveDungeon(config);
         }
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Avertissement a " + seconds + "s ajoute.").withStyle(ChatFormatting.GREEN), true);
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Advertencia a " + seconds + "se añade.").withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
 
@@ -280,21 +280,21 @@ final class ArcadiaAdminSupportCommandActions {
         String id = StringArgumentType.getString(ctx, "dungeon");
         int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
         DungeonConfig config = ConfigManager.getInstance().getDungeon(id);
-        if (config == null) { ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + id)); return 0; }
+        if (config == null) { ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorra: " + id)); return 0; }
 
         config.settings.timerWarnings.remove(Integer.valueOf(seconds));
         ConfigManager.getInstance().saveDungeon(config);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Avertissement a " + seconds + "s retire.").withStyle(ChatFormatting.GREEN), true);
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Advertencia a " + seconds + "se retira.").withStyle(ChatFormatting.GREEN), true);
         return 1;
     }
 
     static int listTimerWarnings(CommandContext<CommandSourceStack> ctx) {
         String id = StringArgumentType.getString(ctx, "dungeon");
         DungeonConfig config = ConfigManager.getInstance().getDungeon(id);
-        if (config == null) { ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + id)); return 0; }
+        if (config == null) { ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorra: " + id)); return 0; }
 
         String warnings = config.settings.timerWarnings.stream().map(s -> s + "s").reduce((a, b) -> a + ", " + b).orElse("aucun");
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Avertissements pour " + config.name + ": " + warnings).withStyle(ChatFormatting.YELLOW), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Advertencias para " + config.name + ": " + warnings).withStyle(ChatFormatting.YELLOW), false);
         return 1;
     }
 
@@ -304,13 +304,13 @@ final class ArcadiaAdminSupportCommandActions {
         String id = StringArgumentType.getString(ctx, "dungeon");
         DungeonConfig config = ConfigManager.getInstance().getDungeon(id);
         if (config == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + id));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorra: " + id));
             return 0;
         }
 
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] ¡Solo para jugadores!"));
             return 0;
         }
 
@@ -328,7 +328,7 @@ final class ArcadiaAdminSupportCommandActions {
         ConfigManager.getInstance().saveDungeon(config);
 
         String coordStr = pos.x + ", " + pos.y + ", " + pos.z;
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Zone du donjon pos" + posNumber + " definie: " + coordStr)
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Zona de la torre del homenaje" + posNumber + " definida: " + coordStr)
                 .withStyle(ChatFormatting.GREEN), true);
 
         if (config.hasArea()) {
@@ -339,11 +339,11 @@ final class ArcadiaAdminSupportCommandActions {
             int minZ = Math.min(config.areaPos1.z, config.areaPos2.z);
             int maxZ = Math.max(config.areaPos1.z, config.areaPos2.z);
             int volume = (maxX - minX + 1) * (maxY - minY + 1) * (maxZ - minZ + 1);
-            ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Zone complete! " +
+            ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] ¡Zona completada! " +
                     (maxX - minX + 1) + "x" + (maxY - minY + 1) + "x" + (maxZ - minZ + 1) + " (" + volume + " blocs)")
                     .withStyle(ChatFormatting.AQUA), false);
         } else {
-            ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Definissez maintenant pos" + (posNumber == 1 ? "2" : "1") + " pour completer la zone.")
+            ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Defina ahora pos" + (posNumber == 1 ? "2" : "1") + " para completar el campo.")
                     .withStyle(ChatFormatting.YELLOW), false);
         }
 
@@ -354,13 +354,13 @@ final class ArcadiaAdminSupportCommandActions {
         String id = StringArgumentType.getString(ctx, "dungeon");
         DungeonConfig config = ConfigManager.getInstance().getDungeon(id);
         if (config == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + id));
+            ctx.getSource().sendFailure(Component.literal("[Arcadia] No se encuentra la mazmorra: " + id));
             return 0;
         }
         config.areaPos1 = null;
         config.areaPos2 = null;
         ConfigManager.getInstance().saveDungeon(config);
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Zone du donjon " + config.name + " supprimee.")
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Zona de la torre del homenaje " + config.name + " eliminada.")
                 .withStyle(ChatFormatting.GREEN), true);
         return 1;
     }

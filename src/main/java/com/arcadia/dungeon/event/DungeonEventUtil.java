@@ -16,11 +16,11 @@ class DungeonEventUtil {
     }
 
     static void logHandlerError(String handlerName, RuntimeException e) {
-        ArcadiaDungeon.LOGGER.error("Arcadia: erreur inattendue dans {}", handlerName, e);
+        ArcadiaDungeon.LOGGER.error("Arcadia: error inesperado en  {}", handlerName, e);
     }
 
     static void logHandlerError(String handlerName, String context, RuntimeException e) {
-        ArcadiaDungeon.LOGGER.error("Arcadia: erreur inattendue dans {} [{}]", handlerName, context, e);
+        ArcadiaDungeon.LOGGER.error("Arcadia: error inesperado en {} [{}]", handlerName, context, e);
     }
 
     static boolean isArcadiaManaged(Entity entity) {

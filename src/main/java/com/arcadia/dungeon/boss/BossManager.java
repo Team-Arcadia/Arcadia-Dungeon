@@ -53,14 +53,14 @@ public class BossManager {
                 if (bossConfig.optional && bossConfig.spawnChance < 1.0) {
                     double roll = server.overworld().getRandom().nextDouble();
                     if (roll > bossConfig.spawnChance) {
-                        ArcadiaDungeon.LOGGER.info("Optional boss {} skipped (roll: {}, chance: {})",
+                        ArcadiaDungeon.LOGGER.info("Se ha omitido el jefe opcional {} (tirada: {}, probabilidad: {})",
                                 bossConfig.id, String.format("%.2f", roll), bossConfig.spawnChance);
                         instance.incrementBossIndex();
 
                         // Notify players with custom or default skip message
                         String skipMsg = (bossConfig.skipMessage != null && !bossConfig.skipMessage.isEmpty())
                                 ? bossConfig.skipMessage.replace("%boss%", bossConfig.customName)
-                                : "[Arcadia] Le " + bossConfig.customName + " n'est pas apparu cette fois...";
+                                : "[Arcadia] Le " + bossConfig.customName + " esta vez no ha aparecido....";
                         MessageUtil.broadcast(instance, skipMsg);
                         continue;
                     }
@@ -69,7 +69,7 @@ public class BossManager {
                 // Spawn this boss
                 ResourceLocation dimLoc = ResourceLocation.tryParse(bossConfig.spawnPoint.dimension);
                 if (dimLoc == null) {
-                    ArcadiaDungeon.LOGGER.error("Invalid dimension: {}", bossConfig.spawnPoint.dimension);
+                    ArcadiaDungeon.LOGGER.error("Dimensión no válida: {}", bossConfig.spawnPoint.dimension);
                     instance.incrementBossIndex();
                     continue;
                 }
@@ -77,7 +77,7 @@ public class BossManager {
                 ResourceKey<Level> dimKey = ResourceKey.create(Registries.DIMENSION, dimLoc);
                 ServerLevel level = server.getLevel(dimKey);
                 if (level == null) {
-                    ArcadiaDungeon.LOGGER.error("Could not find dimension: {}", bossConfig.spawnPoint.dimension);
+                    ArcadiaDungeon.LOGGER.error("No se ha encontrado la dimensión: {}", bossConfig.spawnPoint.dimension);
                     instance.incrementBossIndex();
                     continue;
                 }
@@ -158,11 +158,11 @@ public class BossManager {
             if (bossConfig.optional && bossConfig.spawnChance < 1.0) {
                 double roll = server.overworld().getRandom().nextDouble();
                 if (roll > bossConfig.spawnChance) {
-                    ArcadiaDungeon.LOGGER.info("Optional inter-wave boss {} skipped (roll: {}, chance: {})",
+                    ArcadiaDungeon.LOGGER.info("Se ha omitido el jefe opcional entre oleadas {} (tirada: {}, probabilidad: {})",
                             bossConfig.id, String.format("%.2f", roll), bossConfig.spawnChance);
                     String skipMsg = (bossConfig.skipMessage != null && !bossConfig.skipMessage.isEmpty())
                             ? bossConfig.skipMessage.replace("%boss%", bossConfig.customName)
-                            : "[Arcadia] Le " + bossConfig.customName + " n'est pas apparu cette fois...";
+                            : "[Arcadia] Le " + bossConfig.customName + " esta vez no ha aparecido...";
                     MessageUtil.broadcast(instance, skipMsg);
                     continue;
                 }

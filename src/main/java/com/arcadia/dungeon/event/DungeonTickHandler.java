@@ -176,7 +176,7 @@ public class DungeonTickHandler {
                 MessageUtil.broadcast(instance, msg);
                 DungeonManager.getInstance().triggerScriptedWalls(instance.getConfig().id, "WAVE_START:" + currentWave.getConfig().waveNumber);
                 if (DungeonEventUtil.isDebugEnabled(instance.getConfig())) {
-                    ArcadiaDungeon.LOGGER.debug("Wave spawned dungeon={} wave={} playerCount={}",
+                    ArcadiaDungeon.LOGGER.debug("Mazmorra generada por oleadas={} oleada={} númeroDeJugadores={}",
                             instance.getConfig().id, currentWave.getConfig().waveNumber, instance.getPlayerCount());
                 }
             }
@@ -188,7 +188,7 @@ public class DungeonTickHandler {
                 DungeonManager.getInstance().triggerScriptedWalls(instance.getConfig().id, "WAVE_COMPLETE:" + clearedWaveNumber);
                 for (UUID playerId : instance.getPlayers()) {
                     ServerPlayer player = server.getPlayerList().getPlayer(playerId);
-                    if (player != null) player.sendSystemMessage(Component.literal("[Donjon] Vague " + clearedWaveNumber + " terminee!").withStyle(ChatFormatting.GREEN));
+                    if (player != null) player.sendSystemMessage(Component.literal("[Mazmorra] Ola " + clearedWaveNumber + " persona despedida!").withStyle(ChatFormatting.GREEN));
                 }
 
                 // Check for inter-wave boss after this wave
@@ -201,7 +201,7 @@ public class DungeonTickHandler {
                     }
                     for (UUID playerId : instance.getPlayers()) {
                         ServerPlayer player = server.getPlayerList().getPlayer(playerId);
-                        if (player != null) player.sendSystemMessage(Component.literal("[Donjon] Un boss approche!").withStyle(ChatFormatting.GOLD));
+                        if (player != null) player.sendSystemMessage(Component.literal("[Mazmorra] ¡Se acerca un jefe!").withStyle(ChatFormatting.GOLD));
                     }
                 } else {
                     if (!instance.advanceWave()) onWavesCompleted(instance);
@@ -222,10 +222,10 @@ public class DungeonTickHandler {
         if (bossSpawned) {
             for (UUID playerId : instance.getPlayers()) {
                 ServerPlayer player = server.getPlayerList().getPlayer(playerId);
-                if (player != null) player.sendSystemMessage(Component.literal("[Donjon] Toutes les vagues eliminees! Le boss approche...").withStyle(ChatFormatting.GOLD));
+                if (player != null) player.sendSystemMessage(Component.literal("[Mazmorra] ¡Todas las oleadas eliminadas! El jefe se acerca...").withStyle(ChatFormatting.GOLD));
             }
             if (DungeonEventUtil.isDebugEnabled(instance.getConfig())) {
-                ArcadiaDungeon.LOGGER.debug("Boss spawn scheduled after waves dungeon={}", instance.getConfig().id);
+                ArcadiaDungeon.LOGGER.debug("Aparición del jefe programada tras las oleadas de la mazmorra={}", instance.getConfig().id);
             }
         } else if (instance.allRequiredBossesDefeated()) {
             // No more bosses to spawn and all required are dead — complete
@@ -320,7 +320,7 @@ public class DungeonTickHandler {
                     announcedRecruitmentMilestones.add(key);
                     for (UUID playerId : instance.getPlayers()) {
                         ServerPlayer player = server.getPlayerList().getPlayer(playerId);
-                        if (player != null) player.sendSystemMessage(Component.literal("[Arcadia] Recrutement: " + m + "s restantes!").withStyle(ChatFormatting.YELLOW));
+                        if (player != null) player.sendSystemMessage(Component.literal("[Arcadia] ¡Convocatoria: quedan «+ m +» plazas!").withStyle(ChatFormatting.YELLOW));
                     }
                     DungeonManager.getInstance().broadcastClickableReminder(instance.getConfig(), m);
                 }
@@ -356,7 +356,7 @@ public class DungeonTickHandler {
                 if (player == null || !player.isAlive() || player.isSpectator()) continue;
                 if (!config.isInArea(player.level().dimension().location().toString(), player.getX(), player.getY(), player.getZ())) {
                     DungeonManager.getInstance().teleportToSpawn(player, config.spawnPoint);
-                    player.sendSystemMessage(Component.literal("[Arcadia] Vous ne pouvez pas quitter la zone du donjon!").withStyle(ChatFormatting.RED));
+                    player.sendSystemMessage(Component.literal("[Arcadia] ¡No puedes salir de la zona de la mazmorra!").withStyle(ChatFormatting.RED));
                 }
             }
         }
@@ -381,7 +381,7 @@ public class DungeonTickHandler {
                         continue;
                     }
                 } catch (RuntimeException e) {
-                    ArcadiaDungeon.LOGGER.debug("Impossible de vérifier BYPASS_ANTIPARASITE pour {} : {}", player.getName().getString(), e.getMessage());
+                    ArcadiaDungeon.LOGGER.debug("No se puede verificar BYPASS_ANTIPARASITE para {} : {}", player.getName().getString(), e.getMessage());
                 }
 
                 String dim = player.level().dimension().location().toString();
@@ -390,7 +390,7 @@ public class DungeonTickHandler {
                 net.minecraft.server.level.ServerLevel overworld = server.overworld();
                 net.minecraft.core.BlockPos spawnPos = overworld.getSharedSpawnPos();
                 player.teleportTo(overworld, spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5, 0, 0);
-                player.sendSystemMessage(Component.literal("[Arcadia] Un donjon est en cours dans cette zone! Vous avez ete teleporte au spawn.")
+                player.sendSystemMessage(Component.literal("[Arcadia] ¡Hay una mazmorra activa en esta zona! Has sido teletransportado al punto de aparición.")
                         .withStyle(ChatFormatting.RED));
             }
 
@@ -435,7 +435,7 @@ public class DungeonTickHandler {
                         continue;
                     }
                 } catch (RuntimeException e) {
-                    ArcadiaDungeon.LOGGER.debug("Impossible de vérifier BYPASS_ANTIFLY pour {} : {}", player.getName().getString(), e.getMessage());
+                    ArcadiaDungeon.LOGGER.debug("No se puede verificar BYPASS_ANTIFLY para {} : {}", player.getName().getString(), e.getMessage());
                 }
 
                 if (player.getAbilities().mayfly && !suspendedFlight.containsKey(playerId)) {
@@ -456,7 +456,7 @@ public class DungeonTickHandler {
                 }
                 if (changed) {
                     player.onUpdateAbilities();
-                    player.sendSystemMessage(Component.literal("[Arcadia] Le fly est desactive dans ce donjon.").withStyle(ChatFormatting.RED));
+                    player.sendSystemMessage(Component.literal("[Arcadia] El vuelo está desactivado en esta mazmorra.").withStyle(ChatFormatting.RED));
                 }
             }
         }
@@ -491,7 +491,7 @@ public class DungeonTickHandler {
             if (instance.isTimedOut()) {
                 for (UUID playerId : instance.getPlayers()) {
                     ServerPlayer player = DungeonManager.getInstance().getServer().getPlayerList().getPlayer(playerId);
-                    if (player != null) player.sendSystemMessage(Component.literal("[Arcadia] Temps ecoule!").withStyle(ChatFormatting.RED));
+                    if (player != null) player.sendSystemMessage(Component.literal("[Arcadia] ¡El tiempo pasa!").withStyle(ChatFormatting.RED));
                 }
                 clearDungeonMilestones(dungeonId, instance);
                 DungeonManager.getInstance().scheduleRemoval(dungeonId);
@@ -509,7 +509,7 @@ public class DungeonTickHandler {
                         announcedTimerMilestones.add(key);
                         for (UUID playerId : instance.getPlayers()) {
                             ServerPlayer player = DungeonManager.getInstance().getServer().getPlayerList().getPlayer(playerId);
-                            if (player != null) player.sendSystemMessage(Component.literal("[Arcadia] Temps restant: " + DungeonManager.formatTime(m) + "!").withStyle(ChatFormatting.YELLOW));
+                            if (player != null) player.sendSystemMessage(Component.literal("[Arcadia] Tiempo restante: " + DungeonManager.formatTime(m) + "!").withStyle(ChatFormatting.YELLOW));
                         }
                     }
                 }

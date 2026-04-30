@@ -74,9 +74,9 @@ public class ConfigManager {
             try {
                 writeAnnotatedExampleConfig(example, dungeonsDir.resolve(example.id + ".json"));
                 loadedConfigs.put(example.id, example);
-                ArcadiaDungeon.LOGGER.info("Created example dungeon config");
+                ArcadiaDungeon.LOGGER.info("Configuración de mazmorra de ejemplo creada");
             } catch (IOException e) {
-                ArcadiaDungeon.LOGGER.error("Failed to create example dungeon config", e);
+                ArcadiaDungeon.LOGGER.error("No se ha podido crear la configuración de la mazmorra de ejemplo", e);
             }
         }
 
@@ -93,10 +93,10 @@ public class ConfigManager {
             String json = GSON.toJson(config);
             Files.writeString(file, json);
             dungeonConfigs.put(config.id, config);
-            ArcadiaDungeon.LOGGER.info("Saved dungeon config: {}", config.id);
+            ArcadiaDungeon.LOGGER.info("Configuración de mazmorra guardada: {}", config.id);
             writeDocumentationArtifacts();
         } catch (IOException e) {
-            ArcadiaDungeon.LOGGER.error("Failed to save dungeon config: {}", config.id, e);
+            ArcadiaDungeon.LOGGER.error("No se ha podido guardar la configuración de la mazmorra: {}", config.id, e);
         }
     }
 
@@ -109,7 +109,7 @@ public class ConfigManager {
                 return true;
             }
         } catch (IOException e) {
-            ArcadiaDungeon.LOGGER.error("Failed to delete dungeon config: {}", id, e);
+            ArcadiaDungeon.LOGGER.error("No se ha podido eliminar la configuración de la mazmorra: {}", id, e);
         }
         return false;
     }
@@ -128,7 +128,7 @@ public class ConfigManager {
             if (Files.notExists(progressionConfigPath)) {
                 progressionConfig = ArcadiaProgressionConfig.createDefault();
                 Files.writeString(progressionConfigPath, GSON.toJson(progressionConfig));
-                ArcadiaDungeon.LOGGER.info("Generated default arcadia-progression.json");
+                ArcadiaDungeon.LOGGER.info("Archivo «arcadia-progression.json» generado por defecto");
                 return;
             }
 
@@ -136,7 +136,7 @@ public class ConfigManager {
             JsonObject rawObject = GSON.fromJson(json, JsonObject.class);
             ArcadiaProgressionConfig loadedConfig = GSON.fromJson(json, ArcadiaProgressionConfig.class);
             if (loadedConfig == null) {
-                ArcadiaDungeon.LOGGER.warn("arcadia-progression.json is empty. Using default progression config.");
+                ArcadiaDungeon.LOGGER.warn("El archivo arcadia-progression.json está vacío. Se utilizará la configuración de progresión predeterminada..");
                 progressionConfig = ArcadiaProgressionConfig.createDefault();
             } else {
                 ArcadiaProgressionConfig defaults = ArcadiaProgressionConfig.createDefault();
@@ -149,15 +149,15 @@ public class ConfigManager {
                 loadedConfig.normalize();
                 progressionConfig = loadedConfig;
             }
-            ArcadiaDungeon.LOGGER.info("Loaded Arcadia progression config: {} level threshold(s), {} rank threshold(s)",
+            ArcadiaDungeon.LOGGER.info("Configuración de progresión de Arcadia cargada: {} umbrales de nivel, {} umbrales de rango",
                     progressionConfig.levels.size(), progressionConfig.ranks.size());
         } catch (IOException e) {
-            ArcadiaDungeon.LOGGER.error("Erreur I/O lors du chargement de arcadia-progression.json. Config précédente conservée.", e);
+            ArcadiaDungeon.LOGGER.error("Error de E/S al cargar arcadia-progression.json. Se ha conservado la configuración anterior..", e);
             if (progressionConfig == null) {
                 progressionConfig = ArcadiaProgressionConfig.createDefault();
             }
         } catch (JsonParseException e) {
-            ArcadiaDungeon.LOGGER.error("arcadia-progression.json est corrompu (JSON invalide). Config précédente conservée.", e);
+            ArcadiaDungeon.LOGGER.error("El archivo arcadia-progression.json está dañado (JSON no válido). Se ha conservado la configuración anterior..", e);
             if (progressionConfig == null) {
                 progressionConfig = ArcadiaProgressionConfig.createDefault();
             }
@@ -176,7 +176,7 @@ public class ConfigManager {
             }
             progressionConfig.normalize();
             Files.writeString(progressionConfigPath, GSON.toJson(progressionConfig));
-            ArcadiaDungeon.LOGGER.info("Saved Arcadia progression config");
+            ArcadiaDungeon.LOGGER.info("Configuración de progresión guardada de Arcadia");
         } catch (IOException e) {
             ArcadiaDungeon.LOGGER.error("Failed to save arcadia-progression.json", e);
         }
@@ -416,21 +416,21 @@ public class ConfigManager {
         example.order = 1;
 
         WaveConfig wave1 = new WaveConfig(1);
-        wave1.name = "Premiere vague";
-        wave1.startMessage = "&e[Donjon] &7Des ennemis approchent!";
+        wave1.name = "Primera oleada";
+        wave1.startMessage = "&e[Mazmorra] &7¡Se acercan enemigos!";
         MobSpawnConfig zombie1 = new MobSpawnConfig("minecraft:zombie", 3,
                 new SpawnPointConfig("minecraft:overworld", 105, 64, 105, 0, 0));
-        zombie1.customName = "Zombie du Donjon";
+        zombie1.customName = "Zombi de la mazmorra";
         zombie1.health = 30;
         zombie1.attackRange = 3.5;
         wave1.mobs.add(zombie1);
 
         WaveConfig wave2 = new WaveConfig(2);
-        wave2.name = "Deuxieme vague";
-        wave2.startMessage = "&e[Donjon] &7Des squelettes arrivent!";
+        wave2.name = "Segunda ola";
+        wave2.startMessage = "&e[Mazmorra] &7Llegan los esqueletos!";
         MobSpawnConfig skel = new MobSpawnConfig("minecraft:skeleton", 4,
                 new SpawnPointConfig("minecraft:overworld", 108, 64, 108, 0, 0));
-        skel.customName = "Squelette du Donjon";
+        skel.customName = "Esqueleto de la mazmorra";
         skel.health = 25;
         skel.damage = 5;
         skel.projectileCooldownMs = 1200;
@@ -474,22 +474,22 @@ public class ConfigManager {
 
     private void writeAnnotatedExampleConfig(DungeonConfig example, Path target) throws IOException {
         JsonObject root = GSON.toJsonTree(example).getAsJsonObject();
-        root.addProperty("_comment", "Example generated by Arcadia Dungeon. Unknown _comment fields are ignored by the loader.");
-        root.addProperty("_comment_placeholders", "%player%, %dungeon% and %id% are available in message fields.");
+        root.addProperty("_comment", "Ejemplo generado por Arcadia Dungeon. El cargador ignora los campos de comentario desconocidos.");
+        root.addProperty("_comment_placeholders", "%player%, %dungeon% y %id% están disponibles en los campos de mensaje.");
 
         JsonObject settings = root.getAsJsonObject("settings");
         if (settings != null) {
-            settings.addProperty("_comment_timerWarnings", "Seconds before timeout when warning messages are sent.");
+            settings.addProperty("_comment_timerWarnings", "Segundos antes de que se agote el tiempo, cuando se envían los mensajes de advertencia».");
         }
 
         JsonArray waves = root.getAsJsonArray("waves");
         if (waves != null && !waves.isEmpty()) {
-            waves.get(0).getAsJsonObject().addProperty("_comment", "Waves run in order and must be fully cleared before the next one starts.");
+            waves.get(0).getAsJsonObject().addProperty("_comment", "Las series se suceden en orden y deben completarse por completo antes de que comience la siguiente.");
         }
 
         JsonArray bosses = root.getAsJsonArray("bosses");
         if (bosses != null && !bosses.isEmpty()) {
-            bosses.get(0).getAsJsonObject().addProperty("_comment", "Bosses can spawn at start, after a wave, or after all waves depending on their flags.");
+            bosses.get(0).getAsJsonObject().addProperty("_comment", "Los jefes pueden aparecer al inicio, tras una oleada o tras todas las oleadas, dependiendo de sus indicadores.");
         }
 
         Files.writeString(target, GSON.toJson(root));

@@ -198,7 +198,7 @@ public class DungeonCombatEventHandler {
 
                 String bossId = bossEntry.getKey();
                 if (DungeonEventUtil.isDebugEnabled(instance.getConfig())) {
-                    ArcadiaDungeon.LOGGER.debug("Boss death handled for dungeon={} boss={}", dungeonId, bossId);
+                    ArcadiaDungeon.LOGGER.debug("Se ha implementado la muerte del jefe para la mazmorra={} y el jefe={}", dungeonId, bossId);
                 }
 
                 for (UUID playerId : instance.getPlayers()) {
@@ -211,7 +211,7 @@ public class DungeonCombatEventHandler {
                         Component bossName = DungeonManager.parseColorCodes(bossLabel);
                         player.sendSystemMessage(Component.literal("[Arcadia] Boss ").withStyle(ChatFormatting.GOLD)
                                 .append(bossName)
-                                .append(Component.literal(" vaincu!").withStyle(ChatFormatting.GOLD)));
+                                .append(Component.literal(" derrotado!").withStyle(ChatFormatting.GOLD)));
                     }
                 }
 
@@ -227,7 +227,7 @@ public class DungeonCombatEventHandler {
                     if (spawned) {
                         for (UUID playerId : instance.getPlayers()) {
                             ServerPlayer player = DungeonManager.getInstance().getServer().getPlayerList().getPlayer(playerId);
-                            if (player != null) player.sendSystemMessage(Component.literal("[Arcadia] Prochain boss en approche...").withStyle(ChatFormatting.YELLOW));
+                            if (player != null) player.sendSystemMessage(Component.literal("[Arcadia] Se acerca el próximo jefe...").withStyle(ChatFormatting.YELLOW));
                         }
                     } else if (instance.allRequiredBossesDefeated()) {
                         if (!instance.hasWaves() || instance.areWavesCompleted()) {
@@ -261,21 +261,21 @@ public class DungeonCombatEventHandler {
         int maxDeaths = instance.getConfig().settings.maxDeaths;
         int remaining = instance.getRemainingLives(player.getUUID());
         if (DungeonEventUtil.isDebugEnabled(instance.getConfig())) {
-            ArcadiaDungeon.LOGGER.debug("Player death in dungeon={} player={} deaths={} remaining={}",
+            ArcadiaDungeon.LOGGER.debug("Muerte de un jugador en la mazmorra={} jugador={} muertes={} restantes={}",
                     instance.getConfig().id, player.getGameProfile().getName(), deaths, remaining);
         }
 
         if (maxDeaths > 0 && deaths >= maxDeaths) {
-            player.sendSystemMessage(Component.literal("[Arcadia] Maximum de morts (" + maxDeaths + ") atteint! Vous etes exclu du donjon.").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("[Arcadia] ¡Se ha alcanzado el límite máximo de muertes (« + maxDeaths + »)! Quedas expulsado de la mazmorra.").withStyle(ChatFormatting.RED));
             for (UUID otherId : instance.getPlayers()) {
                 if (!otherId.equals(player.getUUID())) {
                     ServerPlayer other = DungeonManager.getInstance().getServer().getPlayerList().getPlayer(otherId);
-                    if (other != null) other.sendSystemMessage(Component.literal("[Arcadia] " + player.getName().getString() + " a ete exclu (trop de morts)!").withStyle(ChatFormatting.RED));
+                    if (other != null) other.sendSystemMessage(Component.literal("[Arcadia] " + player.getName().getString() + " ha sido excluido (demasiadas muertes)!").withStyle(ChatFormatting.RED));
                 }
             }
             DungeonManager.getInstance().schedulePlayerRemoval(player.getUUID());
         } else {
-            player.sendSystemMessage(Component.literal("[Arcadia] Mort! " + remaining + " vie(s) restante(s).").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("[Arcadia] ¡Muerto! " + remaining + " vida(s) restante(s).").withStyle(ChatFormatting.RED));
         }
     }
 }

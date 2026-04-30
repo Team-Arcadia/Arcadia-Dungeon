@@ -80,7 +80,7 @@ public final class ApotheosisCompat {
                 stack.set(type, false);
                 suppressed.add("V:" + i);
                 ArcadiaDungeon.LOGGER.debug(
-                        "[Arcadia] Vanilla charm supprimé slot={} joueur={}", i, player.getGameProfile().getName());
+                        "[Arcadia] Se ha eliminado el amuleto de vainilla: ranura={} jugador={}", i, player.getGameProfile().getName());
             }
         }
 
@@ -117,7 +117,7 @@ public final class ApotheosisCompat {
                     if (!stack.isEmpty() && stack.has(type)) {
                         stack.set(type, true);
                         ArcadiaDungeon.LOGGER.debug(
-                                "[Arcadia] Vanilla charm restauré slot={} joueur={}", idx, player.getGameProfile().getName());
+                                "[Arcadia] Amuleto de vainilla restaurado slot={} jugador={}", idx, player.getGameProfile().getName());
                     }
                 } else if (key.startsWith("C:")) {
                     String[] parts = key.split(":", 3);
@@ -131,7 +131,7 @@ public final class ApotheosisCompat {
                     }
                 }
             } catch (Exception e) {
-                ArcadiaDungeon.LOGGER.warn("[Arcadia] Erreur restore charm key={}: {}", key, e.getMessage());
+                ArcadiaDungeon.LOGGER.warn("[Arcadia] Error al restaurar el charm key={}: {}", key, e.getMessage());
             }
         }
     }
@@ -160,7 +160,7 @@ public final class ApotheosisCompat {
                 stack.set(type, false);
                 newSlots.add(key);
                 ArcadiaDungeon.LOGGER.debug(
-                        "[Arcadia] Vanilla nouveau charm supprimé slot={} joueur={}", i, player.getGameProfile().getName());
+                        "[Arcadia] Se ha eliminado el nuevo charm de Vanilla: slot={} jugador={}", i, player.getGameProfile().getName());
             }
         }
 

@@ -54,7 +54,7 @@ public class ArcadiaDungeon {
     }
 
     private void onCommonSetup(final FMLCommonSetupEvent event) {
-        LOGGER.info("Arcadia Dungeon initializing...");
+        LOGGER.info("Inicializando la mazmorra de Arcadia...");
         LOGGER.info("ModCompat: HAS_LUCKPERMS={}, HAS_SPARK={}", ModCompat.HAS_LUCKPERMS, ModCompat.HAS_SPARK);
     }
 
@@ -71,7 +71,7 @@ public class ArcadiaDungeon {
         configManager.loadAll();
         DungeonManager.getInstance().setServer(event.getServer());
         com.arcadia.dungeon.dungeon.WeeklyLeaderboard.getInstance().load();
-        LOGGER.info("Arcadia Dungeon loaded {} dungeon(s)", configManager.getDungeonConfigs().size());
+        LOGGER.info("Se ha cargado Arcadia Dungeon {} mazmorras", configManager.getDungeonConfigs().size());
     }
 
     @SubscribeEvent

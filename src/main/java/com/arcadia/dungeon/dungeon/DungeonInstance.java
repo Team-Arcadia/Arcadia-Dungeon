@@ -263,10 +263,10 @@ public class DungeonInstance {
                                 player.drop(stack, false);
                             }
                         } else {
-                            ArcadiaDungeon.LOGGER.warn("Reward item {} is missing or belongs to an absent mod; skipping reward.", reward.item);
+                            ArcadiaDungeon.LOGGER.warn("Falta el objeto de recompensa {} o pertenece a un mod que no está instalado; se omite la recompensa.", reward.item);
                         }
                     } else {
-                        ArcadiaDungeon.LOGGER.warn("Reward item {} is not a valid resource location; skipping reward.", reward.item);
+                        ArcadiaDungeon.LOGGER.warn("El objeto de recompensa {} no es una ubicación de recurso válida; se omite la recompensa.", reward.item);
                     }
                 }
 

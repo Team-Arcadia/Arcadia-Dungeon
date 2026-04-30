@@ -46,11 +46,11 @@ final class AccessoriesCompat {
                     stack.set(type, false);
                     outKeys.add("A:" + slotType + ":" + idx);
                     ArcadiaDungeon.LOGGER.debug(
-                            "[Arcadia] Accessories charm supprimé type={} slot={} joueur={}",
+                            "[Arcadia] Se ha eliminado el amuleto de accesorio tipo={} ranura={} jugador={}",
                             slotType, idx, player.getGameProfile().getName());
                 }
             } catch (Exception e) {
-                ArcadiaDungeon.LOGGER.debug("[Arcadia] AccessoriesCompat.suppressCharms erreur: {}", e.getMessage());
+                ArcadiaDungeon.LOGGER.debug("[Arcadia] Accesorios: Compatibilidad, supresión, error de amuletos: {}", e.getMessage());
             }
         });
     }
@@ -69,11 +69,11 @@ final class AccessoriesCompat {
                     stack.set(type, false);
                     outKeys.add(key);
                     ArcadiaDungeon.LOGGER.debug(
-                            "[Arcadia] Accessories nouveau charm supprimé type={} slot={} joueur={}",
+                            "[Arcadia] Accesorios: nuevo charm eliminado tipo={} ranura={} jugador={}",
                             slotType, idx, player.getGameProfile().getName());
                 }
             } catch (Exception e) {
-                ArcadiaDungeon.LOGGER.debug("[Arcadia] AccessoriesCompat.sweepNewCharms erreur: {}", e.getMessage());
+                ArcadiaDungeon.LOGGER.debug("[Arcadia]  AccesoriosCompat.sweepNewCharms error: {}", e.getMessage());
             }
         });
     }
@@ -91,11 +91,11 @@ final class AccessoriesCompat {
             if (!stack.isEmpty() && stack.has(type)) {
                 stack.set(type, true);
                 ArcadiaDungeon.LOGGER.debug(
-                        "[Arcadia] Accessories charm restauré type={} slot={} joueur={}",
+                        "[Arcadia] Accesorios: charm restaurado tipo={} ranura={} jugador={}",
                         slotType, idx, player.getGameProfile().getName());
             }
         } catch (Exception e) {
-            ArcadiaDungeon.LOGGER.debug("[Arcadia] AccessoriesCompat.restoreSlot erreur: {}", e.getMessage());
+            ArcadiaDungeon.LOGGER.debug("[Arcadia] Error en la ranura de restauración de accesorios: {}", e.getMessage());
         }
     }
 
@@ -122,7 +122,7 @@ final class AccessoriesCompat {
                 }
             }
         } catch (Exception e) {
-            ArcadiaDungeon.LOGGER.debug("[Arcadia] AccessoriesCompat.forEachSlot erreur: {}", e.getMessage());
+            ArcadiaDungeon.LOGGER.debug("[Arcadia] Error en «AccessoriesCompat.forEachSlot»: {}", e.getMessage());
         }
     }
 
@@ -139,7 +139,7 @@ final class AccessoriesCompat {
             if (accessoriesContainer == null) return null;
             return extractAccessoriesContainer(accessoriesContainer);
         } catch (Exception e) {
-            ArcadiaDungeon.LOGGER.debug("[Arcadia] AccessoriesCompat.resolveContainer erreur: {}", e.getMessage());
+            ArcadiaDungeon.LOGGER.debug("[Arcadia] Error de resolución de compatibilidad de accesorios: {}", e.getMessage());
             return null;
         }
     }

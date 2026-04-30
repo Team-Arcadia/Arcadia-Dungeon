@@ -9,9 +9,9 @@ public class DungeonConfig {
     public int cooldownSeconds = 3600;
     public boolean announceStart = true;
     public boolean announceCompletion = true;
-    public String startMessage = "&6[Donjon] &e%player% &7lance &e%dungeon%&7! Rejoignez avec &f/arcadia_dungeon join %id%&7!";
-    public String completionMessage = "&6[Donjon] &a%player% &7a vaincu &e%dungeon%&7!";
-    public String failMessage = "&6[Donjon] &c%player% &7a echoue dans &e%dungeon%&7!";
+    public String startMessage = "&6[Mazmorra] &e%player% &7está iniciando &e%dungeon%&7! ¡Únete con &f/arcadia_dungeon join %id%&7!";
+    public String completionMessage = "&6[Mazmorra] &a%jugador% &7ha derrotado a &e%mazmorra%&7!";
+    public String failMessage = "&6[Mazmorra] &c%player% &7a fracasa en &e%dungeon%&7!";
     public boolean teleportBackOnComplete = true;
     public int arcadiaXp = 0;
     public double difficultyMultiplier = 1.0;
@@ -26,7 +26,7 @@ public class DungeonConfig {
     public int availableEverySeconds = 0;
     public boolean announceAvailability = true;
     public int announceIntervalMinutes = 0;
-    public String availabilityMessage = "&6[Donjon] &e%dungeon% &7est de nouveau accessible! &fLancez avec &e/arcadia_dungeon start %id%";
+    public String availabilityMessage = "&6[Mazmorra] &e%dungeon% &7vuelve a estar disponible! &fIníciala con &e/arcadia_dungeon start %id%";
     public String requiredPermission = "";
     public int order = 0;
     public String requiredDungeon = "";
@@ -35,7 +35,7 @@ public class DungeonConfig {
 
     // Recruitment / group system
     public int recruitmentDurationSeconds = 90;
-    public String recruitmentMessage = "&6[Donjon] &e%player% &7ouvre &e%dungeon%&7! &fRejoignez dans les %time%s &7avec &f/arcadia_dungeon join %id%";
+    public String recruitmentMessage = "&6[Mazmorra] &e%player% &7está abriendo &e%dungeon%&7! &fÚnete en %time%s &7con &f/arcadia_dungeon join %id%";
 
     // Dungeon area (cuboid) - containment + anti-parasites
     public AreaPos areaPos1 = null;
