@@ -20,3 +20,6 @@ gradle-wrapper.jar
 .agents/
 _bmad/
 _bmad-output/
+
+# Archive PoC — lecture seule, hors versioning
+_legacy/

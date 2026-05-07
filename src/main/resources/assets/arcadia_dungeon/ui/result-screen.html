@@ -1,0 +1,26 @@
+<div class="result-screen {{ result.class }} arc-panel">
+  <div class="header">
+    <label class="title {{ result.title-class }}">{{ result.title }}</label>
+  </div>
+  <div class="content">
+    <div class="stat-row">
+      <label class="key">Temps</label>
+      <label class="value mono">{{ run.elapsed }}</label>
+    </div>
+    <div class="stat-row">
+      <label class="key">Record</label>
+      <label class="value {{ pb.class }}">{{ run.pb }}</label>
+    </div>
+    <div class="stat-row">
+      <label class="key">Gains</label>
+      <label class="value mono copper">{{ reward.currency }} ⚙</label>
+    </div>
+    <div class="separator"></div>
+    <div class="stat-row">
+      <label class="pb-hint {{ pb.hint-class }}">{{ pb.hint }}</label>
+    </div>
+  </div>
+  <div class="footer">
+    <button onclick="hub">Retour au hub</button>
+  </div>
+</div>

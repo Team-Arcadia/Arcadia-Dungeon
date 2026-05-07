@@ -25,13 +25,6 @@ description='''${mod_description}'''
     side="BOTH"
 
 [[dependencies.${mod_id}]]
-    modId="arcadia_core"
-    type="required"
-    versionRange="[0.1.0,)"
-    ordering="AFTER"
-    side="SERVER"
-
-[[dependencies.${mod_id}]]
     modId="luckperms"
     type="optional"
     versionRange="*"
@@ -44,3 +37,10 @@ description='''${mod_description}'''
     versionRange="*"
     ordering="NONE"
     side="SERVER"
+
+[[dependencies.${mod_id}]]
+    modId="geckolib"
+    type="required"
+    versionRange="[4.8.0,)"
+    ordering="BEFORE"
+    side="BOTH"

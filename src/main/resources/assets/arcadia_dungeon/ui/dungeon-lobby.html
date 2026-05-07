@@ -1,0 +1,25 @@
+<div class="lobby-screen arc-panel">
+  <div class="header">
+    <label class="title">{{ dungeon.name }}</label>
+    <label class="subtitle">Lobby</label>
+  </div>
+  <div class="content">
+    <div class="slot-row">
+      <label class="slot-label">Slot 1</label>
+      <label class="slot-name">{{ player.name }}</label>
+      <div class="badge-ready">Prêt</div>
+    </div>
+    <div class="slot-row slot-empty">
+      <label class="slot-label">Slot 2</label>
+      <label class="slot-name mute">(vide)</label>
+    </div>
+    <div class="archetype-row">
+      <label class="key">Archétype</label>
+      <label class="value copper">{{ archetype.name }}</label>
+    </div>
+  </div>
+  <div class="footer">
+    <button class="btn-secondary" onclick="close">Annuler</button>
+    <button class="btn-primary" onclick="launch">Lancer !</button>
+  </div>
+</div>

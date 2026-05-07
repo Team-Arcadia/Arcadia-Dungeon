@@ -1,0 +1,12 @@
+{
+  "key.categories.arcadia_dungeon": "Arcadia Dungeon",
+  "key.arcadia_dungeon.open_hub": "Open Arcadia Hub",
+
+  "arcadia.dungeon.example.name": "Example Dungeon",
+
+  "arcadia.currency.gears.name": "Gears",
+
+  "arcadia.archetype.warrior.name": "Warrior",
+  "arcadia.archetype.mage.name":    "Mage",
+  "arcadia.archetype.archer.name":  "Archer"
+}

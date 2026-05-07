@@ -1,0 +1,17 @@
+<div class="archetype-screen arc-panel">
+  <div class="header">
+    <label class="title">Choisir un Archétype</label>
+    <label class="subtitle">{{ dungeon.name }}</label>
+  </div>
+  <div class="content">
+    <div class="archetype-list" v-for="a in archetype.count">
+      <div class="archetype-card" onclick="{{ a.onclick }}">
+        <label class="archetype-name">{{ a.name }}</label>
+        <label class="archetype-id mute">{{ a.id }}</label>
+      </div>
+    </div>
+  </div>
+  <div class="footer">
+    <button onclick="back">← Retour</button>
+  </div>
+</div>

@@ -1,0 +1,12 @@
+{
+  "key.categories.arcadia_dungeon": "Arcadia Dungeon",
+  "key.arcadia_dungeon.open_hub": "Ouvrir le Hub Arcadia",
+
+  "arcadia.dungeon.example.name": "Donjon Exemple",
+
+  "arcadia.currency.gears.name": "Engrenages",
+
+  "arcadia.archetype.warrior.name": "Guerrier",
+  "arcadia.archetype.mage.name":    "Mage",
+  "arcadia.archetype.archer.name":  "Archer"
+}

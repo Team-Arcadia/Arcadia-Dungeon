@@ -15,6 +15,11 @@ group = mod_group_id
 
 repositories {
     mavenLocal()
+    mavenCentral()
+    maven {
+        name = "GeckoLib"
+        url "https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/"
+    }
 }
 
 base {
@@ -22,6 +27,13 @@ base {
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+sourceSets {
+    gametest {
+        java.srcDirs = ['src/gametest/java']
+        resources.srcDirs = ['src/gametest/resources']
+    }
+}
 
 runs {
     configureEach {
@@ -40,7 +52,8 @@ runs {
     }
 
     gameTestServer {
-        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+        systemProperty 'forge.enabledGameTestNamespaces', mod_id
+        modSource project.sourceSets.gametest
     }
 
     data {
@@ -52,11 +65,94 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 configurations {
     runtimeClasspath.extendsFrom localRuntime
+    gametestImplementation.extendsFrom implementation
 }
+
+jarJar.enable()
 
 dependencies {
     implementation "net.neoforged:neoforge:${neo_version}"
-    implementation "com.arcadia.core:arcadia_core:0.1.0"
+
+    // Bundled libraries — embarquées dans le JAR prod via JiJ, disponibles en dev via localRuntime
+    jarJar(implementation("com.zaxxer:HikariCP:5.1.0")) {
+        jarJar.ranged(it, "[5.1.0,6.0)")
+    }
+    jarJar(implementation("org.flywaydb:flyway-core:9.22.3")) {
+        jarJar.ranged(it, "[9.22.3,10.0)")
+    }
+    jarJar(implementation("org.xerial:sqlite-jdbc:3.45.3.0")) {
+        jarJar.ranged(it, "[3.45.3.0,4.0)")
+    }
+    // Rend les JiJ disponibles dans runClient/runServer (dev uniquement, pas dans le JAR)
+    localRuntime "com.zaxxer:HikariCP:5.1.0"
+    localRuntime "org.flywaydb:flyway-core:9.22.3"
+    localRuntime "org.xerial:sqlite-jdbc:3.45.3.0"
+
+    // GeckoLib — modèles 3D animés (Story 13.1-13.2)
+    implementation "software.bernie.geckolib:geckolib-neoforge-1.21.1:4.8.4"
+
+    gametestImplementation sourceSets.main.output
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+// Génère la structure NBT vide utilisée par les GameTests
+// StructureTemplateManager utilise FileToIdConverter("structure", ".nbt") → prefix "structure" (sans s)
+// arcadia_dungeon:arcadiaepic1gametests.empty → data/arcadia_dungeon/structure/arcadiaepic1gametests.empty.nbt
+tasks.register('generateEmptyStructure') {
+    def structDir = file('src/main/resources/data/arcadia_dungeon/structure')
+    def epic1 = new File(structDir, 'arcadiaepic1gametests.empty.nbt')
+    def epic2 = new File(structDir, 'arcadiaepic2gametests.empty.nbt')
+    def epic3 = new File(structDir, 'arcadiaepic3gametests.empty.nbt')
+    def epic4 = new File(structDir, 'arcadiaepic4gametests.empty.nbt')
+    def epic5 = new File(structDir, 'arcadiaepic5gametests.empty.nbt')
+    def epic6 = new File(structDir, 'arcadiaepic6gametests.empty.nbt')
+    def epic7 = new File(structDir, 'arcadiaepic7gametests.empty.nbt')
+    def epic8 = new File(structDir, 'arcadiaepic8gametests.empty.nbt')
+    def epic9 = new File(structDir, 'arcadiaepic9gametests.empty.nbt')
+    outputs.files(epic1, epic2, epic3, epic4, epic5, epic6, epic7, epic8, epic9)
+    doLast {
+        [epic1, epic2, epic3, epic4, epic5, epic6, epic7, epic8, epic9].each { structFile ->
+            structFile.parentFile.mkdirs()
+            structFile.withOutputStream { os ->
+                def gzip = new java.util.zip.GZIPOutputStream(os)
+                def out = new java.io.DataOutputStream(gzip)
+                out.writeByte(10); out.writeShort(0)
+                out.writeByte(9);  out.writeShort(4); out.writeBytes('size')
+                out.writeByte(3);  out.writeInt(3)
+                out.writeInt(1);   out.writeInt(1);   out.writeInt(1)
+                out.writeByte(9);  out.writeShort(8); out.writeBytes('entities')
+                out.writeByte(0);  out.writeInt(0)
+                out.writeByte(9);  out.writeShort(6); out.writeBytes('blocks')
+                out.writeByte(0);  out.writeInt(0)
+                out.writeByte(9);  out.writeShort(7); out.writeBytes('palette')
+                out.writeByte(10); out.writeInt(1)
+                out.writeByte(8);  out.writeShort(4); out.writeBytes('Name')
+                out.writeShort(13); out.writeBytes('minecraft:air')
+                out.writeByte(0)
+                out.writeByte(3);  out.writeShort(11); out.writeBytes('DataVersion')
+                out.writeInt(3953)
+                out.writeByte(0)
+                out.flush(); gzip.finish()
+            }
+        }
+    }
+}
+
+tasks.named('processResources').configure {
+    dependsOn 'generateEmptyStructure'
+}
+
+// Jar contenant uniquement les GameTests (séparé du jar de production)
+tasks.register('testJar', Jar) {
+    archiveClassifier = 'gametests'
+    from sourceSets.gametest.output
+    dependsOn compileGametestJava
 }
 
 tasks.withType(ProcessResources).configureEach {
@@ -90,6 +186,14 @@ publishing {
         maven {
             url "file://${project.projectDir}/repo"
         }
+    }
+}
+
+jar {
+    manifest {
+        attributes([
+            'Arcadia-API-Version': api_version
+        ])
     }
 }
 

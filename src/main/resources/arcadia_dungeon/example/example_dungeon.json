@@ -1,0 +1,107 @@
+{
+  "_doc": "Donjon exemple Arcadia v1.0 — généré au premier boot. Auto-documentation par les champs _doc. Tu peux supprimer ce fichier ou le copier comme base pour ton propre donjon. Voir le wiki ou _bmad-output/planning-artifacts/prd-v1.md §7 pour le schéma complet.",
+
+  "_doc_schemaVersion": "Version du schéma config. Toujours 1 en MVP. Permet à v1.1+ de migrer sans casser les configs existantes.",
+  "schemaVersion": 1,
+
+  "_doc_id": "Identifiant unique du donjon. Format namespace:id. Doit correspondre au nom de fichier (ex: example_dungeon.json → arcadia_dungeon:example_dungeon).",
+  "id": "arcadia_dungeon:example",
+
+  "_doc_nameKey": "Nom affiché. Soit clé i18n (résolue dans lang/fr_fr.json) soit literal string.",
+  "nameKey": "arcadia.dungeon.example.name",
+
+  "_doc_currency": "Currency Arcadia distribuée à fin de run. Configurable par donjon : nom + icône.",
+  "currency": {
+    "nameKey": "arcadia.currency.gears.name",
+    "iconPath": "arcadia_dungeon:textures/icons/gear.png"
+  },
+
+  "_doc_lives": "Pool de vies partagé par le groupe. Chaque mort consomme 1. À 0 → DEFEAT. MVP : 3 vies fixes.",
+  "lives": 3,
+
+  "_doc_rooms": "Liste ordonnée 2-3 salles. Chaque salle référence un template (structure Minecraft) + ses waves de mobs.",
+  "rooms": [
+    {
+      "id": "entry",
+      "templateRef": "arcadia_dungeon:rooms/entry_basic",
+      "waves": [
+        {
+          "_doc": "Wave 1 : 2 zombies au démarrage (delay 0).",
+          "mobs": [{ "mobType": "minecraft:zombie", "count": 2 }],
+          "delayTicks": 0
+        },
+        {
+          "_doc": "Wave 2 : 1 squelette après 30 ticks (1.5s).",
+          "mobs": [{ "mobType": "minecraft:skeleton", "count": 1 }],
+          "delayTicks": 30
+        }
+      ]
+    },
+    {
+      "id": "transition",
+      "templateRef": "arcadia_dungeon:rooms/corridor_short",
+      "waves": []
+    },
+    {
+      "id": "boss_chamber",
+      "templateRef": "arcadia_dungeon:rooms/boss_arena",
+      "waves": []
+    }
+  ],
+
+  "_doc_boss": "Boss du donjon. 1 boss minimum, à phases configurables (HP threshold trigger).",
+  "boss": {
+    "type": "minecraft:wither_skeleton",
+    "hp": 200,
+    "phases": [
+      {
+        "_doc": "Phase 2 : à 50% HP, dégâts boss × 1.2.",
+        "triggerHpPercent": 50,
+        "damageMultiplier": 1.2,
+        "speedMultiplier": 1.0
+      },
+      {
+        "_doc": "Phase 3 : à 25% HP, dégâts × 1.5 + vitesse × 1.1.",
+        "triggerHpPercent": 25,
+        "damageMultiplier": 1.5,
+        "speedMultiplier": 1.1
+      }
+    ]
+  },
+
+  "_doc_rewards": "Récompenses VICTORY. DEFEAT = currency × 0.25 (pas de loot).",
+  "rewards": {
+    "currency": 50,
+    "loot": [
+      { "item": "minecraft:diamond", "min": 1, "max": 3 }
+    ]
+  },
+
+  "_doc_structureRef": "Référence NBT à placer lors du /arcadia setup. Format namespace:path (sans .nbt). Nul = donjon déjà présent dans le monde, on enregistre juste le spawn.",
+  "structureRef": "arcadia_dungeon:chateau_defaut",
+
+  "_doc_dimension": "Dimension où placer la structure et téléporter les joueurs. Nul = dimension courante de l'admin au moment du /arcadia setup.",
+  "dimension": "arcadia_dungeon:dungeon",
+
+  "_doc_placementY": "Y forcé pour le coin NW de la structure NBT. Nul = Y courant de l'admin. Utile en dimension void où Y=0 est trop bas.",
+  "placementY": 64,
+
+  "_doc_archetypes": "3 kits de départ équilibrés. Joueur en choisit 1 au join. Items du kit = SEULS items utilisables en run (inventaire externe mis de côté).",
+  "archetypes": [
+    {
+      "id": "warrior",
+      "nameKey": "arcadia.archetype.warrior.name",
+      "items": ["minecraft:iron_sword", "minecraft:iron_chestplate", "minecraft:iron_helmet"]
+    },
+    {
+      "id": "mage",
+      "nameKey": "arcadia.archetype.mage.name",
+      "items": ["minecraft:stick", "minecraft:leather_chestplate", "minecraft:potion"]
+    },
+    {
+      "id": "archer",
+      "nameKey": "arcadia.archetype.archer.name",
+      "items": ["minecraft:bow", "minecraft:leather_chestplate", "minecraft:arrow"]
+    }
+  ]
+}

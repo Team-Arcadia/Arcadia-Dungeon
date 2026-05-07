@@ -1,0 +1,64 @@
+/* Palette Copper Patina — design-system.md §2 */
+
+.lobby {
+  background: #17120D;
+  border: 1;
+  border-color: #A0642C;
+  padding: 0px;
+  gap: 0px;
+  align-items: center;
+}
+
+.header {
+  background: #1F1812;
+  padding: 8px 20px;
+  border-bottom: 1;
+  border-color: #A0642C;
+  width: 100%;
+  align-items: center;
+}
+
+.dungeon-name {
+  color: #F0B27A;
+  font-size: 10;
+  font-weight: 700;
+  text-align: center;
+}
+
+.content {
+  gap: 8px;
+  align-items: center;
+  padding: 16px;
+  flex: 1;
+}
+
+.label-waiting {
+  color: #7A6A55;
+  font-size: 7;
+  text-transform: uppercase;
+}
+
+.countdown {
+  color: #D89255;
+  font-size: 16;
+  font-weight: 700;
+}
+
+.hint {
+  color: #7A6A55;
+  font-size: 6;
+}
+
+.footer {
+  width: 100%;
+  border-top: 1;
+  border-color: #5A3A1C;
+  background: #1F1812;
+  padding: 5px 10px;
+  align-items: center;
+}
+
+.footer-note {
+  color: #5A3A1C;
+  font-size: 6;
+}

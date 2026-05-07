@@ -1,0 +1,25 @@
+<div class="admin-screen arc-panel">
+  <div class="header">
+    <label class="title">Admin — Donjons</label>
+    <label class="warn-badge">{{ admin.fallback }}</label>
+  </div>
+  <div class="content">
+    <div class="dungeon-list" v-for="d in dungeon.count">
+      <div class="dungeon-row">
+        <label class="status-dot {{ d.status-class }}">●</label>
+        <div class="row-info">
+          <label class="dungeon-id">{{ d.id }}</label>
+          <label class="dungeon-schema mute">schema v{{ d.schema }}</label>
+        </div>
+        <div class="status-badge {{ d.badge-class }}">{{ d.status }}</div>
+      </div>
+    </div>
+    <div class="hint-block">
+      <label class="hint">Pour éditer, modifier les fichiers JSON dans config/arcadia/dungeon/</label>
+    </div>
+  </div>
+  <div class="footer">
+    <button class="btn-reload" onclick="reload">⟳ Recharger</button>
+    <button onclick="close">Fermer</button>
+  </div>
+</div>

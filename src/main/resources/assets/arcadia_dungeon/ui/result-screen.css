@@ -1,0 +1,123 @@
+/* Palette Copper Patina */
+.result-screen {
+  background: #17120D;
+  border: 2;
+  border-color: #A0642C;
+  padding: 0px;
+  gap: 0px;
+}
+
+.result-victory {
+  border-color: #4A7A2A;
+}
+
+.result-defeat {
+  border-color: #7A2A1A;
+}
+
+.header {
+  background: #1F1812;
+  padding: 6px 10px;
+  border-bottom: 1;
+  border-color: #A0642C;
+}
+
+.result-victory .header {
+  background: #1A2A12;
+  border-color: #4A7A2A;
+}
+
+.result-defeat .header {
+  background: #2A1210;
+  border-color: #7A2A1A;
+}
+
+.title {
+  color: #F0B27A;
+  font-size: 9;
+  font-weight: 700;
+  text-align: center;
+}
+
+.title-victory {
+  color: #8FB96B;
+}
+
+.title-defeat {
+  color: #C9533D;
+}
+
+.content {
+  gap: 5px;
+  padding: 10px 12px;
+  flex: 1;
+}
+
+.stat-row {
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+}
+
+.key {
+  color: #7A6A55;
+  font-size: 7;
+  width: 44px;
+}
+
+.value {
+  color: #F3E7D3;
+  font-size: 7;
+  flex: 1;
+}
+
+.mono {
+  font-family: mono;
+}
+
+.copper {
+  color: #F0B27A;
+}
+
+.value-good {
+  color: #8FB96B;
+}
+
+.separator {
+  height: 1px;
+  background: #5A3A1C;
+}
+
+.pb-hint {
+  color: #7A6A55;
+  font-size: 7;
+}
+
+.pb-hint-new {
+  color: #8FB96B;
+  font-weight: 700;
+}
+
+.footer {
+  flex-direction: row;
+  justify-content: center;
+  padding: 5px 10px;
+  border-top: 1;
+  border-color: #5A3A1C;
+  background: #1F1812;
+}
+
+button {
+  background: #2A2019;
+  color: #C2AD8E;
+  padding: 3px 14px;
+  font-size: 7;
+  border: 1;
+  border-color: #A0642C;
+}
+
+button:hover {
+  background: #362A20;
+  color: #F3E7D3;
+  border-color: #F0B27A;
+}
