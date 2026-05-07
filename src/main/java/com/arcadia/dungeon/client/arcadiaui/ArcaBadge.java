@@ -26,15 +26,6 @@ public class ArcaBadge extends ArcaElement {
 
     @Override
     public int getWidth() {
-        if (width == 0) {
-            var font = Minecraft.getInstance().font;
-            if (font != null) {
-                String displayed = ArcaTextStyling.transform(label, textTransform);
-                var comp = ArcaFonts.component(displayed, fontFamily, fontWeight);
-                float scale = fontSize / ArcaFonts.naturalPx(fontFamily);
-                width = (int) Math.ceil(font.width(comp) * scale) + paddingH;
-            }
-        }
         return Math.max(width, 20);
     }
 
@@ -64,7 +55,7 @@ public class ArcaBadge extends ArcaElement {
         String displayed = ArcaTextStyling.transform(label, textTransform);
         var comp = ArcaFonts.component(displayed, fontFamily, fontWeight);
         float scale = fontSize / ArcaFonts.naturalPx(fontFamily);
-        if (width == 0) width = (int) Math.ceil(font.width(comp) * scale) + paddingH;
+        if (font != null) width = (int) Math.ceil(font.width(comp) * scale) + paddingH;
 
         g.fill(x, y, x + width, y + height, bgColor);
 

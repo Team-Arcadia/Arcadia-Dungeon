@@ -40,7 +40,7 @@ description='''${mod_description}'''
 
 [[dependencies.${mod_id}]]
     modId="geckolib"
-    type="required"
+    type="optional"
     versionRange="[4.8.0,)"
     ordering="BEFORE"
     side="BOTH"

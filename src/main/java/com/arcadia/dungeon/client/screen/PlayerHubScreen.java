@@ -25,11 +25,12 @@ import java.util.Map;
  */
 public final class PlayerHubScreen extends Screen {
 
-    private static final int PANEL_W = 280;
-    private static final int PANEL_H = 200;
+    private static final int PANEL_W = 340;
+    private static final int PANEL_H = 240;
 
     private ArcaPanel panel;
     private int lastKnownDungeonCount = -1;
+    private boolean panelDirty = true;
 
     public PlayerHubScreen() {
         super(Component.literal("Arcadia — Donjons"));
@@ -39,7 +40,7 @@ public final class PlayerHubScreen extends Screen {
     protected void init() {
         super.init();
         PacketDistributor.sendToServer(new RequestDungeonListPayload());
-        rebuildPanel();
+        panelDirty = true;
     }
 
     @Override
@@ -52,8 +53,9 @@ public final class PlayerHubScreen extends Screen {
         List<DungeonListPayload.DungeonSummary> current = DungeonListClient.get();
         if (current.size() != lastKnownDungeonCount) {
             lastKnownDungeonCount = current.size();
-            rebuildPanel();
+            panelDirty = true;
         }
+        if (panelDirty) { rebuildPanel(); panelDirty = false; }
         renderBackground(g, mx, my, partialTick);
         if (panel != null) panel.render(g, mx, my);
         super.render(g, mx, my, partialTick);
@@ -93,8 +95,7 @@ public final class PlayerHubScreen extends Screen {
             modelData.put("d.name." + i,   net.minecraft.network.chat.Component.translatable(d.name()).getString());
             modelData.put("d.id." + i,     d.id());
             modelData.put("d.onclick." + i, handlerKey);
-            final int idx = i;
-            handlers.put(handlerKey, () -> onSelectDungeon(dungeons.get(idx)));
+            handlers.put(handlerKey, () -> onSelectDungeon(d));
         }
         handlers.put("close", this::onClose);
 

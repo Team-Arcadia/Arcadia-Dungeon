@@ -112,18 +112,18 @@
 }
 
 .btn-primary {
-  background: #2A1A0A;
-  color: #F0B27A;
+  background: #D89255;
+  color: #17120D;
   padding: 3px 12px;
   font-size: 7;
   border: 1;
-  border-color: #D89255;
+  border-color: #F0B27A;
 }
 
 .btn-primary:hover {
-  background: #3A2A10;
-  color: #F3E7D3;
-  border-color: #F0B27A;
+  background: #F0B27A;
+  color: #17120D;
+  border-color: #F3E7D3;
 }
 
 .btn-secondary {

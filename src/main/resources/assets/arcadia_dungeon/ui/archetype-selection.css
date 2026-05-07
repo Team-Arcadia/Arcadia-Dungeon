@@ -32,21 +32,32 @@
   flex: 1;
 }
 
-.archetype-list {
-  gap: 5px;
+.archetype-grid {
+  flex-direction: row;
+  gap: 8px;
+  justify-content: center;
 }
 
 .archetype-card {
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
   background: #1F1812;
-  padding: 7px 10px;
+  padding: 10px 8px;
   border: 1;
   border-color: #5A3A1C;
-  gap: 3px;
+  gap: 4px;
 }
 
 .archetype-card:hover {
   background: #2A2019;
   border-color: #D89255;
+}
+
+.archetype-icon {
+  color: #F0B27A;
+  font-size: 9;
+  font-weight: 700;
 }
 
 .archetype-name {
@@ -55,7 +66,8 @@
   font-weight: 700;
 }
 
-.archetype-id {
+.archetype-sub {
+  color: #7A6A55;
   font-size: 6;
 }
 

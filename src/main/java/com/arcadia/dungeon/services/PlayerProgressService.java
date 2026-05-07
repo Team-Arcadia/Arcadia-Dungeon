@@ -17,6 +17,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * Service progression joueur — currency + PB par donjon (Stories S5.1, S4.3).
@@ -30,6 +32,13 @@ public final class PlayerProgressService {
     private static final String DATA_FILE = "config/arcadia/player_progress.json";
 
     private final Map<UUID, PlayerProgress> progressMap = new ConcurrentHashMap<>();
+
+    private final ScheduledExecutorService saveExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "arcadia-progress-save");
+        t.setDaemon(true);
+        return t;
+    });
+    private volatile boolean savePending = false;
 
     public PlayerProgress getOrCreate(UUID playerId, String playerName) {
         return progressMap.computeIfAbsent(playerId, id -> new PlayerProgress(id, playerName));
@@ -127,7 +136,14 @@ public final class PlayerProgressService {
     }
 
     private void saveAsync() {
-        Thread.ofVirtual().name("arcadia-progress-save").start(this::save);
+        if (savePending) return;
+        savePending = true;
+        saveExecutor.execute(() -> { savePending = false; save(); });
+    }
+
+    /** Appelé depuis ArcadiaDungeon.onServerStopping pour terminer le thread proprement. */
+    public void shutdown() {
+        saveExecutor.shutdownNow();
     }
 
     // ── DTOs sérialisables ─────────────────────────────────────────────────

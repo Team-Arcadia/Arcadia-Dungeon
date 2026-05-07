@@ -171,7 +171,11 @@ public final class RoomProgressionService {
                     mob.finalizeSpawn(level, level.getCurrentDifficultyAt(entity.blockPosition()),
                         MobSpawnType.COMMAND, null);
                 }
-                level.addFreshEntity(entity);
+                boolean added = level.addFreshEntity(entity);
+                if (!added) {
+                    ArcadiaDungeon.LOGGER.warn("[Arcadia][ROOM] addFreshEntity failed — mob not tracked type={}", mobSpawn.mobType());
+                    continue;
+                }
                 mobs.add(entity.getUUID());
                 mobToRun.put(entity.getUUID(), run.id());
             }

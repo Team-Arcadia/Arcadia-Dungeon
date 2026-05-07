@@ -136,7 +136,6 @@ public class ArcadiaDungeon {
 
     public ArcadiaDungeon(IEventBus modEventBus) {
         LOGGER.info("[Arcadia][BOOT] Mod loading — v1.0 fresh start");
-        NeoForge.EVENT_BUS.register(ServerEvents.class);
         modEventBus.addListener(this::registerPayloads);
         // HUD overlay (S6.5) — enregistré sur le mod event bus, ne s'exécute que côté client
         modEventBus.addListener(ArcadiaDungeon::onRegisterGuiLayers);
@@ -239,7 +238,7 @@ public class ArcadiaDungeon {
             if (playerDeathService != null)   { playerDeathService.shutdown(); NeoForge.EVENT_BUS.unregister(playerDeathService); playerDeathService = null; }
             if (bossPhaseService != null)     { NeoForge.EVENT_BUS.unregister(bossPhaseService); bossPhaseService = null; }
             if (roomProgressionService != null) { NeoForge.EVENT_BUS.unregister(roomProgressionService); roomProgressionService = null; }
-            if (playerProgressService != null) { playerProgressService.save(); playerProgressService = null; }
+            if (playerProgressService != null) { playerProgressService.save(); playerProgressService.shutdown(); playerProgressService = null; }
             if (runLifecycleService != null)  { runLifecycleService.shutdownAll(); runLifecycleService = null; }
             dungeonRegistry        = null;
             placementRegistry      = null;

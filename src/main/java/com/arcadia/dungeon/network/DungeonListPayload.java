@@ -43,12 +43,16 @@ public record DungeonListPayload(List<DungeonSummary> dungeons) implements Custo
         },
         buf -> {
             int count = buf.readInt();
+            if (count < 0 || count > 256)
+                throw new io.netty.handler.codec.DecoderException("count hors limites: " + count);
             List<DungeonSummary> dungeons = new ArrayList<>(count);
             for (int i = 0; i < count; i++) {
                 String id = buf.readUtf();
                 String name = buf.readUtf();
                 int schemaVersion = buf.readInt();
                 int archCount = buf.readInt();
+                if (archCount < 0 || archCount > 32)
+                    throw new io.netty.handler.codec.DecoderException("archCount hors limites: " + archCount);
                 List<ArchetypeSummary> archetypes = new ArrayList<>(archCount);
                 for (int j = 0; j < archCount; j++) {
                     archetypes.add(new ArchetypeSummary(buf.readUtf(), buf.readUtf()));

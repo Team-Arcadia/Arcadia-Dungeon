@@ -32,7 +32,9 @@ import java.util.UUID;
  */
 public final class ServerPayloadHandler {
 
-    private static final PacketRateLimiter RESYNC_LIMITER = new PacketRateLimiter(5_000L);
+    private static final PacketRateLimiter RESYNC_LIMITER    = new PacketRateLimiter(5_000L);
+    private static final PacketRateLimiter START_RUN_LIMITER = new PacketRateLimiter(3_000L);
+    private static final PacketRateLimiter RELOAD_LIMITER    = new PacketRateLimiter(10_000L);
 
     private static final int MAX_PLAYERS_PER_RUN = 2;
 
@@ -41,8 +43,16 @@ public final class ServerPayloadHandler {
     // ── S2.5 ──────────────────────────────────────────────────────────────
 
     public static void handleStartRun(StartRunPayload payload, IPayloadContext context) {
+        ServerPlayer player = (ServerPlayer) context.player();
+
+        // Fix #2 — rate-limit sur StartRun
+        if (!START_RUN_LIMITER.tryAcquire(player.getUUID())) {
+            ArcadiaDungeon.LOGGER.debug("[Arcadia][RUN] event=start_run_rate_limited player={}",
+                player.getGameProfile().getName());
+            return;
+        }
+
         context.enqueueWork(() -> {
-            ServerPlayer player = (ServerPlayer) context.player();
             RunLifecycleService lifecycle = ArcadiaDungeon.runLifecycleService();
             RoomProgressionService progression = ArcadiaDungeon.roomProgressionService();
 
@@ -51,8 +61,20 @@ public final class ServerPayloadHandler {
                 return;
             }
 
-            if (ArcadiaDungeon.dungeonRegistry().get(payload.dungeonId()).isEmpty()) {
-                player.sendSystemMessage(Component.literal("§c✗ Donjon inconnu : " + payload.dungeonId()));
+            var dungeonOpt = ArcadiaDungeon.dungeonRegistry().get(payload.dungeonId());
+            if (dungeonOpt.isEmpty()) {
+                player.sendSystemMessage(Component.literal("§c✗ Donjon inconnu : " + sanitize(payload.dungeonId())));
+                return;
+            }
+
+            // Fix #1 — valider que l'archetypeId existe dans la config du donjon
+            var dungeonConfig = dungeonOpt.get();
+            boolean archetypeValid = dungeonConfig.archetypes() != null &&
+                dungeonConfig.archetypes().stream().anyMatch(a -> a.id().equals(payload.archetypeId()));
+            if (!archetypeValid) {
+                ArcadiaDungeon.LOGGER.warn("[Arcadia][RUN] event=start_run_invalid_archetype player={} archetypeId={}",
+                    player.getGameProfile().getName(), sanitize(payload.archetypeId()));
+                player.sendSystemMessage(Component.literal("§c✗ Archétype invalide : " + sanitize(payload.archetypeId())));
                 return;
             }
 
@@ -61,7 +83,7 @@ public final class ServerPayloadHandler {
             Vec3 spawnPos = registry.getSpawn(payload.dungeonId()).orElse(null);
             if (spawnPos == null) {
                 player.sendSystemMessage(Component.literal(
-                    "§c✗ Donjon non configuré. Un admin doit lancer : /arcadia setup " + payload.dungeonId()));
+                    "§c✗ Donjon non configuré. Un admin doit lancer : /arcadia setup " + sanitize(payload.dungeonId())));
                 return;
             }
 
@@ -90,7 +112,7 @@ public final class ServerPayloadHandler {
             broadcastRunState(run);
 
             ArcadiaDungeon.LOGGER.info("[Arcadia][RUN] event=start_run_workflow runId={} player={} dungeon={}",
-                run.id(), player.getGameProfile().getName(), payload.dungeonId());
+                run.id(), player.getGameProfile().getName(), sanitize(payload.dungeonId()));
         });
     }
 
@@ -146,6 +168,17 @@ public final class ServerPayloadHandler {
             // Capacité max
             if (run.playerIds().size() >= MAX_PLAYERS_PER_RUN) {
                 player.sendSystemMessage(Component.literal("§c✗ Run complète (" + MAX_PLAYERS_PER_RUN + " joueurs max)."));
+                return;
+            }
+
+            // Fix #1 — valider que l'archetypeId existe dans la config du donjon
+            var dungeonConfig = ArcadiaDungeon.dungeonRegistry().get(run.dungeonId()).orElse(null);
+            boolean archetypeValid = dungeonConfig != null && dungeonConfig.archetypes() != null &&
+                dungeonConfig.archetypes().stream().anyMatch(a -> a.id().equals(payload.archetypeId()));
+            if (!archetypeValid) {
+                ArcadiaDungeon.LOGGER.warn("[Arcadia][RUN] event=join_invalid_archetype player={} archetypeId={}",
+                    player.getGameProfile().getName(), sanitize(payload.archetypeId()));
+                player.sendSystemMessage(Component.literal("§c✗ Archétype invalide : " + sanitize(payload.archetypeId())));
                 return;
             }
 
@@ -216,8 +249,16 @@ public final class ServerPayloadHandler {
     // ── S6.4 — Reload admin ───────────────────────────────────────────────
 
     public static void handleReloadRequest(ReloadRequestPayload payload, IPayloadContext context) {
+        ServerPlayer player = (ServerPlayer) context.player();
+
+        // Fix #2 — rate-limit sur ReloadRequest
+        if (!RELOAD_LIMITER.tryAcquire(player.getUUID())) {
+            ArcadiaDungeon.LOGGER.debug("[Arcadia][ADMIN] event=reload_rate_limited player={}",
+                player.getGameProfile().getName());
+            return;
+        }
+
         context.enqueueWork(() -> {
-            ServerPlayer player = (ServerPlayer) context.player();
             if (!player.hasPermissions(2)) {
                 player.sendSystemMessage(Component.literal("§c✗ Permissions insuffisantes (op2 requis)."));
                 return;
@@ -229,6 +270,15 @@ public final class ServerPayloadHandler {
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────
+
+    /**
+     * Sanitise une chaîne venant du client avant de la loguer
+     * (évite l'injection CRLF dans les logs).
+     */
+    private static String sanitize(String s) {
+        if (s == null) return "null";
+        return s.replaceAll("[\\r\\n\\t]", "_").substring(0, Math.min(s.length(), 128));
+    }
 
     /** Diffuse {@link RunStatePayload} à tous les joueurs connectés de la run. */
     public static void broadcastRunState(Run run) {

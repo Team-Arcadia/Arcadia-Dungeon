@@ -22,13 +22,21 @@ public final class PacketRateLimiter {
     /**
      * @return {@code true} si la requête est autorisée (et consomme le token),
      *         {@code false} si le rate limit est atteint.
+     *
+     * <p>Utilise {@link java.util.concurrent.ConcurrentHashMap#compute} pour
+     * garantir l'atomicité du get+put (pas de race condition entre threads).
      */
     public boolean tryAcquire(UUID playerId) {
         long now = System.currentTimeMillis();
-        Long last = lastGranted.get(playerId);
-        if (last != null && (now - last) < intervalMs) return false;
-        lastGranted.put(playerId, now);
-        return true;
+        long[] granted = { 1 }; // 1 = autorisé
+        lastGranted.compute(playerId, (k, last) -> {
+            if (last != null && now - last < intervalMs) {
+                granted[0] = 0; // refusé
+                return last;
+            }
+            return now;
+        });
+        return granted[0] == 1;
     }
 
     public void evict(UUID playerId) {

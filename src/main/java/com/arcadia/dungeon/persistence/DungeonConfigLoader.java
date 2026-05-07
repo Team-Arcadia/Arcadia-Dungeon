@@ -29,8 +29,7 @@ import java.util.Optional;
  */
 public final class DungeonConfigLoader {
 
-    private static final Gson GSON = new GsonBuilder().setLenient().create();
-    /** Récupère les `_doc` champs par exemple — Gson lenient les ignore par défaut. */
+    private static final Gson GSON = new GsonBuilder().create();
 
     private final Path configDir;
     private final Map<String, DungeonConfig> loaded = new LinkedHashMap<>();
@@ -138,7 +137,10 @@ public final class DungeonConfigLoader {
         }
         if (cfg.id() == null || cfg.id().isBlank()) return "missing id";
         if (cfg.nameKey() == null || cfg.nameKey().isBlank()) return "missing nameKey";
-        if (cfg.lives() < 0) return "lives must be >= 0";
+        if (cfg.lives() <= 0) {
+            ArcadiaDungeon.LOGGER.warn("[Arcadia][CONFIG] dungeonId={} lives={} invalide — doit être > 0, ignoré", cfg.id(), cfg.lives());
+            return "lives must be > 0 (got " + cfg.lives() + ")";
+        }
         if (cfg.rooms() == null || cfg.rooms().isEmpty()) return "rooms must contain >= 1 entry";
         if (cfg.boss() == null) return "missing boss";
         if (cfg.boss().hp() <= 0) return "boss.hp must be > 0";

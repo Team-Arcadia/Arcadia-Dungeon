@@ -22,8 +22,8 @@ import java.util.Map;
  */
 public final class ArchetypeSelectionScreen extends Screen {
 
-    private static final int PANEL_W = 280;
-    private static final int PANEL_H = 196;
+    private static final int PANEL_W = 360;
+    private static final int PANEL_H = 220;
 
     private final String dungeonId;
     private final String dungeonName;
@@ -90,17 +90,28 @@ public final class ArchetypeSelectionScreen extends Screen {
             // Résolution nameKey → traduit si dispo, sinon clé brute
             String displayArchName = Component.translatable(a.nameKey()).getString();
             String handlerKey = "archetype.select." + i;
-            modelData.put("a.name." + i,   displayArchName);
-            modelData.put("a.id." + i,     a.id());
-            modelData.put("a.onclick." + i, handlerKey);
-            final int idx = i;
-            handlers.put(handlerKey, () -> onSelectArchetype(archetypes.get(idx), displayArchName));
+            modelData.put("a.name." + i,    displayArchName);
+            modelData.put("a.id." + i,      a.id());
+            modelData.put("a.onclick." + i,  handlerKey);
+            modelData.put("a.icon." + i,     archetypeIcon(a.id()));
+            modelData.put("a.sub." + i,      ""); // Sous-titre non disponible dans le payload
+            handlers.put(handlerKey, () -> onSelectArchetype(a, displayArchName));
         }
         handlers.put("back", () -> Minecraft.getInstance().setScreen(new PlayerHubScreen()));
 
         ArcaModel model = key -> modelData.getOrDefault(key, null);
         ArcaTemplate template = ArcaTemplate.load("arcadia_dungeon:ui/archetype-selection");
         panel = ArcaTemplateRenderer.build(template, model, handlers, px, py, PANEL_W, PANEL_H);
+    }
+
+    /** Retourne une icône par défaut selon l'id d'archétype (clé ou suffixe). */
+    private static String archetypeIcon(String id) {
+        if (id == null) return "?";
+        String lower = id.toLowerCase();
+        if (lower.contains("warrior") || lower.contains("guerrier")) return "⚔";
+        if (lower.contains("mage")    || lower.contains("mago"))     return "✦";
+        if (lower.contains("archer")  || lower.contains("rogue"))    return "➶";
+        return "?";
     }
 
     private void onSelectArchetype(DungeonListPayload.ArchetypeSummary archetype, String displayName) {

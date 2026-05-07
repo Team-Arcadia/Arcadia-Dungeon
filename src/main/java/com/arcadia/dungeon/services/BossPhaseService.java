@@ -5,6 +5,7 @@ import com.arcadia.dungeon.domain.config.DungeonConfig;
 import com.arcadia.dungeon.domain.run.BossState;
 import com.arcadia.dungeon.domain.run.Run;
 import com.arcadia.dungeon.domain.run.RunId;
+import com.arcadia.dungeon.domain.run.RunPhase;
 import com.arcadia.dungeon.domain.run.RunResult;
 import com.arcadia.dungeon.network.ServerPayloadHandler;
 import com.arcadia.dungeon.persistence.DungeonRegistry;
@@ -68,6 +69,8 @@ public final class BossPhaseService {
      * Doit être appelé sur le SGT.
      */
     public void spawnBoss(Run run, ServerLevel level, Vec3 spawnPos) {
+        if (run.phase() == RunPhase.ENDED) return;
+        if (bossToRun.containsValue(run.id())) return; // boss déjà spawné pour cette run
         DungeonConfig config = dungeonRegistry.get(run.dungeonId()).orElse(null);
         if (config == null || config.boss() == null) return;
 

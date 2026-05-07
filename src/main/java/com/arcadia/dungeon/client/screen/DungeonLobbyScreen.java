@@ -21,8 +21,8 @@ import java.util.Map;
  */
 public final class DungeonLobbyScreen extends Screen {
 
-    private static final int PANEL_W = 260;
-    private static final int PANEL_H = 168;
+    private static final int PANEL_W = 320;
+    private static final int PANEL_H = 220;
 
     private final String dungeonId;
     private final String dungeonName;
@@ -30,6 +30,7 @@ public final class DungeonLobbyScreen extends Screen {
     private final String archetypeName;
 
     private ArcaPanel panel;
+    private boolean launching = false;
 
     public DungeonLobbyScreen(String dungeonId, String dungeonName,
                               String archetypeId, String archetypeName) {
@@ -53,6 +54,14 @@ public final class DungeonLobbyScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mx, int my, float partialTick) {
+        // Si en attente de réponse serveur, fermer quand la run passe IN_PROGRESS
+        if (launching) {
+            var state = com.arcadia.dungeon.client.state.RunStateClient.getState().orElse(null);
+            if (state != null && "IN_PROGRESS".equals(state.phase())) {
+                onClose();
+                return;
+            }
+        }
         renderBackground(g, mx, my, partialTick);
         if (panel != null) panel.render(g, mx, my);
         super.render(g, mx, my, partialTick);
@@ -85,7 +94,8 @@ public final class DungeonLobbyScreen extends Screen {
         ArcaModel model = ArcaModel.of(Map.of(
             "dungeon.name",   displayName,
             "player.name",    playerName,
-            "archetype.name", archetypeName
+            "archetype.name", archetypeName,
+            "launch.status",  launching ? "Démarrage..." : ""
         ));
 
         ArcaTemplate template = ArcaTemplate.load("arcadia_dungeon:ui/dungeon-lobby");
@@ -96,7 +106,9 @@ public final class DungeonLobbyScreen extends Screen {
     }
 
     private void onLaunch() {
+        if (launching) return; // Éviter double-clic
         PacketDistributor.sendToServer(new StartRunPayload(dungeonId, archetypeId));
-        onClose();
+        launching = true;
+        rebuildPanel(); // Affiche "Démarrage..." et désactive le bouton
     }
 }

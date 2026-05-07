@@ -1,10 +1,7 @@
 package com.arcadia.dungeon.client.arcadiaui;
 
-import com.arcadia.dungeon.ArcadiaDungeon;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphics;
-import org.joml.Matrix4f;
-import org.joml.Vector4f;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,6 +50,8 @@ public class ArcaPanel implements ArcadiaWidget {
     private String justifyContent = "flex-start";
     private String alignItems = "center";
 
+    private boolean layoutDirty = true;
+
     private ArcaPanel(Mode mode, int cols, int x, int y, int w, int h) {
         this.mode = mode;
         this.cols = cols;
@@ -73,16 +72,19 @@ public class ArcaPanel implements ArcadiaWidget {
 
     public ArcaPanel add(ArcadiaWidget widget) {
         children.add(new Entry(widget, 0, null, false));
+        layoutDirty = true;
         return this;
     }
 
     public ArcaPanel add(ArcadiaWidget widget, int flex) {
         children.add(new Entry(widget, flex, null, false));
+        layoutDirty = true;
         return this;
     }
 
     public ArcaPanel add(ArcadiaWidget widget, int flex, String alignSelf, boolean marginTopAuto) {
         children.add(new Entry(widget, flex, alignSelf, marginTopAuto));
+        layoutDirty = true;
         return this;
     }
 
@@ -141,6 +143,7 @@ public class ArcaPanel implements ArcadiaWidget {
     // ── Layout engine ──────────────────────────────────────────────────────
 
     public void layout() {
+        layoutDirty = false;
         if (children.isEmpty()) return;
         switch (mode) {
             case ROW    -> layoutRow();
@@ -380,7 +383,7 @@ public class ArcaPanel implements ArcadiaWidget {
 
     @Override
     public void render(GuiGraphics g, int mx, int my) {
-        layout();
+        if (layoutDirty) { layout(); }
         boolean hovered = bounds().contains(mx, my);
 
         int bg = (hovered && hoverBackground != 0) ? hoverBackground : background;
@@ -396,10 +399,7 @@ public class ArcaPanel implements ArcadiaWidget {
         if (bg != 0) g.fill(x, y, x + w, y + h, bg);
 
         if (clip) {
-            Matrix4f m = g.pose().last().pose();
-            Vector4f tl = new Vector4f(x, y, 0f, 1f).mul(m);
-            Vector4f br = new Vector4f(x + w, y + h, 0f, 1f).mul(m);
-            g.enableScissor((int) tl.x, (int) tl.y, (int) br.x, (int) br.y);
+            g.enableScissor(x, y, x + w, y + h);
         }
         for (Entry e : children) {
             e.widget().render(g, mx, my);
@@ -498,10 +498,10 @@ public class ArcaPanel implements ArcadiaWidget {
     public boolean isActive() { return active; }
 
     @Override
-    public void setPosition(int x, int y) { this.x = x; this.y = y; }
+    public void setPosition(int x, int y) { this.x = x; this.y = y; layoutDirty = true; }
 
     @Override
-    public void setSize(int w, int h) { this.w = w; this.h = h; }
+    public void setSize(int w, int h) { this.w = w; this.h = h; layoutDirty = true; }
 
     @Override
     public int getWidth()  { return w; }

@@ -26,27 +26,32 @@ import java.util.Map;
  */
 public final class AdminHubScreen extends Screen {
 
-    private static final int PANEL_W = 300;
-    private static final int PANEL_H = 220;
+    private static final int PANEL_W = 360;
+    private static final int PANEL_H = 240;
 
     private ArcaPanel panel;
     private int lastKnownDungeonCount = -1;
+    private boolean panelDirty = true;
+    private final boolean accessDenied;
 
     public AdminHubScreen() {
         super(Component.literal("Admin — Donjons"));
+        // Vérifie op2 côté client (indicatif uniquement) — effectué dans le constructeur
+        // pour éviter d'appeler onClose() depuis init() (violation contrat Screen).
+        this.accessDenied = Minecraft.getInstance().player != null
+                && !Minecraft.getInstance().player.hasPermissions(2);
     }
 
     @Override
     protected void init() {
         super.init();
-        // Vérifie op2 côté client (indicatif uniquement)
-        if (Minecraft.getInstance().player != null
-                && !Minecraft.getInstance().player.hasPermissions(2)) {
-            onClose();
+        if (accessDenied) {
+            // Planifier la fermeture hors de init() pour respecter le contrat Screen
+            Minecraft.getInstance().tell(this::onClose);
             return;
         }
         PacketDistributor.sendToServer(new RequestDungeonListPayload());
-        rebuildPanel();
+        panelDirty = true;
     }
 
     @Override
@@ -59,8 +64,9 @@ public final class AdminHubScreen extends Screen {
         List<DungeonListPayload.DungeonSummary> current = DungeonListClient.get();
         if (current.size() != lastKnownDungeonCount) {
             lastKnownDungeonCount = current.size();
-            rebuildPanel();
+            panelDirty = true;
         }
+        if (panelDirty) { rebuildPanel(); panelDirty = false; }
         renderBackground(g, mx, my, partialTick);
         if (panel != null) panel.render(g, mx, my);
         super.render(g, mx, my, partialTick);

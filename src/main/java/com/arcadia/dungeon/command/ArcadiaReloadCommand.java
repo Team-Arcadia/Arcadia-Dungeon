@@ -45,6 +45,6 @@ public final class ArcadiaReloadCommand {
             ? "§e⚠ Aucun donjon valide chargé — fallback sur l'exemple JAR. Vérifiez vos JSON."
             : "§a✓ " + reloaded.size() + " donjon(s) rechargé(s).";
         ctx.getSource().sendSuccess(() -> Component.literal(message), true);
-        return reloaded.size();
+        return 1;
     }
 }

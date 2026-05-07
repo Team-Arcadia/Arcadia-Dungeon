@@ -39,7 +39,13 @@ public final class ArchetypeService {
      */
     public void preparePlayer(ServerPlayer player, String dungeonId, String archetypeId) {
         stripAndSaveInventory(player);
-        giveKit(player, dungeonId, archetypeId);
+        try {
+            giveKit(player, dungeonId, archetypeId);
+        } catch (Exception e) {
+            ArcadiaDungeon.LOGGER.error("[Arcadia][ARCHETYPE] giveKit failed — restoring inventory for {}", player.getUUID(), e);
+            restoreInventory(player.getUUID(), player.getServer());
+            throw e;
+        }
         ArcadiaDungeon.LOGGER.info("[Arcadia][ARCHETYPE] event=kit_given playerId={} dungeon={} archetype={}",
             player.getUUID(), dungeonId, archetypeId);
     }

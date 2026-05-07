@@ -344,12 +344,24 @@ public final class ArcaCssParser {
     }
 
     private static int parseLength(String value) {
-        return parseInt(value.trim().replaceAll("[^\\d-]", ""));
+        if (value == null) return 0;
+        String v = value.trim();
+        // extraire le premier entier signé (ex: "-10px" → -10, "1.5em" → 1, "42" → 42)
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("^(-?\\d+)").matcher(v);
+        if (m.find()) {
+            try { return Integer.parseInt(m.group(1)); } catch (NumberFormatException e) { return 0; }
+        }
+        return 0;
     }
 
     private static int parseInt(String value) {
-        value = value.trim().replaceAll("[^\\d-]", "");
-        return value.isEmpty() ? 0 : Integer.parseInt(value);
+        if (value == null) return 0;
+        String v = value.trim();
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("^(-?\\d+)").matcher(v);
+        if (m.find()) {
+            try { return Integer.parseInt(m.group(1)); } catch (NumberFormatException e) { return 0; }
+        }
+        return 0;
     }
 
     private static String stripComments(String css) {

@@ -19,8 +19,8 @@ import java.util.Map;
  */
 public final class ResultScreen extends Screen {
 
-    private static final int PANEL_W = 260;
-    private static final int PANEL_H = 196;
+    private static final int PANEL_W = 300;
+    private static final int PANEL_H = 220;
 
     private final String result;
     private final long elapsedSeconds;

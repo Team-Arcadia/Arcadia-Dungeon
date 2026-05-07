@@ -40,6 +40,7 @@ public final class RunOverlayHud implements LayeredDraw.Layer {
 
         int lives = state.livesRemaining();
         String livesStr = "♥ " + lives;
+        // TODO: totalRooms absent du payload — affiche seulement l'index courant
         String roomStr = "Salle " + (state.currentRoomIndex() + 1);
 
         // Danger pulsing : 1 vie restante
@@ -52,7 +53,11 @@ public final class RunOverlayHud implements LayeredDraw.Layer {
         }
         int livesColor = lives <= 1 ? ArcadiaPalette.DANGER : ArcadiaPalette.CREAM;
 
-        int bgW = 58;
+        // Largeur dynamique — prend le max des 3 lignes + 4px de padding de chaque côté
+        int w1 = font.width(chrono);
+        int w2 = font.width(roomStr);
+        int w3 = font.width(livesStr);
+        int bgW = Math.max(w1, Math.max(w2, w3)) + 8;
         int bgH = PAD_Y + LINE_H * 3 + 2;
         graphics.fill(PAD_X - 2, PAD_Y - 2, PAD_X + bgW, PAD_Y + bgH, BG_COLOR);
 

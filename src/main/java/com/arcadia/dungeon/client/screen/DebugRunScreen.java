@@ -24,6 +24,7 @@ public final class DebugRunScreen extends Screen {
     private static final int PANEL_H = 148;
 
     private ArcaPanel panel;
+    private RunStatePayload lastRenderedState = null;
 
     public DebugRunScreen() {
         super(Component.literal("Arcadia Debug"));
@@ -43,6 +44,11 @@ public final class DebugRunScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mx, int my, float partialTick) {
+        RunStatePayload current = RunStateClient.getState().orElse(null);
+        if (current != lastRenderedState) {
+            lastRenderedState = current;
+            rebuildPanel();
+        }
         renderBackground(g, mx, my, partialTick);
         if (panel != null) panel.render(g, mx, my);
         super.render(g, mx, my, partialTick);

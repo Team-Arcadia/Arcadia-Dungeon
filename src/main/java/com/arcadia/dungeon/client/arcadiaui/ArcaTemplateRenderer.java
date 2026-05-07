@@ -1,5 +1,6 @@
 package com.arcadia.dungeon.client.arcadiaui;
 
+import com.arcadia.dungeon.ArcadiaDungeon;
 import com.arcadia.dungeon.client.util.ArcadiaPalette;
 
 import java.util.ArrayDeque;
@@ -33,7 +34,7 @@ public final class ArcaTemplateRenderer {
                                   Map<String, ArcaInputState> inputStates,
                                   int x, int y, int w, int h) {
         Deque<ArcaNode> ancestors = new ArrayDeque<>();
-        return buildNode(template.root(), template.styleSheet(), model, handlers, inputHandlers, inputStates, ancestors, x, y, w, h);
+        return buildNode(template.root(), template.styleSheet(), model, handlers, inputHandlers, inputStates, ancestors, x, y, w, h, 0);
     }
 
     private static ArcaPanel buildNode(ArcaNode node, ArcaStyleSheet sheet,
@@ -41,7 +42,11 @@ public final class ArcaTemplateRenderer {
                                        Map<String, Consumer<String>> inputHandlers,
                                        Map<String, ArcaInputState> inputStates,
                                        Deque<ArcaNode> ancestors,
-                                       int x, int y, int w, int h) {
+                                       int x, int y, int w, int h, int depth) {
+        if (depth > 64) {
+            ArcadiaDungeon.LOGGER.warn("[ArcadiaUI] Profondeur max atteinte — nœud ignoré");
+            return ArcaPanel.column(x, y, w, h);
+        }
         ArcaStyle style = sheet.resolve(node, ancestors);
         ArcaStyle hoverStyle = sheet.resolveHover(node, ancestors);
 
@@ -120,7 +125,7 @@ public final class ArcaTemplateRenderer {
             for (ArcaNode child : expandChildren(node, sheet, model)) {
                 ArcaStyle childStyle = sheet.resolve(child, ancestors);
                 ArcadiaWidget widget = buildWidget(child, sheet, model, handlers, inputHandlers, inputStates, ancestors,
-                        innerW, innerH, stretchChildWidth, stretchChildHeight);
+                        innerW, innerH, stretchChildWidth, stretchChildHeight, depth + 1);
                 if (widget == null) continue;
                 int flex = childStyle.flex != ArcaStyle.UNSET ? childStyle.flex : 0;
                 panel.add(widget, flex, childStyle.alignSelf, childStyle.marginTopAuto);
@@ -155,8 +160,9 @@ public final class ArcaTemplateRenderer {
                     }
                     return ArcaForEach.expand(child, items, varName).stream();
                 }
-                String cls = child.attr("class");
-                if (cls.contains("{{")) {
+                boolean hasBinding = child.attrs().values().stream().anyMatch(v -> v.contains("{{"))
+                        || child.text().contains("{{");
+                if (hasBinding) {
                     return java.util.stream.Stream.of(ArcaForEach.resolveAttrs(child, model));
                 }
                 return java.util.stream.Stream.of(child);
@@ -179,7 +185,8 @@ public final class ArcaTemplateRenderer {
                                              Map<String, ArcaInputState> inputStates,
                                              Deque<ArcaNode> ancestors,
                                              int availW, int availH,
-                                             boolean inheritWidth, boolean inheritHeight) {
+                                             boolean inheritWidth, boolean inheritHeight,
+                                             int depth) {
         ArcaStyle style = sheet.resolve(node, ancestors);
 
         int wRaw = resolveLength(style.width, style.widthPercent, availW, ArcaStyle.UNSET);
@@ -210,7 +217,7 @@ public final class ArcaTemplateRenderer {
             case "div", "row", "col", "grid" -> {
                 boolean explicitW = wRaw != ArcaStyle.UNSET;
                 int initialW = wVal > 0 ? wVal : availW;
-                ArcaPanel built = buildNode(node, sheet, model, handlers, inputHandlers, inputStates, ancestors, 0, 0, initialW, hVal);
+                ArcaPanel built = buildNode(node, sheet, model, handlers, inputHandlers, inputStates, ancestors, 0, 0, initialW, hVal, depth);
                 if (!explicitW && !inheritWidth) {
                     int natural = built.fitContentWidth();
                     if (natural > 0 && natural < built.getWidth()) {

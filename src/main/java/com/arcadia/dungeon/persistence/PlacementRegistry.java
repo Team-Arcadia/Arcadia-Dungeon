@@ -6,12 +6,14 @@ import com.google.gson.reflect.TypeToken;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.fml.loading.FMLPaths;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Reader;
-import java.io.Writer;
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -85,9 +87,12 @@ public final class PlacementRegistry {
     private void persist() {
         try {
             Files.createDirectories(filePath.getParent());
-            try (Writer w = Files.newBufferedWriter(filePath)) {
+            // Écriture atomique : on écrit dans un .tmp puis on renomme
+            Path tmp = filePath.resolveSibling(filePath.getFileName() + ".tmp");
+            try (BufferedWriter w = Files.newBufferedWriter(tmp, StandardCharsets.UTF_8)) {
                 GSON.toJson(data, w);
             }
+            Files.move(tmp, filePath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             ArcadiaDungeon.LOGGER.error("[Arcadia][PLACEMENT] Erreur écriture placements.json", e);
         }
