@@ -36,12 +36,12 @@
   flex-direction: row;
   gap: 8px;
   justify-content: center;
+  height: 80px;
 }
 
 .archetype-card {
   flex: 1;
   flex-direction: column;
-  align-items: center;
   background: #1F1812;
   padding: 10px 8px;
   border: 1;
@@ -58,17 +58,20 @@
   color: #F0B27A;
   font-size: 9;
   font-weight: 700;
+  text-align: center;
 }
 
 .archetype-name {
   color: #F3E7D3;
   font-size: 7;
   font-weight: 700;
+  text-align: center;
 }
 
 .archetype-sub {
   color: #7A6A55;
   font-size: 6;
+  text-align: center;
 }
 
 .mute {

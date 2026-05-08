@@ -8,6 +8,7 @@ import com.arcadia.dungeon.domain.run.RunId;
 import com.arcadia.dungeon.domain.run.RunResult;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -16,6 +17,8 @@ import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import java.util.Map;
 import java.util.Random;
@@ -108,6 +111,13 @@ public final class RoomProgressionService {
     // ============================================================
     // Event listener SGT (LivingDeathEvent fire on game thread)
     // ============================================================
+
+    @SubscribeEvent
+    public void onMobDrops(LivingDropsEvent event) {
+        if (mobToRun.containsKey(event.getEntity().getUUID())) {
+            event.setCanceled(true);
+        }
+    }
 
     @SubscribeEvent
     public void onMobDeath(LivingDeathEvent event) {
@@ -228,6 +238,20 @@ public final class RoomProgressionService {
 
     private void cleanupWaveTracking(RunId runId) {
         Set<UUID> mobs = livingMobs.remove(runId);
-        if (mobs != null) mobs.forEach(mobToRun::remove);
+        if (mobs == null) return;
+        mobs.forEach(mobToRun::remove);
+        discardEntities(mobs);
+    }
+
+    private void discardEntities(Set<UUID> mobIds) {
+        if (mobIds.isEmpty()) return;
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        if (server == null) return;
+        for (ServerLevel level : server.getAllLevels()) {
+            for (UUID id : mobIds) {
+                Entity e = level.getEntity(id);
+                if (e != null) e.discard();
+            }
+        }
     }
 }

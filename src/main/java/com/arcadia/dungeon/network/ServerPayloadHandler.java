@@ -100,6 +100,9 @@ public final class ServerPayloadHandler {
             Run run = lifecycle.startRun(payload.dungeonId(), List.of(player.getUUID()));
             run.setArchetype(player.getUUID(), payload.archetypeId());
 
+            // Sauvegarder la position d'origine avant le téléport
+            lifecycle.savePlayerOrigin(player.getUUID(), player);
+
             // S6.6 — strip inventaire + kit archétype
             ArcadiaDungeon.archetypeService().preparePlayer(player, payload.dungeonId(), payload.archetypeId());
 
@@ -122,6 +125,7 @@ public final class ServerPayloadHandler {
             RunLifecycleService lifecycle = ArcadiaDungeon.runLifecycleService();
 
             lifecycle.findActiveRunForPlayer(player.getUUID()).ifPresentOrElse(run -> {
+                ArcadiaDungeon.playerDeathService().cancelPendingRespawn(player.getUUID());
                 ArcadiaDungeon.roomProgressionService().cleanupRun(run.id());
                 lifecycle.abandonRun(run, player.getUUID());
                 player.sendSystemMessage(Component.literal("§7Run abandonnée."));
@@ -184,6 +188,9 @@ public final class ServerPayloadHandler {
 
             run.addPlayer(player.getUUID());
             run.setArchetype(player.getUUID(), payload.archetypeId());
+
+            // Sauvegarder l'origine avant téléport (comme handleStartRun)
+            lifecycle.savePlayerOrigin(player.getUUID(), player);
 
             // S6.6 — strip inventaire + kit archétype pour le joueur qui rejoint
             ArcadiaDungeon.archetypeService().preparePlayer(player, run.dungeonId(), payload.archetypeId());

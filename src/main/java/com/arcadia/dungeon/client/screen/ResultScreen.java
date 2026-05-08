@@ -4,15 +4,22 @@ import com.arcadia.dungeon.client.arcadiaui.ArcaModel;
 import com.arcadia.dungeon.client.arcadiaui.ArcaPanel;
 import com.arcadia.dungeon.client.arcadiaui.ArcaTemplate;
 import com.arcadia.dungeon.client.arcadiaui.ArcaTemplateRenderer;
+import com.arcadia.dungeon.network.AbandonRunPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.neoforged.neoforge.network.PacketDistributor;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
- * Écran résultat de run — 2 modes : VICTORY et DEFEAT (Story S6.3).
+ * Écran résultat de run — 3 modes : VICTORY, DEFEAT, DEATH (Story S6.3).
+ *
+ * <p>DEATH = mort intermédiaire (vies restantes > 0) : affiche un compte à rebours
+ * et se ferme automatiquement au respawn.
  *
  * <p>Ouvert par {@code ClientPayloadHandler} à la réception de
  * {@link com.arcadia.dungeon.network.OpenResultScreenPayload}.
@@ -27,17 +34,32 @@ public final class ResultScreen extends Screen {
     private final long currencyEarned;
     private final boolean newPb;
     private final long bestTimeSeconds;
+    private final int respawnSeconds;
+    private final String dungeonId;
+    private final List<String> lootLines;
+
+    // DEATH mode : deadline absolue pour le respawn
+    private final long respawnDeadlineMs;
+    private int lastSecondsShown = -1;
+    private boolean panelDirty = false;
 
     private ArcaPanel panel;
 
     public ResultScreen(String result, long elapsedSeconds, long currencyEarned,
-                        boolean newPb, long bestTimeSeconds) {
+                        boolean newPb, long bestTimeSeconds, int respawnSeconds,
+                        String dungeonId, List<String> lootLines) {
         super(Component.literal("Résultat"));
         this.result = result;
         this.elapsedSeconds = elapsedSeconds;
         this.currencyEarned = currencyEarned;
         this.newPb = newPb;
         this.bestTimeSeconds = bestTimeSeconds;
+        this.respawnSeconds = respawnSeconds;
+        this.dungeonId = dungeonId;
+        this.lootLines = lootLines != null ? lootLines : List.of();
+        this.respawnDeadlineMs = "DEATH".equals(result)
+            ? System.currentTimeMillis() + respawnSeconds * 1000L
+            : 0L;
     }
 
     @Override
@@ -54,6 +76,22 @@ public final class ResultScreen extends Screen {
     @Override
     public void render(GuiGraphics g, int mx, int my, float partialTick) {
         renderBackground(g, mx, my, partialTick);
+
+        if ("DEATH".equals(result)) {
+            long remaining = Math.max(0, (respawnDeadlineMs - System.currentTimeMillis() + 999) / 1000L);
+            if (remaining == 0) { onClose(); return; }
+            int sec = (int) remaining;
+            if (sec != lastSecondsShown) {
+                lastSecondsShown = sec;
+                panelDirty = true;
+            }
+        }
+
+        if (panelDirty) {
+            rebuildPanel();
+            panelDirty = false;
+        }
+
         if (panel != null) panel.render(g, mx, my);
         super.render(g, mx, my, partialTick);
     }
@@ -75,33 +113,54 @@ public final class ResultScreen extends Screen {
         int px = (width - PANEL_W) / 2;
         int py = (height - PANEL_H) / 2;
 
-        boolean isVictory = "VICTORY".equals(result);
-        String resultClass   = isVictory ? "result-victory" : "result-defeat";
-        String titleClass    = isVictory ? "title-victory"  : "title-defeat";
-        String titleText     = isVictory ? "✦ VICTOIRE"     : "✗ DÉFAITE";
+        final ArcaModel model;
+        final String templateId;
+        final Map<String, Runnable> actions;
 
-        String elapsedStr = formatTime(elapsedSeconds);
-        String bestStr    = bestTimeSeconds > 0 ? formatTime(bestTimeSeconds) : "—";
-        String pbHint     = newPb ? "★ Nouveau record !" : (bestTimeSeconds > 0 ? "Record : " + bestStr : "—");
-        String pbHintClass = newPb ? "pb-hint-new" : "";
-        String pbClass    = newPb ? "value-good" : "";
+        if ("DEATH".equals(result)) {
+            long remaining = Math.max(1, (respawnDeadlineMs - System.currentTimeMillis() + 999) / 1000L);
+            model = ArcaModel.of(Map.of("t", remaining + "s"));
+            templateId = "arcadia_dungeon:ui/result-screen-death";
+            actions = Map.of("quit", () -> {
+                PacketDistributor.sendToServer(new AbandonRunPayload());
+                Minecraft.getInstance().setScreen(null);
+            });
+        } else {
+            boolean isVictory = "VICTORY".equals(result);
+            String resultClass   = isVictory ? "result-victory" : "result-defeat";
+            String titleClass    = isVictory ? "title-victory"  : "title-defeat";
+            String titleText     = isVictory ? "✦ VICTOIRE"     : "✗ DÉFAITE";
 
-        ArcaModel model = ArcaModel.of(Map.of(
-            "result.class",      resultClass,
-            "result.title",      titleText,
-            "result.title-class", titleClass,
-            "run.elapsed",       elapsedStr,
-            "run.pb",            bestStr,
-            "pb.class",          pbClass,
-            "pb.hint",           pbHint,
-            "pb.hint-class",     pbHintClass,
-            "reward.currency",   String.valueOf(currencyEarned)
-        ));
+            String elapsedStr = formatTime(elapsedSeconds);
+            String bestStr    = bestTimeSeconds > 0 ? formatTime(bestTimeSeconds) : "—";
+            String pbHint     = newPb ? "★ Nouveau record !" : (bestTimeSeconds > 0 ? "Record : " + bestStr : "—");
+            String pbHintClass = newPb ? "pb-hint-new" : "";
+            String pbClass    = newPb ? "value-good" : "";
 
-        ArcaTemplate template = ArcaTemplate.load("arcadia_dungeon:ui/result-screen");
-        panel = ArcaTemplateRenderer.build(template, model, Map.of(
-            "hub", () -> Minecraft.getInstance().setScreen(new PlayerHubScreen())
-        ), px, py, PANEL_W, PANEL_H);
+            Map<String, String> modelData = new HashMap<>();
+            modelData.put("result.class",       resultClass);
+            modelData.put("result.title",       titleText);
+            modelData.put("result.title-class", titleClass);
+            modelData.put("run.elapsed",        elapsedStr);
+            modelData.put("run.pb",             bestStr);
+            modelData.put("pb.class",           pbClass);
+            modelData.put("pb.hint",            pbHint);
+            modelData.put("pb.hint-class",      pbHintClass);
+            modelData.put("reward.currency",    String.valueOf(currencyEarned));
+            modelData.put("loot",               String.valueOf(lootLines.size()));
+            for (int i = 0; i < lootLines.size(); i++) {
+                modelData.put("item.name." + i, lootLines.get(i));
+            }
+            model = ArcaModel.of(modelData);
+            templateId = "arcadia_dungeon:ui/result-screen";
+            actions = Map.of(
+                "hub",     () -> Minecraft.getInstance().setScreen(new PlayerHubScreen()),
+                "rejouer", () -> Minecraft.getInstance().setScreen(new PlayerHubScreen())
+            );
+        }
+
+        ArcaTemplate template = ArcaTemplate.load(templateId);
+        panel = ArcaTemplateRenderer.build(template, model, actions, px, py, PANEL_W, PANEL_H);
     }
 
     private static String formatTime(long seconds) {

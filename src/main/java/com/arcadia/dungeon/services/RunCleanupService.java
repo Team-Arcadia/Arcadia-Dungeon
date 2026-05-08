@@ -80,9 +80,6 @@ public final class RunCleanupService {
         Run run = runLifecycleService.findById(runId).orElse(null);
         if (run == null || run.phase() == RunPhase.ENDED) return;
 
-        // TODO: kill tracked mobs on cleanup — cleanupRun() supprime le tracking mais ne kill
-        //       pas les entités en jeu. RunCleanupService n'a pas accès au ServerLevel.
-        //       Solution v1.1 : passer server.getAllLevels() en paramètre et hurt les entités.
         roomProgressionService.cleanupRun(runId);
         runLifecycleService.completeRun(run, RunResult.ABANDONED);
 

@@ -11,7 +11,10 @@ import com.arcadia.dungeon.network.ServerPayloadHandler;
 import com.arcadia.dungeon.persistence.DungeonRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.BossEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -25,6 +28,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 
 import net.minecraft.server.MinecraftServer;
 
@@ -53,6 +57,8 @@ public final class BossPhaseService {
 
     /** Boss entity UUID → RunId pour lookup rapide. */
     private final Map<UUID, RunId> bossToRun = new ConcurrentHashMap<>();
+    /** RunId → barre de vie boss (ServerBossEvent vanilla). */
+    private final Map<RunId, ServerBossEvent> bossBars = new ConcurrentHashMap<>();
 
     public BossPhaseService(RunLifecycleService runLifecycleService,
                             RewardDistributionService rewardService,
@@ -106,6 +112,16 @@ public final class BossPhaseService {
         bossToRun.put(entity.getUUID(), run.id());
         run.setBossState(new BossState(bossDef.type(), bossDef.hp()));
 
+        // Boss bar — affichée à tous les joueurs de la run
+        ServerBossEvent bossBar = new ServerBossEvent(
+            entityType.getDescription(), BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.PROGRESS);
+        bossBar.setProgress(1.0f);
+        for (UUID playerId : run.playerIds()) {
+            ServerPlayer p = level.getServer().getPlayerList().getPlayer(playerId);
+            if (p != null) bossBar.addPlayer(p);
+        }
+        bossBars.put(run.id(), bossBar);
+
         ServerPayloadHandler.broadcastRunState(run);
         ArcadiaDungeon.LOGGER.info("[Arcadia][BOSS] event=spawn runId={} type={} hp={}",
             run.id(), bossDef.type(), bossDef.hp());
@@ -113,6 +129,8 @@ public final class BossPhaseService {
 
     public void cleanupBoss(RunId runId) {
         bossToRun.values().removeIf(id -> id.equals(runId));
+        ServerBossEvent bar = bossBars.remove(runId);
+        if (bar != null) bar.removeAllPlayers();
     }
 
     /**
@@ -162,6 +180,9 @@ public final class BossPhaseService {
         BossState bossState = run.bossState();
         bossState.setHpCurrent(Math.round(hpAfter));
 
+        ServerBossEvent bar = bossBars.get(runId);
+        if (bar != null) bar.setProgress(Math.max(0f, Math.min(1f, hpAfter / hpMax)));
+
         List<DungeonConfig.Phase> phases = config.boss().phases();
         int currentIdx = bossState.currentPhaseIndex();
         if (currentIdx < phases.size()) {
@@ -180,10 +201,20 @@ public final class BossPhaseService {
     // ── S4.4 — Boss mort → VICTORY ────────────────────────────────────────
 
     @SubscribeEvent
+    public void onBossDrops(LivingDropsEvent event) {
+        if (bossToRun.containsKey(event.getEntity().getUUID())) {
+            event.setCanceled(true);
+        }
+    }
+
+    @SubscribeEvent
     public void onBossDeath(LivingDeathEvent event) {
         UUID entityId = event.getEntity().getUUID();
         RunId runId = bossToRun.remove(entityId);
         if (runId == null) return;
+
+        ServerBossEvent bar = bossBars.remove(runId);
+        if (bar != null) bar.removeAllPlayers();
 
         Run run = runLifecycleService.findById(runId).orElse(null);
         if (run == null) return;

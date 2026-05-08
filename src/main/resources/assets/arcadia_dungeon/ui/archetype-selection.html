@@ -4,8 +4,8 @@
     <label class="subtitle">{{ dungeon.name }}</label>
   </div>
   <div class="content">
-    <div class="archetype-grid" v-for="a in archetype.count">
-      <div class="archetype-card" onclick="{{ a.onclick }}">
+    <div class="archetype-grid">
+      <div class="archetype-card" v-for="a in archetype.count" onclick="{{ a.onclick }}">
         <label class="archetype-icon">{{ a.icon }}</label>
         <label class="archetype-name">{{ a.name }}</label>
         <label class="archetype-sub mute">{{ a.sub }}</label>

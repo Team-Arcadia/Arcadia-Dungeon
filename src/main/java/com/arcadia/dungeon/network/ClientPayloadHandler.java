@@ -53,6 +53,7 @@ public final class ClientPayloadHandler {
     public static void handleOpenResultScreen(OpenResultScreenPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> Minecraft.getInstance().setScreen(new ResultScreen(
             payload.result(), payload.elapsedSeconds(), payload.currencyEarned(),
-            payload.newPb(), payload.bestTimeSeconds())));
+            payload.newPb(), payload.bestTimeSeconds(),
+            payload.respawnSeconds(), payload.dungeonId(), payload.lootLines())));
     }
 }

@@ -5,6 +5,7 @@ import com.arcadia.dungeon.domain.run.Run;
 import com.arcadia.dungeon.domain.run.RunId;
 import com.arcadia.dungeon.domain.run.RunPhase;
 import com.arcadia.dungeon.domain.run.RunResult;
+import com.arcadia.dungeon.network.OpenResultScreenPayload;
 import com.arcadia.dungeon.network.ServerPayloadHandler;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -16,8 +17,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -34,13 +39,14 @@ import java.util.concurrent.TimeUnit;
  */
 public final class PlayerDeathService {
 
-    private static final long RESPAWN_DELAY_S = 10L;
+    private static final long RESPAWN_DELAY_S = 5L;
 
     private final RunLifecycleService runLifecycleService;
     private final RoomProgressionService roomProgressionService;
     private final RewardDistributionService rewardDistributionService;
 
     private final Map<UUID, ScheduledFuture<?>> pendingRespawns = new ConcurrentHashMap<>();
+    private final Set<UUID> dropsSuppressed = ConcurrentHashMap.newKeySet();
 
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
         Thread t = new Thread(r, "arcadia-respawn");
@@ -76,14 +82,31 @@ public final class PlayerDeathService {
         ServerPayloadHandler.broadcastRunState(run);
 
         if (livesAfter <= 0) {
+            // Annuler la mort MC pour contrôler le respawn : téléport vers l'origine via completeRun
+            event.setCanceled(true);
+            player.setHealth(player.getMaxHealth());
             roomProgressionService.cleanupRun(run.id());
             runLifecycleService.completeRun(run, RunResult.DEFEAT);
             rewardDistributionService.distribute(run, RunResult.DEFEAT);
             ServerPayloadHandler.broadcastRunState(run);
             ArcadiaDungeon.LOGGER.info("[Arcadia][RUN] event=defeat_lives_exhausted runId={}", run.id());
         } else {
-            // S5.3 — respawn différé 10 s
+            // S5.3 — annuler la mort MC, restaurer HP, afficher DEATH screen + téléporter après délai
+            event.setCanceled(true);
+            player.setHealth(player.getMaxHealth());
+            player.setInvulnerable(true);
+            player.connection.send(new OpenResultScreenPayload(
+                "DEATH", run.elapsedSeconds(), 0L, false, 0L,
+                (int) RESPAWN_DELAY_S, run.dungeonId(), List.of()));
             scheduleRespawn(player.getUUID(), run.id(), player.getServer());
+        }
+    }
+
+    @SubscribeEvent
+    public void onPlayerDrops(LivingDropsEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        if (dropsSuppressed.remove(player.getUUID())) {
+            event.setCanceled(true);
         }
     }
 
@@ -127,14 +150,33 @@ public final class PlayerDeathService {
 
         player.teleportTo(targetLevel, spawnPos.x, spawnPos.y, spawnPos.z,
             player.getYRot(), player.getXRot());
+        player.setInvulnerable(false);
 
         ServerPayloadHandler.broadcastRunState(run);
         ArcadiaDungeon.LOGGER.info("[Arcadia][LIVES] event=respawn playerId={} runId={}",
             playerId, runId);
     }
 
-    /** Annule les respawns en attente quand le serveur s'arrête. */
+    /** Annule un respawn en attente et lève l'invulnérabilité du joueur (ex : abandon de run). */
+    public void cancelPendingRespawn(UUID playerId) {
+        ScheduledFuture<?> future = pendingRespawns.remove(playerId);
+        if (future != null) future.cancel(false);
+        dropsSuppressed.remove(playerId);
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        if (server == null) return;
+        ServerPlayer player = server.getPlayerList().getPlayer(playerId);
+        if (player != null) player.setInvulnerable(false);
+    }
+
+    /** Annule les respawns en attente et lève l'invulnérabilité au shutdown. */
     public void shutdown() {
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        if (server != null) {
+            pendingRespawns.keySet().forEach(playerId -> {
+                ServerPlayer p = server.getPlayerList().getPlayer(playerId);
+                if (p != null) p.setInvulnerable(false);
+            });
+        }
         pendingRespawns.values().forEach(f -> f.cancel(false));
         pendingRespawns.clear();
         scheduler.shutdownNow();

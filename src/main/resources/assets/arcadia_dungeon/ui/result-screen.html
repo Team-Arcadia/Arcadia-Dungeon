@@ -5,7 +5,7 @@
   <div class="content">
     <div class="stat-row">
       <label class="key">Temps</label>
-      <label class="value mono">{{ run.elapsed }}</label>
+      <label class="value">{{ run.elapsed }}</label>
     </div>
     <div class="stat-row">
       <label class="key">Record</label>
@@ -13,14 +13,19 @@
     </div>
     <div class="stat-row">
       <label class="key">Gains</label>
-      <label class="value mono copper">{{ reward.currency }} ⚙</label>
+      <label class="value copper">{{ reward.currency }} ⚙</label>
     </div>
     <div class="separator"></div>
     <div class="stat-row">
       <label class="pb-hint {{ pb.hint-class }}">{{ pb.hint }}</label>
     </div>
+    <div v-for="item in loot" class="stat-row">
+      <label class="key"></label>
+      <label class="value copper">{{ item.name }}</label>
+    </div>
   </div>
   <div class="footer">
+    <button onclick="rejouer">Rejouer</button>
     <button onclick="hub">Retour au hub</button>
   </div>
 </div>

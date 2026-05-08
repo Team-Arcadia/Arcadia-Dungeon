@@ -6,6 +6,6 @@
       "type": "minecraft:fixed",
       "biome": "minecraft:the_void"
     },
-    "settings": "minecraft:the_end"
+    "settings": "minecraft:end"
   }
 }

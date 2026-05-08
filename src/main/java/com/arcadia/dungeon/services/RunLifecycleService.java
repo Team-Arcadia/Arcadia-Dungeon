@@ -6,6 +6,12 @@ import com.arcadia.dungeon.domain.run.Run;
 import com.arcadia.dungeon.domain.run.RunId;
 import com.arcadia.dungeon.domain.run.RunResult;
 import com.arcadia.dungeon.persistence.DungeonRegistry;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import java.util.List;
@@ -26,8 +32,11 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class RunLifecycleService {
 
+    record OriginPos(String dimensionId, double x, double y, double z, float yaw, float pitch) {}
+
     private final DungeonRegistry dungeonRegistry;
     private final Map<RunId, Run> activeRuns = new ConcurrentHashMap<>();
+    private final Map<UUID, OriginPos> playerOrigins = new ConcurrentHashMap<>();
 
     private ArchetypeService archetypeService;
 
@@ -48,7 +57,8 @@ public final class RunLifecycleService {
     public Run startRun(String dungeonId, List<UUID> playerIds) {
         DungeonConfig config = dungeonRegistry.get(dungeonId)
             .orElseThrow(() -> new IllegalArgumentException("Unknown dungeon: " + dungeonId));
-        Run run = new Run(RunId.generate(), dungeonId, playerIds, config.lives());
+        int totalRooms = config.rooms() != null ? config.rooms().size() : 0;
+        Run run = new Run(RunId.generate(), dungeonId, playerIds, config.lives(), totalRooms);
         activeRuns.put(run.id(), run);
         ArcadiaDungeon.LOGGER.info("[Arcadia][RUN] event=start runId={} dungeon={} players={}",
             run.id(), dungeonId, playerIds.size());
@@ -62,6 +72,7 @@ public final class RunLifecycleService {
     public void completeRun(Run run, RunResult result) {
         run.completeRun(result);
         activeRuns.remove(run.id());
+        restorePlayerOrigins(run);
         tryRestoreInventories(run);
         ArcadiaDungeon.LOGGER.info("[Arcadia][RUN] event=end runId={} result={} duration={}s",
             run.id(), result, run.elapsedSeconds());
@@ -74,9 +85,18 @@ public final class RunLifecycleService {
     public void abandonRun(Run run, UUID requestingPlayerId) {
         run.completeRun(RunResult.ABANDONED);
         activeRuns.remove(run.id());
+        restorePlayerOrigins(run);
         tryRestoreInventories(run);
         ArcadiaDungeon.LOGGER.info("[Arcadia][RUN] event=abandon runId={} requestedBy={}",
             run.id(), requestingPlayerId);
+    }
+
+    /** Sauvegarde la position du joueur avant le téléport dans le donjon. */
+    public void savePlayerOrigin(UUID playerId, ServerPlayer player) {
+        String dimId = player.serverLevel().dimension().location().toString();
+        playerOrigins.put(playerId, new OriginPos(
+            dimId, player.getX(), player.getY(), player.getZ(),
+            player.getYRot(), player.getXRot()));
     }
 
     public Optional<Run> findActiveRunForPlayer(UUID playerId) {
@@ -109,6 +129,25 @@ public final class RunLifecycleService {
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────
+
+    private void restorePlayerOrigins(Run run) {
+        var server = ServerLifecycleHooks.getCurrentServer();
+        if (server == null) return;
+        for (UUID playerId : run.playerIds()) {
+            OriginPos origin = playerOrigins.remove(playerId);
+            if (origin == null) continue;
+            ServerPlayer player = server.getPlayerList().getPlayer(playerId);
+            if (player == null) continue;
+            ResourceKey<Level> dimKey = ResourceKey.create(Registries.DIMENSION,
+                ResourceLocation.parse(origin.dimensionId()));
+            ServerLevel targetLevel = server.getLevel(dimKey);
+            if (targetLevel == null) targetLevel = server.overworld();
+            player.teleportTo(targetLevel, origin.x(), origin.y(), origin.z(),
+                origin.yaw(), origin.pitch());
+            ArcadiaDungeon.LOGGER.info("[Arcadia][RUN] event=origin_restored playerId={} dim={} pos={},{},{}",
+                playerId, origin.dimensionId(), origin.x(), origin.y(), origin.z());
+        }
+    }
 
     private void tryRestoreInventories(Run run) {
         if (archetypeService == null) return;

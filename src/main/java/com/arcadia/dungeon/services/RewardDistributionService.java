@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -67,6 +68,7 @@ public final class RewardDistributionService {
 
             boolean newPb = false;
             long bestTime = 0L;
+            List<String> lootLines = new ArrayList<>();
 
             if (result == RunResult.VICTORY) {
                 // S5.1 — PB tracking
@@ -86,14 +88,18 @@ public final class RewardDistributionService {
 
                 if (rewards.loot() != null) {
                     for (DungeonConfig.LootEntry entry : rewards.loot()) {
-                        giveItem(player, entry);
+                        int count = giveItem(player, entry);
+                        if (count > 0) {
+                            ResourceLocation rl = ResourceLocation.tryParse(entry.item());
+                            if (rl != null) lootLines.add(count + "x " + formatItemName(rl));
+                        }
                     }
                 }
             }
 
             // S6.3 — ouvrir ResultScreen côté client
             player.connection.send(new OpenResultScreenPayload(
-                result.name(), elapsedSeconds, currency, newPb, bestTime));
+                result.name(), elapsedSeconds, currency, newPb, bestTime, 0, run.dungeonId(), lootLines));
         }
 
         ArcadiaDungeon.LOGGER.info(
@@ -101,25 +107,36 @@ public final class RewardDistributionService {
             run.id(), result, currency, multiplier);
     }
 
-    private void giveItem(ServerPlayer player, DungeonConfig.LootEntry entry) {
+    private int giveItem(ServerPlayer player, DungeonConfig.LootEntry entry) {
         ResourceLocation rl = ResourceLocation.tryParse(entry.item());
         if (rl == null) {
             ArcadiaDungeon.LOGGER.warn("[Arcadia][RUN] loot item invalide: {}", entry.item());
-            return;
+            return 0;
         }
         var item = BuiltInRegistries.ITEM.getOptional(rl).orElse(null);
         if (item == null) {
             ArcadiaDungeon.LOGGER.warn("[Arcadia][RUN] item inconnu: {}", entry.item());
-            return;
+            return 0;
         }
         int min = Math.min(entry.min(), entry.max());
         int max = Math.max(entry.min(), entry.max());
         int count = min >= max ? max : min + random.nextInt(max - min + 1);
-        if (count <= 0) return;
+        if (count <= 0) return 0;
 
         ItemStack stack = new ItemStack(item, count);
         if (!player.getInventory().add(stack)) {
             player.drop(stack, false);
         }
+        return count;
+    }
+
+    private static String formatItemName(ResourceLocation rl) {
+        String[] parts = rl.getPath().split("_");
+        StringBuilder sb = new StringBuilder();
+        for (String part : parts) {
+            if (!sb.isEmpty()) sb.append(' ');
+            if (!part.isEmpty()) sb.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
+        }
+        return sb.toString();
     }
 }

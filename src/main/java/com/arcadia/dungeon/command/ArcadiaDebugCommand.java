@@ -87,7 +87,8 @@ public final class ArcadiaDebugCommand {
             return 0;
         }
         // Données fictives : 4m12s, 50 currency, nouveau PB
-        player.connection.send(new OpenResultScreenPayload("VICTORY", 252L, 50L, true, 252L));
+        player.connection.send(new OpenResultScreenPayload("VICTORY", 252L, 50L, true, 252L, 0, "arcadia_dungeon:demo",
+            java.util.List.of("3x Diamond", "2x Gold Ingot", "1x Enchanted Book")));
         return 1;
     }
 

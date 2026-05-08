@@ -20,6 +20,7 @@ public record RunStatePayload(
     int currentRoomIndex,
     int currentWaveIndex,
     int livesRemaining,
+    int totalRooms,
     long startTimestampMs,
     boolean hasBoss,
     String bossType,
@@ -40,6 +41,7 @@ public record RunStatePayload(
             buf.writeInt(p.currentRoomIndex());
             buf.writeInt(p.currentWaveIndex());
             buf.writeInt(p.livesRemaining());
+            buf.writeInt(p.totalRooms());
             buf.writeLong(p.startTimestampMs());
             buf.writeBoolean(p.hasBoss());
             if (p.hasBoss()) {
@@ -56,6 +58,7 @@ public record RunStatePayload(
             int roomIndex = buf.readInt();
             int waveIndex = buf.readInt();
             int lives = buf.readInt();
+            int totalRooms = buf.readInt();
             long startMs = buf.readLong();
             boolean hasBoss = buf.readBoolean();
             String bossType = "";
@@ -68,7 +71,7 @@ public record RunStatePayload(
             }
             long serverMs = buf.readLong();
             return new RunStatePayload(runId, phase, roomIndex, waveIndex,
-                lives, startMs, hasBoss, bossType, bossHpCur, bossHpMax, bossPhaseIdx, serverMs);
+                lives, totalRooms, startMs, hasBoss, bossType, bossHpCur, bossHpMax, bossPhaseIdx, serverMs);
         }
     );
 
@@ -81,6 +84,7 @@ public record RunStatePayload(
             run.currentRoomIndex(),
             run.currentWaveIndex(),
             run.livesRemaining(),
+            run.totalRooms(),
             run.startTimestampMs(),
             hasBoss,
             hasBoss ? run.bossState().type() : "",

@@ -29,6 +29,7 @@ public final class RunOverlayHud implements LayeredDraw.Layer {
 
     @Override
     public void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
+        if (Minecraft.getInstance().screen != null) return;
         RunStatePayload state = RunStateClient.getState().orElse(null);
         if (state == null || !"IN_PROGRESS".equals(state.phase())) return;
 
@@ -40,8 +41,7 @@ public final class RunOverlayHud implements LayeredDraw.Layer {
 
         int lives = state.livesRemaining();
         String livesStr = "♥ " + lives;
-        // TODO: totalRooms absent du payload — affiche seulement l'index courant
-        String roomStr = "Salle " + (state.currentRoomIndex() + 1);
+        String roomStr = "Salle " + (state.currentRoomIndex() + 1) + "/" + state.totalRooms();
 
         // Danger pulsing : 1 vie restante
         int chronoColor;
