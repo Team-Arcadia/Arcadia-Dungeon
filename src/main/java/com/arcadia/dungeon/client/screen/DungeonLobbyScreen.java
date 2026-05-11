@@ -1,9 +1,9 @@
 package com.arcadia.dungeon.client.screen;
 
-import com.arcadia.dungeon.client.arcadiaui.ArcaModel;
-import com.arcadia.dungeon.client.arcadiaui.ArcaPanel;
-import com.arcadia.dungeon.client.arcadiaui.ArcaTemplate;
-import com.arcadia.dungeon.client.arcadiaui.ArcaTemplateRenderer;
+import com.tesseraui.TesseraModel;
+import com.tesseraui.TesseraPanel;
+import com.tesseraui.TesseraTemplate;
+import com.tesseraui.TesseraTemplateRenderer;
 import com.arcadia.dungeon.network.StartRunPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -29,7 +29,7 @@ public final class DungeonLobbyScreen extends Screen {
     private final String archetypeId;
     private final String archetypeName;
 
-    private ArcaPanel panel;
+    private TesseraPanel panel;
     private boolean launching = false;
 
     public DungeonLobbyScreen(String dungeonId, String dungeonName,
@@ -91,15 +91,15 @@ public final class DungeonLobbyScreen extends Screen {
         String displayName = dungeonName.length() > 40
             ? dungeonName.substring(0, 37) + "…" : dungeonName;
 
-        ArcaModel model = ArcaModel.of(Map.of(
+        TesseraModel model = TesseraModel.of(Map.of(
             "dungeon.name",   displayName,
             "player.name",    playerName,
             "archetype.name", archetypeName,
             "launch.status",  launching ? "Démarrage..." : ""
         ));
 
-        ArcaTemplate template = ArcaTemplate.load("arcadia_dungeon:ui/dungeon-lobby");
-        panel = ArcaTemplateRenderer.build(template, model, Map.of(
+        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/dungeon-lobby");
+        panel = TesseraTemplateRenderer.build(template, model, Map.of(
             "launch", this::onLaunch,
             "close",  this::onClose
         ), px, py, PANEL_W, PANEL_H);

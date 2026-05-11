@@ -1,9 +1,9 @@
 package com.arcadia.dungeon.client.screen;
 
-import com.arcadia.dungeon.client.arcadiaui.ArcaModel;
-import com.arcadia.dungeon.client.arcadiaui.ArcaPanel;
-import com.arcadia.dungeon.client.arcadiaui.ArcaTemplate;
-import com.arcadia.dungeon.client.arcadiaui.ArcaTemplateRenderer;
+import com.tesseraui.TesseraModel;
+import com.tesseraui.TesseraPanel;
+import com.tesseraui.TesseraTemplate;
+import com.tesseraui.TesseraTemplateRenderer;
 import com.arcadia.dungeon.network.DungeonListPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -29,7 +29,7 @@ public final class ArchetypeSelectionScreen extends Screen {
     private final String dungeonName;
     private final List<DungeonListPayload.ArchetypeSummary> archetypes;
 
-    private ArcaPanel panel;
+    private TesseraPanel panel;
 
     public ArchetypeSelectionScreen(String dungeonId, String dungeonName,
                                     List<DungeonListPayload.ArchetypeSummary> archetypes) {
@@ -99,9 +99,9 @@ public final class ArchetypeSelectionScreen extends Screen {
         }
         handlers.put("back", () -> Minecraft.getInstance().setScreen(new PlayerHubScreen()));
 
-        ArcaModel model = key -> modelData.getOrDefault(key, null);
-        ArcaTemplate template = ArcaTemplate.load("arcadia_dungeon:ui/archetype-selection");
-        panel = ArcaTemplateRenderer.build(template, model, handlers, px, py, PANEL_W, PANEL_H);
+        TesseraModel model = key -> modelData.getOrDefault(key, null);
+        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/archetype-selection");
+        panel = TesseraTemplateRenderer.build(template, model, handlers, px, py, PANEL_W, PANEL_H);
     }
 
     /** Retourne une icône par défaut selon l'id d'archétype (clé ou suffixe). */

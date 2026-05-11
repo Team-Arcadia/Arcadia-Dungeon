@@ -1,9 +1,9 @@
 package com.arcadia.dungeon.client.screen;
 
-import com.arcadia.dungeon.client.arcadiaui.ArcaModel;
-import com.arcadia.dungeon.client.arcadiaui.ArcaPanel;
-import com.arcadia.dungeon.client.arcadiaui.ArcaTemplate;
-import com.arcadia.dungeon.client.arcadiaui.ArcaTemplateRenderer;
+import com.tesseraui.TesseraModel;
+import com.tesseraui.TesseraPanel;
+import com.tesseraui.TesseraTemplate;
+import com.tesseraui.TesseraTemplateRenderer;
 import com.arcadia.dungeon.client.state.DungeonListClient;
 import com.arcadia.dungeon.network.DungeonListPayload;
 import com.arcadia.dungeon.network.ReloadRequestPayload;
@@ -29,7 +29,7 @@ public final class AdminHubScreen extends Screen {
     private static final int PANEL_W = 360;
     private static final int PANEL_H = 240;
 
-    private ArcaPanel panel;
+    private TesseraPanel panel;
     private int lastKnownDungeonCount = -1;
     private boolean panelDirty = true;
     private final boolean accessDenied;
@@ -111,9 +111,9 @@ public final class AdminHubScreen extends Screen {
         handlers.put("reload", this::onReload);
         handlers.put("close",  this::onClose);
 
-        ArcaModel model = key -> modelData.getOrDefault(key, null);
-        ArcaTemplate template = ArcaTemplate.load("arcadia_dungeon:ui/admin-hub");
-        panel = ArcaTemplateRenderer.build(template, model, handlers, px, py, PANEL_W, PANEL_H);
+        TesseraModel model = key -> modelData.getOrDefault(key, null);
+        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin-hub");
+        panel = TesseraTemplateRenderer.build(template, model, handlers, px, py, PANEL_W, PANEL_H);
     }
 
     private void onReload() {

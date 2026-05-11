@@ -73,6 +73,10 @@ jarJar.enable()
 dependencies {
     implementation "net.neoforged:neoforge:${neo_version}"
 
+    // TesseraUI — lib UI locale (builder: cd ../TesseraUI && gradlew jar)
+    implementation files('../TesseraUI/build/libs/tesseraui-1.0.0.jar')
+    localRuntime files('../TesseraUI/build/libs/tesseraui-1.0.0.jar')
+
     // Bundled libraries — embarquées dans le JAR prod via JiJ, disponibles en dev via localRuntime
     jarJar(implementation("com.zaxxer:HikariCP:5.1.0")) {
         jarJar.ranged(it, "[5.1.0,6.0)")

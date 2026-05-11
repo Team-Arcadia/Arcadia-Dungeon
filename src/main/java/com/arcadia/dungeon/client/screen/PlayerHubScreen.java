@@ -1,9 +1,9 @@
 package com.arcadia.dungeon.client.screen;
 
-import com.arcadia.dungeon.client.arcadiaui.ArcaModel;
-import com.arcadia.dungeon.client.arcadiaui.ArcaPanel;
-import com.arcadia.dungeon.client.arcadiaui.ArcaTemplate;
-import com.arcadia.dungeon.client.arcadiaui.ArcaTemplateRenderer;
+import com.tesseraui.TesseraModel;
+import com.tesseraui.TesseraPanel;
+import com.tesseraui.TesseraTemplate;
+import com.tesseraui.TesseraTemplateRenderer;
 import com.arcadia.dungeon.client.state.DungeonListClient;
 import com.arcadia.dungeon.network.DungeonListPayload;
 import com.arcadia.dungeon.network.RequestDungeonListPayload;
@@ -28,7 +28,7 @@ public final class PlayerHubScreen extends Screen {
     private static final int PANEL_W = 340;
     private static final int PANEL_H = 240;
 
-    private ArcaPanel panel;
+    private TesseraPanel panel;
     private int lastKnownDungeonCount = -1;
     private boolean panelDirty = true;
 
@@ -99,9 +99,9 @@ public final class PlayerHubScreen extends Screen {
         }
         handlers.put("close", this::onClose);
 
-        ArcaModel model = key -> modelData.getOrDefault(key, null);
-        ArcaTemplate template = ArcaTemplate.load("arcadia_dungeon:ui/player-hub");
-        panel = ArcaTemplateRenderer.build(template, model, handlers, px, py, PANEL_W, PANEL_H);
+        TesseraModel model = key -> modelData.getOrDefault(key, null);
+        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/player-hub");
+        panel = TesseraTemplateRenderer.build(template, model, handlers, px, py, PANEL_W, PANEL_H);
     }
 
     private void onSelectDungeon(DungeonListPayload.DungeonSummary dungeon) {

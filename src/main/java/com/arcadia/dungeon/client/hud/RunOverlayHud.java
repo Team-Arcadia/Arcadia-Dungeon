@@ -1,7 +1,7 @@
 package com.arcadia.dungeon.client.hud;
 
 import com.arcadia.dungeon.client.state.RunStateClient;
-import com.arcadia.dungeon.client.util.ArcadiaPalette;
+import com.tesseraui.TesseraPalette;
 import com.arcadia.dungeon.network.RunStatePayload;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -47,11 +47,11 @@ public final class RunOverlayHud implements LayeredDraw.Layer {
         int chronoColor;
         if (lives <= 1) {
             boolean pulse = (now % 800L) < 400L;
-            chronoColor = pulse ? ArcadiaPalette.DANGER : 0xFFA01A10;
+            chronoColor = pulse ? TesseraPalette.DANGER : 0xFFA01A10;
         } else {
-            chronoColor = ArcadiaPalette.CREAM;
+            chronoColor = TesseraPalette.CREAM;
         }
-        int livesColor = lives <= 1 ? ArcadiaPalette.DANGER : ArcadiaPalette.CREAM;
+        int livesColor = lives <= 1 ? TesseraPalette.DANGER : TesseraPalette.CREAM;
 
         // Largeur dynamique — prend le max des 3 lignes + 4px de padding de chaque côté
         int w1 = font.width(chrono);
@@ -63,6 +63,6 @@ public final class RunOverlayHud implements LayeredDraw.Layer {
 
         graphics.drawString(font, chrono,   PAD_X, PAD_Y,              chronoColor, false);
         graphics.drawString(font, livesStr, PAD_X, PAD_Y + LINE_H,     livesColor,  false);
-        graphics.drawString(font, roomStr,  PAD_X, PAD_Y + LINE_H * 2, ArcadiaPalette.CREAM_DIM, false);
+        graphics.drawString(font, roomStr,  PAD_X, PAD_Y + LINE_H * 2, TesseraPalette.CREAM_DIM, false);
     }
 }

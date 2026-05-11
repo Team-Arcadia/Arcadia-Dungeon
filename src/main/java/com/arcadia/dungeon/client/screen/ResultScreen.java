@@ -1,9 +1,9 @@
 package com.arcadia.dungeon.client.screen;
 
-import com.arcadia.dungeon.client.arcadiaui.ArcaModel;
-import com.arcadia.dungeon.client.arcadiaui.ArcaPanel;
-import com.arcadia.dungeon.client.arcadiaui.ArcaTemplate;
-import com.arcadia.dungeon.client.arcadiaui.ArcaTemplateRenderer;
+import com.tesseraui.TesseraModel;
+import com.tesseraui.TesseraPanel;
+import com.tesseraui.TesseraTemplate;
+import com.tesseraui.TesseraTemplateRenderer;
 import com.arcadia.dungeon.network.AbandonRunPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -43,7 +43,7 @@ public final class ResultScreen extends Screen {
     private int lastSecondsShown = -1;
     private boolean panelDirty = false;
 
-    private ArcaPanel panel;
+    private TesseraPanel panel;
 
     public ResultScreen(String result, long elapsedSeconds, long currencyEarned,
                         boolean newPb, long bestTimeSeconds, int respawnSeconds,
@@ -113,13 +113,13 @@ public final class ResultScreen extends Screen {
         int px = (width - PANEL_W) / 2;
         int py = (height - PANEL_H) / 2;
 
-        final ArcaModel model;
+        final TesseraModel model;
         final String templateId;
         final Map<String, Runnable> actions;
 
         if ("DEATH".equals(result)) {
             long remaining = Math.max(1, (respawnDeadlineMs - System.currentTimeMillis() + 999) / 1000L);
-            model = ArcaModel.of(Map.of("t", remaining + "s"));
+            model = TesseraModel.of(Map.of("t", remaining + "s"));
             templateId = "arcadia_dungeon:ui/result-screen-death";
             actions = Map.of("quit", () -> {
                 PacketDistributor.sendToServer(new AbandonRunPayload());
@@ -151,7 +151,7 @@ public final class ResultScreen extends Screen {
             for (int i = 0; i < lootLines.size(); i++) {
                 modelData.put("item.name." + i, lootLines.get(i));
             }
-            model = ArcaModel.of(modelData);
+            model = TesseraModel.of(modelData);
             templateId = "arcadia_dungeon:ui/result-screen";
             actions = Map.of(
                 "hub",     () -> Minecraft.getInstance().setScreen(new PlayerHubScreen()),
@@ -159,8 +159,8 @@ public final class ResultScreen extends Screen {
             );
         }
 
-        ArcaTemplate template = ArcaTemplate.load(templateId);
-        panel = ArcaTemplateRenderer.build(template, model, actions, px, py, PANEL_W, PANEL_H);
+        TesseraTemplate template = TesseraTemplate.load(templateId);
+        panel = TesseraTemplateRenderer.build(template, model, actions, px, py, PANEL_W, PANEL_H);
     }
 
     private static String formatTime(long seconds) {

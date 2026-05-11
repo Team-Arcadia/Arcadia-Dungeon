@@ -1,9 +1,9 @@
 package com.arcadia.dungeon.client.screen;
 
-import com.arcadia.dungeon.client.arcadiaui.ArcaModel;
-import com.arcadia.dungeon.client.arcadiaui.ArcaPanel;
-import com.arcadia.dungeon.client.arcadiaui.ArcaTemplate;
-import com.arcadia.dungeon.client.arcadiaui.ArcaTemplateRenderer;
+import com.tesseraui.TesseraModel;
+import com.tesseraui.TesseraPanel;
+import com.tesseraui.TesseraTemplate;
+import com.tesseraui.TesseraTemplateRenderer;
 import com.arcadia.dungeon.client.state.RunStateClient;
 import com.arcadia.dungeon.network.RunStatePayload;
 import net.minecraft.client.gui.GuiGraphics;
@@ -23,7 +23,7 @@ public final class DebugRunScreen extends Screen {
     private static final int PANEL_W = 248;
     private static final int PANEL_H = 148;
 
-    private ArcaPanel panel;
+    private TesseraPanel panel;
     private RunStatePayload lastRenderedState = null;
 
     public DebugRunScreen() {
@@ -71,15 +71,15 @@ public final class DebugRunScreen extends Screen {
         int px = (width - PANEL_W) / 2;
         int py = (height - PANEL_H) / 2;
 
-        ArcaModel model = buildModel(RunStateClient.getState().orElse(null));
-        ArcaTemplate template = ArcaTemplate.load("arcadia_dungeon:ui/debug-screen");
-        panel = ArcaTemplateRenderer.build(template, model, Map.of("close", this::onClose),
+        TesseraModel model = buildModel(RunStateClient.getState().orElse(null));
+        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/debug-screen");
+        panel = TesseraTemplateRenderer.build(template, model, Map.of("close", this::onClose),
             px, py, PANEL_W, PANEL_H);
     }
 
-    private ArcaModel buildModel(RunStatePayload state) {
+    private TesseraModel buildModel(RunStatePayload state) {
         if (state == null) {
-            return ArcaModel.of(Map.of(
+            return TesseraModel.of(Map.of(
                 "run.id",      "—",
                 "run.phase",   "PAS DE RUN ACTIVE",
                 "run.room",    "—",
@@ -89,7 +89,7 @@ public final class DebugRunScreen extends Screen {
             ));
         }
         long elapsed = (System.currentTimeMillis() - state.startTimestampMs()) / 1000;
-        return ArcaModel.of(Map.of(
+        return TesseraModel.of(Map.of(
             "run.id",      state.runId().substring(0, Math.min(16, state.runId().length())) + "…",
             "run.phase",   state.phase(),
             "run.room",    String.valueOf(state.currentRoomIndex()),
