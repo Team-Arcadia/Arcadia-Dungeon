@@ -36,10 +36,13 @@
       <col class="field-group boss-col-chance">
         <label class="field-label">Chance</label>
         <input id="bossChance" class="field-input wide"
-               value="{{ v.bossChance }}" oninput="onBossChance" placeholder="1.0" />
+               value="{{ v.bossChance }}" oninput="onBossChance" placeholder="1.0"
+               tooltip="Probabilite de spawn. 1.0 = toujours, 0.0 = jamais." />
       </col>
-      <button class="btn-add boss-toggle" onclick="toggleOptional">{{ v.bossOptional }}</button>
-      <button class="btn-add boss-toggle" onclick="toggleRequired">{{ v.bossRequired }}</button>
+      <button class="btn-add boss-toggle" onclick="toggleOptional"
+              tooltip="Fixe: spawn garanti. Optionnel: applique la chance de spawn.">{{ v.bossOptional }}</button>
+      <button class="btn-add boss-toggle" onclick="toggleRequired"
+              tooltip="Kill requis: necessaire pour finir. Kill libre: optionnel pour la victoire.">{{ v.bossRequired }}</button>
     </row>
   </col>
 
@@ -57,24 +60,22 @@
       <label class="boss-col-del"></label>
     </row>
 
-    <virtual-list id="phaseList" class="boss-tab-list" v-for="p in phase.count" row-height="30">
-      <row class="list-row boss-edit-row">
-        <label class="row-idx">{{ p.phaseIndex }}</label>
-        <col class="field-group boss-col-num">
-          <input id="{{ p.phaseHpId }}" class="field-input wide"
-                 value="{{ p.phaseHp }}" oninput="{{ p.phaseHpKey }}" placeholder="50" />
-        </col>
-        <col class="field-group boss-col-num">
-          <input id="{{ p.phaseDmgId }}" class="field-input wide"
-                 value="{{ p.phaseDmg }}" oninput="{{ p.phaseDmgKey }}" placeholder="1.0" />
-        </col>
-        <col class="field-group boss-col-num">
-          <input id="{{ p.phaseSpdId }}" class="field-input wide"
-                 value="{{ p.phaseSpd }}" oninput="{{ p.phaseSpdKey }}" placeholder="1.0" />
-        </col>
-        <button class="btn-del boss-col-del" onclick="{{ p.phaseDelKey }}">X</button>
-      </row>
-    </virtual-list>
+    <row class="list-row boss-edit-row" v-for="p in phase.count">
+      <label class="row-idx">{{ p.phaseIndex }}</label>
+      <col class="field-group boss-col-num">
+        <input id="{{ p.phaseHpId }}" class="field-input wide"
+               value="{{ p.phaseHp }}" oninput="{{ p.phaseHpKey }}" placeholder="50" />
+      </col>
+      <col class="field-group boss-col-num">
+        <input id="{{ p.phaseDmgId }}" class="field-input wide"
+               value="{{ p.phaseDmg }}" oninput="{{ p.phaseDmgKey }}" placeholder="1.0" />
+      </col>
+      <col class="field-group boss-col-num">
+        <input id="{{ p.phaseSpdId }}" class="field-input wide"
+               value="{{ p.phaseSpd }}" oninput="{{ p.phaseSpdKey }}" placeholder="1.0" />
+      </col>
+      <button class="btn-del boss-col-del" onclick="{{ p.phaseDelKey }}">X</button>
+    </row>
   </col>
 
   <col class="boss-tab-body" v-if="tab.drops">
@@ -92,29 +93,27 @@
       <label class="boss-col-del"></label>
     </row>
 
-    <virtual-list id="rewardList" class="boss-tab-list" v-for="r in reward.count" row-height="30">
-      <row class="list-row boss-edit-row">
-        <label class="row-idx">{{ r.rewardIndex }}</label>
-        <col class="field-group boss-col-item">
-          <input id="{{ r.rewardItemId }}" class="field-input wide"
-                 value="{{ r.rewardItem }}" oninput="{{ r.rewardItemKey }}"
-                 placeholder="minecraft:diamond" />
-        </col>
-        <col class="field-group boss-col-small">
-          <input id="{{ r.rewardMinId }}" class="field-input wide"
-                 value="{{ r.rewardMin }}" oninput="{{ r.rewardMinKey }}" placeholder="1" />
-        </col>
-        <col class="field-group boss-col-small">
-          <input id="{{ r.rewardMaxId }}" class="field-input wide"
-                 value="{{ r.rewardMax }}" oninput="{{ r.rewardMaxKey }}" placeholder="1" />
-        </col>
-        <col class="field-group boss-col-chance">
-          <input id="{{ r.rewardChanceId }}" class="field-input wide"
-                 value="{{ r.rewardChance }}" oninput="{{ r.rewardChanceKey }}" placeholder="1.0" />
-        </col>
-        <button class="btn-del boss-col-del" onclick="{{ r.rewardDelKey }}">X</button>
-      </row>
-    </virtual-list>
+    <row class="list-row boss-edit-row" v-for="r in reward.count">
+      <label class="row-idx">{{ r.rewardIndex }}</label>
+      <col class="field-group boss-col-item">
+        <input id="{{ r.rewardItemId }}" class="field-input wide"
+               value="{{ r.rewardItem }}" oninput="{{ r.rewardItemKey }}"
+               placeholder="minecraft:diamond" />
+      </col>
+      <col class="field-group boss-col-small">
+        <input id="{{ r.rewardMinId }}" class="field-input wide"
+               value="{{ r.rewardMin }}" oninput="{{ r.rewardMinKey }}" placeholder="1" />
+      </col>
+      <col class="field-group boss-col-small">
+        <input id="{{ r.rewardMaxId }}" class="field-input wide"
+               value="{{ r.rewardMax }}" oninput="{{ r.rewardMaxKey }}" placeholder="1" />
+      </col>
+      <col class="field-group boss-col-chance">
+        <input id="{{ r.rewardChanceId }}" class="field-input wide"
+               value="{{ r.rewardChance }}" oninput="{{ r.rewardChanceKey }}" placeholder="1.0" />
+      </col>
+      <button class="btn-del boss-col-del" onclick="{{ r.rewardDelKey }}">X</button>
+    </row>
   </col>
 
   <row class="cfg-footer">

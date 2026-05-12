@@ -8,6 +8,7 @@ import com.tesseraui.TesseraModel;
 import com.tesseraui.TesseraPanel;
 import com.tesseraui.TesseraTemplate;
 import com.tesseraui.TesseraTemplateRenderer;
+import com.tesseraui.TesseraToast;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -48,6 +49,7 @@ public final class AdminDungeonBossDetailScreen extends com.tesseraui.TesseraScr
         if (panelDirty) { rebuildPanel(); panelDirty = false; }
         super.render(g, mx, my, pt);
         if (panel != null) panel.render(g, mx, my);
+        TesseraToast.render(g, width, height);
     }
 
     @Override public boolean mouseClicked(double mx, double my, int btn) {
@@ -112,7 +114,7 @@ public final class AdminDungeonBossDetailScreen extends com.tesseraui.TesseraScr
         handlers.put("save", () -> {
             syncBosses(cfg, bosses);
             PacketDistributor.sendToServer(new SaveDungeonConfigPayload(dungeonId, DungeonEditClient.toJson()));
-            ArcadiaNavigator.back();
+            TesseraToast.success("Boss sauvegarde");
         });
         handlers.put("deleteBoss", () -> {
             if (bossIndex < bosses.size()) bosses.remove(bossIndex);
