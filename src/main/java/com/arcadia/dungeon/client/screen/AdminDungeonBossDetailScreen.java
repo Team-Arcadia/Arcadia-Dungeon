@@ -32,6 +32,7 @@ public final class AdminDungeonBossDetailScreen extends com.tesseraui.TesseraScr
     private TesseraPanel panel;
     private final Map<String, com.tesseraui.TesseraInputState> inputStates = new HashMap<>();
     private boolean panelDirty = true;
+    private String activeTab = "options";
 
     public AdminDungeonBossDetailScreen(String dungeonId, String dungeonName, int bossIndex) {
         super(Component.literal("Boss - " + dungeonName + " / " + (bossIndex + 1)));
@@ -94,11 +95,20 @@ public final class AdminDungeonBossDetailScreen extends com.tesseraui.TesseraScr
         modelData.put("v.bossRequired", boolOr(boss, "requiredKill", true) ? "Kill requis" : "Kill libre");
         modelData.put("phase.count", String.valueOf(phases.size()));
         modelData.put("reward.count", String.valueOf(rewards.size()));
+        modelData.put("tab.options", String.valueOf("options".equals(activeTab)));
+        modelData.put("tab.phases", String.valueOf("phases".equals(activeTab)));
+        modelData.put("tab.drops", String.valueOf("drops".equals(activeTab)));
+        modelData.put("tab.optionsLabel", "options".equals(activeTab) ? "> Options" : "Options");
+        modelData.put("tab.phasesLabel", "phases".equals(activeTab) ? "> Phases" : "Phases");
+        modelData.put("tab.dropsLabel", "drops".equals(activeTab) ? "> Drops" : "Drops");
 
         Map<String, Runnable> handlers = new HashMap<>();
         Map<String, Consumer<String>> inputHandlers = new HashMap<>();
 
         handlers.put("back", ArcadiaNavigator::back);
+        handlers.put("tabOptions", () -> switchTab("options"));
+        handlers.put("tabPhases", () -> switchTab("phases"));
+        handlers.put("tabDrops", () -> switchTab("drops"));
         handlers.put("save", () -> {
             syncBosses(cfg, bosses);
             PacketDistributor.sendToServer(new SaveDungeonConfigPayload(dungeonId, DungeonEditClient.toJson()));
@@ -126,6 +136,7 @@ public final class AdminDungeonBossDetailScreen extends com.tesseraui.TesseraScr
             ph.addProperty("speedMultiplier", 1.0);
             phases.add(ph);
             boss.add("phases", phases);
+            activeTab = "phases";
             clearDynamicInputStates();
             panelDirty = true;
         });
@@ -137,6 +148,7 @@ public final class AdminDungeonBossDetailScreen extends com.tesseraui.TesseraScr
             reward.addProperty("chance", 1.0);
             rewards.add(reward);
             boss.add("rewards", rewards);
+            activeTab = "drops";
             clearDynamicInputStates();
             panelDirty = true;
         });
@@ -180,6 +192,7 @@ public final class AdminDungeonBossDetailScreen extends com.tesseraui.TesseraScr
             handlers.put("delPhase." + i, () -> {
                 if (idx < phases.size()) phases.remove(idx);
                 boss.add("phases", phases);
+                activeTab = "phases";
                 clearDynamicInputStates();
                 panelDirty = true;
             });
@@ -216,10 +229,16 @@ public final class AdminDungeonBossDetailScreen extends com.tesseraui.TesseraScr
             handlers.put("delReward." + i, () -> {
                 if (idx < rewards.size()) rewards.remove(idx);
                 boss.add("rewards", rewards);
+                activeTab = "drops";
                 clearDynamicInputStates();
                 panelDirty = true;
             });
         }
+    }
+
+    private void switchTab(String tab) {
+        activeTab = tab;
+        panelDirty = true;
     }
 
     private void clearDynamicInputStates() {

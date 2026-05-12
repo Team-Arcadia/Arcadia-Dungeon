@@ -426,6 +426,46 @@
   flex: 1;
 }
 
+.boss-tab-body {
+  padding: 8px 10px;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+}
+
+.boss-tab-bar {
+  background: var(--bg-dark);
+  border-bottom: 1;
+  border-color: var(--border-mid);
+  gap: 4px;
+  padding: 4px 8px;
+}
+
+.boss-tab-btn {
+  background: var(--surface-2);
+  color: var(--text-mid);
+  border: 1;
+  border-color: var(--border-mid);
+  border-radius: 2px;
+  width: 70px;
+  padding: 2px 6px;
+  font-size: 7;
+  overflow: hidden;
+  transition: background 150ms ease-out, color 150ms ease-out, border-color 150ms ease-out;
+}
+
+.boss-tab-btn:hover {
+  background: var(--surface-1);
+  color: var(--copper);
+  border-color: var(--copper);
+}
+
+.boss-tab-toolbar {
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
 .boss-main-row,
 .boss-option-row,
 .boss-list-head,
@@ -443,6 +483,11 @@
   height: 78px;
   min-height: 56px;
   flex-shrink: 0;
+}
+
+.boss-tab-list {
+  flex: 1;
+  min-height: 112px;
 }
 
 .boss-entity-field {

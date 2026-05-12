@@ -3,7 +3,13 @@
     <label class="cfg-title">{{ cfg.title }}</label>
   </row>
 
-  <col class="cfg-body">
+  <row class="boss-tab-bar">
+    <button class="boss-tab-btn" onclick="tabOptions">{{ tab.optionsLabel }}</button>
+    <button class="boss-tab-btn" onclick="tabPhases">{{ tab.phasesLabel }}</button>
+    <button class="boss-tab-btn" onclick="tabDrops">{{ tab.dropsLabel }}</button>
+  </row>
+
+  <col class="boss-tab-body" v-if="tab.options">
     <label class="section-title">Identite</label>
 
     <row class="boss-main-row">
@@ -25,6 +31,7 @@
              value="{{ v.bossType }}" oninput="onBossType" placeholder="minecraft:wither_skeleton" />
     </col>
 
+    <label class="section-title">Spawn</label>
     <row class="boss-option-row">
       <col class="field-group boss-col-chance">
         <label class="field-label">Chance</label>
@@ -34,8 +41,14 @@
       <button class="btn-add boss-toggle" onclick="toggleOptional">{{ v.bossOptional }}</button>
       <button class="btn-add boss-toggle" onclick="toggleRequired">{{ v.bossRequired }}</button>
     </row>
+  </col>
 
-    <label class="section-title">Phases</label>
+  <col class="boss-tab-body" v-if="tab.phases">
+    <row class="boss-tab-toolbar">
+      <label class="section-title flex-1">Phases</label>
+      <button class="btn-add" onclick="addPhase">+ Ajouter phase</button>
+    </row>
+
     <row class="boss-list-head">
       <label class="row-idx">#</label>
       <label class="boss-head boss-col-num">HP%</label>
@@ -44,7 +57,7 @@
       <label class="boss-col-del"></label>
     </row>
 
-    <virtual-list id="phaseList" class="boss-detail-list" v-for="p in phase.count" row-height="28">
+    <virtual-list id="phaseList" class="boss-tab-list" v-for="p in phase.count" row-height="30">
       <row class="list-row boss-edit-row">
         <label class="row-idx">{{ p.phaseIndex }}</label>
         <col class="field-group boss-col-num">
@@ -62,10 +75,14 @@
         <button class="btn-del boss-col-del" onclick="{{ p.phaseDelKey }}">X</button>
       </row>
     </virtual-list>
+  </col>
 
-    <button class="btn-add" onclick="addPhase">+ Ajouter phase</button>
+  <col class="boss-tab-body" v-if="tab.drops">
+    <row class="boss-tab-toolbar">
+      <label class="section-title flex-1">Drops boss</label>
+      <button class="btn-add" onclick="addReward">+ Ajouter drop</button>
+    </row>
 
-    <label class="section-title">Drops boss</label>
     <row class="boss-list-head">
       <label class="row-idx">#</label>
       <label class="boss-head boss-col-item">Item</label>
@@ -75,7 +92,7 @@
       <label class="boss-col-del"></label>
     </row>
 
-    <virtual-list id="rewardList" class="boss-detail-list" v-for="r in reward.count" row-height="28">
+    <virtual-list id="rewardList" class="boss-tab-list" v-for="r in reward.count" row-height="30">
       <row class="list-row boss-edit-row">
         <label class="row-idx">{{ r.rewardIndex }}</label>
         <col class="field-group boss-col-item">
@@ -98,8 +115,6 @@
         <button class="btn-del boss-col-del" onclick="{{ r.rewardDelKey }}">X</button>
       </row>
     </virtual-list>
-
-    <button class="btn-add" onclick="addReward">+ Ajouter drop</button>
   </col>
 
   <row class="cfg-footer">
