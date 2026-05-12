@@ -32,9 +32,10 @@ import java.util.UUID;
  */
 public final class ServerPayloadHandler {
 
-    private static final PacketRateLimiter RESYNC_LIMITER    = new PacketRateLimiter(5_000L);
-    private static final PacketRateLimiter START_RUN_LIMITER = new PacketRateLimiter(3_000L);
-    private static final PacketRateLimiter RELOAD_LIMITER    = new PacketRateLimiter(10_000L);
+    private static final PacketRateLimiter RESYNC_LIMITER        = new PacketRateLimiter(5_000L);
+    private static final PacketRateLimiter START_RUN_LIMITER     = new PacketRateLimiter(3_000L);
+    private static final PacketRateLimiter RELOAD_LIMITER        = new PacketRateLimiter(10_000L);
+    private static final PacketRateLimiter CREATE_DUNGEON_LIMITER = new PacketRateLimiter(5_000L);
 
     private static final int MAX_PLAYERS_PER_RUN = 2;
 
@@ -273,6 +274,63 @@ public final class ServerPayloadHandler {
             ArcadiaDungeon.dungeonRegistry().reload();
             player.sendSystemMessage(Component.literal("§aDonjons rechargés."));
             ArcadiaDungeon.LOGGER.info("[Arcadia][ADMIN] event=reload requestedBy={}", player.getGameProfile().getName());
+        });
+    }
+
+    // ── 8.3 — Création donjon admin ───────────────────────────────────────
+
+    // [ZeroTrust:OK] — OP2 requis, id validé regex serveur-side, valeurs numériques clampées
+    public static void handleCreateDungeon(CreateDungeonPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            ServerPlayer player = (ServerPlayer) context.player();
+            if (!player.hasPermissions(2)) {
+                player.sendSystemMessage(Component.literal("§c✗ Permissions insuffisantes (op2 requis)."));
+                return;
+            }
+            if (!CREATE_DUNGEON_LIMITER.tryAcquire(player.getUUID())) return;
+
+            String id = payload.id() != null ? payload.id().trim() : "";
+            String nameKey = payload.nameKey() != null ? payload.nameKey().trim() : "";
+
+            if (id.isEmpty() || !id.matches("[a-z0-9_]+")) {
+                player.sendSystemMessage(Component.literal("§c✗ ID invalide (lettres a-z, chiffres, underscore uniquement)."));
+                return;
+            }
+            if (nameKey.isEmpty()) {
+                player.sendSystemMessage(Component.literal("§c✗ Nom requis."));
+                return;
+            }
+            if (id.length() > 64 || nameKey.length() > 128) {
+                player.sendSystemMessage(Component.literal("§c✗ ID ou nom trop long."));
+                return;
+            }
+            if (ArcadiaDungeon.dungeonRegistry().get(id).isPresent()) {
+                player.sendSystemMessage(Component.literal("§c✗ Un donjon avec cet ID existe déjà : " + sanitize(id)));
+                return;
+            }
+
+            int lives = Math.max(1, Math.min(99, payload.lives()));
+
+            // Config minimale valide (peut être enrichie via JSON direct)
+            DungeonConfig cfg = new DungeonConfig(
+                DungeonConfig.CURRENT_SCHEMA_VERSION,
+                id,
+                nameKey,
+                null,   // currency — configurable dans le JSON
+                lives,
+                java.util.List.of(new DungeonConfig.RoomRef("room_1", null, java.util.List.of())),
+                new DungeonConfig.BossDefinition("minecraft:wither_skeleton", 100, java.util.List.of()),
+                new DungeonConfig.Rewards(0L, java.util.List.of()),
+                java.util.List.of(),   // archetypes
+                null,                  // structureRef
+                null,                  // dimension
+                null                   // placementY
+            );
+
+            ArcadiaDungeon.dungeonRegistry().save(cfg);
+            player.sendSystemMessage(Component.literal(
+                "§a✔ Donjon '" + sanitize(nameKey) + "' (id: " + sanitize(id) + ") créé. Complétez le JSON dans config/arcadia/dungeon/" + sanitize(id) + ".json"));
+            ArcadiaDungeon.LOGGER.info("[Arcadia][ADMIN] event=create_dungeon admin={} dungeonId={}", player.getGameProfile().getName(), sanitize(id));
         });
     }
 

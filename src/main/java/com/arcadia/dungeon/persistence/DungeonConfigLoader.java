@@ -89,6 +89,29 @@ public final class DungeonConfigLoader {
         return loadAll();
     }
 
+    /**
+     * Sérialise {@code cfg} en JSON et l'écrit dans {@code configDir/<id>.json}.
+     * Crée le dossier si absent. Le fichier est écrasé si existant.
+     *
+     * @param cfg config à persister — doit être valide (non null, id non blank)
+     */
+    public void save(DungeonConfig cfg) {
+        if (cfg == null || cfg.id() == null || cfg.id().isBlank()) {
+            ArcadiaDungeon.LOGGER.error("[Arcadia][CONFIG] save_rejected reason=null_or_blank_id");
+            return;
+        }
+        Path file = configDir.resolve(sanitizeFileName(cfg.id()) + ".json");
+        try {
+            Files.createDirectories(configDir);
+            Gson pretty = new GsonBuilder().setPrettyPrinting().create();
+            Files.writeString(file, pretty.toJson(cfg));
+            loaded.put(cfg.id(), cfg);
+            ArcadiaDungeon.LOGGER.info("[Arcadia][CONFIG] saved dungeonId={} path={}", cfg.id(), file);
+        } catch (IOException e) {
+            ArcadiaDungeon.LOGGER.error("[Arcadia][CONFIG] save_failed dungeonId={} error={}", cfg.id(), e.getMessage());
+        }
+    }
+
     /** Donjons chargés à un instant donné (read-only). */
     public Map<String, DungeonConfig> loaded() {
         return Map.copyOf(loaded);

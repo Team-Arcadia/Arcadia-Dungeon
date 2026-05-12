@@ -1,0 +1,116 @@
+/* ── Admin Dungeon Create — Copper Patina ── */
+
+.create-screen {
+  background: #17120D;
+  border: 2;
+  border-color: #E0A84A;
+  gap: 0;
+}
+
+.create-header {
+  background: #1F1812;
+  padding: 5px 12px;
+  border-bottom: 1;
+  border-color: #E0A84A;
+  align-items: center;
+}
+
+.create-title {
+  color: #E0A84A;
+  font-size: 8;
+  font-weight: 700;
+}
+
+.create-body {
+  padding: 10px 14px;
+  gap: 8px;
+  flex: 1;
+}
+
+/* ── Field groups ── */
+.field-group {
+  gap: 2px;
+}
+
+.field-group.field-error {
+  gap: 2px;
+}
+
+.field-label {
+  color: #C2AD8E;
+  font-size: 7;
+}
+
+.field-hint {
+  color: #7A6A55;
+  font-size: 6;
+}
+
+.field-input {
+  height: 14px;
+  background: #0E0B07;
+  border: 1;
+  border-color: #5A3A1C;
+  color: #F3E7D3;
+  font-size: 7;
+  padding: 2px 5px;
+}
+
+.field-input:focus {
+  border-color: #E0A84A;
+}
+
+.field-error {
+  color: #E05050;
+  font-size: 6;
+}
+
+.field-group.field-error .field-input {
+  border-color: #E05050;
+}
+
+.create-note {
+  color: #7A6A55;
+  font-size: 6;
+  padding: 2px 0;
+}
+
+/* ── Footer ── */
+.create-footer {
+  background: #1F1812;
+  border-top: 1;
+  border-color: #5A3A1C;
+  padding: 5px 12px;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.btn-cancel {
+  background: #2A2019;
+  color: #C2AD8E;
+  border: 1;
+  border-color: #5A3A1C;
+  padding: 3px 10px;
+  font-size: 7;
+}
+
+.btn-cancel:hover {
+  background: #362A20;
+  color: #F3E7D3;
+}
+
+.btn-confirm {
+  background: #1A2A10;
+  color: #8FB96B;
+  border: 1;
+  border-color: #4A7A2A;
+  padding: 3px 12px;
+  font-size: 7;
+  font-weight: 700;
+}
+
+.btn-confirm:hover {
+  background: #22381A;
+  color: #B0E070;
+  border-color: #8FB96B;
+}

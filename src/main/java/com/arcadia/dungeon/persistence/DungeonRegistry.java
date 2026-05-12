@@ -64,6 +64,16 @@ public final class DungeonRegistry {
         return Optional.ofNullable(dungeons.get(dungeonId));
     }
 
+    /**
+     * Persiste {@code cfg} sur disque et l'ajoute au registre en mémoire.
+     * Utilisé par le handler admin {@code handleCreateDungeon}.
+     */
+    public void save(DungeonConfig cfg) {
+        loader.save(cfg);
+        dungeons.put(cfg.id(), cfg);
+        fallbackActive = false;
+    }
+
     /** True si le mod tourne en mode fail-safe (donjon exemple uniquement, depuis JAR). */
     public boolean isFallbackActive() {
         return fallbackActive;

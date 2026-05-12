@@ -1,0 +1,38 @@
+<col class="create-screen">
+
+  <row class="create-header">
+    <label class="create-title">Créer un donjon</label>
+  </row>
+
+  <col class="create-body">
+
+    <col class="field-group {{ err.class.id }}">
+      <label class="field-label">ID <span class="field-hint">(a–z, 0–9, _)</span></label>
+      <input class="field-input" placeholder="ex: foret_maudite" oninput="onId" />
+      <label class="field-error" v-show="err.id">{{ err.id }}</label>
+    </col>
+
+    <col class="field-group {{ err.class.name }}">
+      <label class="field-label">Nom affiché</label>
+      <input class="field-input" placeholder="ex: Forêt Maudite" oninput="onName" />
+      <label class="field-error" v-show="err.name">{{ err.name }}</label>
+    </col>
+
+    <col class="field-group {{ err.class.lives }}">
+      <label class="field-label">Vies <span class="field-hint">(1–99)</span></label>
+      <input class="field-input" placeholder="3" oninput="onLives" />
+      <label class="field-error" v-show="err.lives">{{ err.lives }}</label>
+    </col>
+
+    <label class="create-note">
+      Le JSON sera créé dans config/arcadia/dungeon/. Complétez-y rooms, boss et rewards.
+    </label>
+
+  </col>
+
+  <row class="create-footer">
+    <button class="btn-cancel" onclick="cancel">Annuler</button>
+    <button class="btn-confirm" onclick="create">Créer</button>
+  </row>
+
+</col>

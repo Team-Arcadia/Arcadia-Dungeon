@@ -9,6 +9,7 @@ import com.arcadia.dungeon.network.DungeonListPayload;
 import com.arcadia.dungeon.network.JoinRunPayload;
 import com.arcadia.dungeon.network.OpenDebugScreenPayload;
 import com.arcadia.dungeon.network.OpenResultScreenPayload;
+import com.arcadia.dungeon.network.CreateDungeonPayload;
 import com.arcadia.dungeon.network.ReloadRequestPayload;
 import com.arcadia.dungeon.network.RequestDungeonListPayload;
 import com.arcadia.dungeon.network.RequestRunResyncPayload;
@@ -171,7 +172,9 @@ public class ArcadiaDungeon {
             ServerPayloadHandler::handleRequestDungeonList);
         registrar.playToServer(ReloadRequestPayload.TYPE, ReloadRequestPayload.CODEC,
             ServerPayloadHandler::handleReloadRequest);
-        LOGGER.info("[Arcadia][BOOT] Payloads registered (RunState/DungeonList/OpenResultScreen S2C, StartRun/AbandonRun/JoinRun/RequestResync/RequestDungeonList/ReloadRequest C2S, OpenDebugScreen S2C)");
+        registrar.playToServer(CreateDungeonPayload.TYPE, CreateDungeonPayload.CODEC,
+            ServerPayloadHandler::handleCreateDungeon);
+        LOGGER.info("[Arcadia][BOOT] Payloads registered (RunState/DungeonList/OpenResultScreen S2C, StartRun/AbandonRun/JoinRun/RequestResync/RequestDungeonList/ReloadRequest/CreateDungeon C2S, OpenDebugScreen S2C)");
     }
 
     /** Listeners serveur : boot + commandes + shutdown. */

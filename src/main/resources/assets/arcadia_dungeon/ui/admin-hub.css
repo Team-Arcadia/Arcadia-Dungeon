@@ -1,134 +1,162 @@
-/* Palette Copper Patina */
-.admin-screen {
+/* ── Admin Hub — Copper Patina ── */
+
+.admin-hub {
   background: #17120D;
   border: 2;
   border-color: #E0A84A;
-  padding: 0px;
-  gap: 0px;
+  gap: 0;
 }
 
-.header {
+/* ── Header ── */
+.hub-header {
   background: #1F1812;
   padding: 5px 10px;
   border-bottom: 1;
   border-color: #E0A84A;
-  flex-direction: row;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
-.title {
+.hub-title {
   color: #E0A84A;
   font-size: 8;
   font-weight: 700;
   flex: 1;
 }
 
-.warn-badge {
-  color: #E0A84A;
+.hub-stat {
+  color: #7A6A55;
   font-size: 6;
-  background: #2A1A08;
-  padding: 2px 5px;
+}
+
+/* ── Toolbar (search + create) ── */
+.hub-toolbar {
+  padding: 5px 10px;
+  gap: 6px;
+  align-items: center;
+  border-bottom: 1;
+  border-color: #2A2010;
+}
+
+.search-field {
+  flex: 1;
+  height: 14px;
+  background: #0E0B07;
   border: 1;
+  border-color: #5A3A1C;
+  color: #F3E7D3;
+  font-size: 7;
+  padding: 2px 5px;
+}
+
+.search-field:focus {
   border-color: #E0A84A;
 }
 
-.content {
-  gap: 4px;
-  padding: 8px 10px;
-  flex: 1;
+.btn-create {
+  background: #2A1A08;
+  color: #E0A84A;
+  border: 1;
+  border-color: #E0A84A;
+  padding: 3px 10px;
+  font-size: 7;
 }
 
-.dungeon-list {
-  gap: 3px;
+.btn-create:hover {
+  background: #3A2510;
+  color: #F3E7D3;
+}
+
+/* ── Dungeon list ── */
+.hub-list {
+  flex: 1;
+  gap: 2px;
+  padding: 6px 8px;
+  overflow: hidden;
 }
 
 .dungeon-row {
-  flex-direction: row;
-  align-items: center;
-  background: #1F1812;
-  padding: 4px 6px;
+  background: #1A1510;
   border: 1;
+  border-color: #2A1E12;
+  padding: 0;
+}
+
+.dungeon-row:hover {
   border-color: #5A3A1C;
+  background: #1F1812;
+}
+
+.row-inner {
+  padding: 4px 6px;
+  align-items: center;
   gap: 6px;
 }
 
-.status-dot {
+.row-status {
   font-size: 7;
-  width: 8px;
+  width: 10px;
+  text-align: center;
 }
 
-.status-ok {
-  color: #8FB96B;
-}
-
-.status-warn {
-  color: #E0A84A;
-}
+.status-ok   { color: #8FB96B; }
+.status-warn { color: #E0A84A; }
 
 .row-info {
   flex: 1;
   gap: 1px;
 }
 
-.dungeon-id {
+.row-name {
   color: #F3E7D3;
   font-size: 7;
-  overflow: hidden;
 }
 
-.dungeon-schema {
-  font-size: 6;
-}
-
-.mute {
+.row-id {
   color: #7A6A55;
+  font-size: 6;
 }
 
-.status-badge {
-  font-size: 6;
-  padding: 2px 5px;
+.muted { color: #7A6A55; }
+
+.btn-manage {
+  background: #1A1510;
+  color: #C2AD8E;
   border: 1;
-}
-
-.badge-ok {
-  color: #8FB96B;
-  border-color: #4A7A2A;
-  background: #1A2A12;
-}
-
-.badge-warn {
-  color: #E0A84A;
-  border-color: #A06A1A;
-  background: #2A1A08;
-}
-
-.hint-block {
-  padding: 4px 0px;
-}
-
-.hint {
-  color: #7A6A55;
+  border-color: #5A3A1C;
+  padding: 2px 8px;
   font-size: 6;
 }
 
-.footer {
-  flex-direction: row;
-  justify-content: flex-end;
-  gap: 6px;
-  padding: 5px 10px;
+.btn-manage:hover {
+  background: #2A2019;
+  color: #F3E7D3;
+  border-color: #E0A84A;
+}
+
+.empty-hint {
+  color: #7A6A55;
+  font-size: 6;
+  padding: 4px 0;
+}
+
+/* ── Footer ── */
+.hub-footer {
+  background: #1F1812;
   border-top: 1;
   border-color: #5A3A1C;
-  background: #1F1812;
+  padding: 5px 10px;
+  gap: 6px;
+  justify-content: flex-end;
 }
 
 .btn-reload {
   background: #1A1408;
   color: #E0A84A;
-  padding: 3px 10px;
-  font-size: 7;
   border: 1;
   border-color: #E0A84A;
+  padding: 3px 10px;
+  font-size: 7;
 }
 
 .btn-reload:hover {
@@ -136,16 +164,16 @@
   color: #F3E7D3;
 }
 
-button {
+.btn-close {
   background: #2A2019;
   color: #C2AD8E;
-  padding: 3px 10px;
-  font-size: 7;
   border: 1;
   border-color: #A0642C;
+  padding: 3px 10px;
+  font-size: 7;
 }
 
-button:hover {
+.btn-close:hover {
   background: #362A20;
   color: #F3E7D3;
   border-color: #F0B27A;
