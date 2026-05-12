@@ -5,9 +5,9 @@ import com.tesseraui.TesseraPanel;
 import com.tesseraui.TesseraTemplate;
 import com.tesseraui.TesseraTemplateRenderer;
 import com.arcadia.dungeon.network.AbandonRunPayload;
+import com.tesseraui.TesseraScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -24,7 +24,7 @@ import java.util.Map;
  * <p>Ouvert par {@code ClientPayloadHandler} à la réception de
  * {@link com.arcadia.dungeon.network.OpenResultScreenPayload}.
  */
-public final class ResultScreen extends Screen {
+public final class ResultScreen extends TesseraScreen {
 
     private static final int PANEL_W = 300;
     private static final int PANEL_H = 220;
@@ -106,6 +106,9 @@ public final class ResultScreen extends Screen {
     public boolean isPauseScreen() {
         return false;
     }
+
+    @Override
+    protected TesseraPanel tesseraRoot() { return panel; }
 
     // ── Internals ─────────────────────────────────────────────────────────
 

@@ -5,9 +5,9 @@ import com.tesseraui.TesseraPanel;
 import com.tesseraui.TesseraTemplate;
 import com.tesseraui.TesseraTemplateRenderer;
 import com.arcadia.dungeon.network.DungeonListPayload;
+import com.tesseraui.TesseraScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 import java.util.HashMap;
@@ -20,7 +20,7 @@ import java.util.Map;
  * <p>Affiché après le {@link PlayerHubScreen}. L'archétype choisi ouvre
  * {@link DungeonLobbyScreen}.
  */
-public final class ArchetypeSelectionScreen extends Screen {
+public final class ArchetypeSelectionScreen extends TesseraScreen {
 
     private static final int PANEL_W = 360;
     private static final int PANEL_H = 220;
@@ -67,6 +67,9 @@ public final class ArchetypeSelectionScreen extends Screen {
     public boolean isPauseScreen() {
         return false;
     }
+
+    @Override
+    protected TesseraPanel tesseraRoot() { return panel; }
 
     // ── Internals ─────────────────────────────────────────────────────────
 

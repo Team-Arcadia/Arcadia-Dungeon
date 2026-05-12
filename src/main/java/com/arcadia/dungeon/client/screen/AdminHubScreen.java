@@ -8,9 +8,9 @@ import com.arcadia.dungeon.client.state.DungeonListClient;
 import com.arcadia.dungeon.network.DungeonListPayload;
 import com.arcadia.dungeon.network.ReloadRequestPayload;
 import com.arcadia.dungeon.network.RequestDungeonListPayload;
+import com.tesseraui.TesseraScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -24,7 +24,7 @@ import java.util.Map;
  * <p>Requiert op2. La vérification client-side est indicative ; le serveur
  * valide lui-même dans {@code ServerPayloadHandler.handleReloadRequest}.
  */
-public final class AdminHubScreen extends Screen {
+public final class AdminHubScreen extends TesseraScreen {
 
     private static final int PANEL_W = 360;
     private static final int PANEL_H = 240;
@@ -82,6 +82,9 @@ public final class AdminHubScreen extends Screen {
     public boolean isPauseScreen() {
         return false;
     }
+
+    @Override
+    protected TesseraPanel tesseraRoot() { return panel; }
 
     // ── Internals ─────────────────────────────────────────────────────────
 

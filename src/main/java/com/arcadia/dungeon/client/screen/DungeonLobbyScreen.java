@@ -5,9 +5,9 @@ import com.tesseraui.TesseraPanel;
 import com.tesseraui.TesseraTemplate;
 import com.tesseraui.TesseraTemplateRenderer;
 import com.arcadia.dungeon.network.StartRunPayload;
+import com.tesseraui.TesseraScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -19,7 +19,7 @@ import java.util.Map;
  * <p>Affiché après sélection d'un archétype. L'owner clique "Lancer !" pour
  * envoyer {@link StartRunPayload} et démarrer la run. Solo MVP uniquement.
  */
-public final class DungeonLobbyScreen extends Screen {
+public final class DungeonLobbyScreen extends TesseraScreen {
 
     private static final int PANEL_W = 320;
     private static final int PANEL_H = 220;
@@ -77,6 +77,9 @@ public final class DungeonLobbyScreen extends Screen {
     public boolean isPauseScreen() {
         return false;
     }
+
+    @Override
+    protected TesseraPanel tesseraRoot() { return panel; }
 
     // ── Internals ─────────────────────────────────────────────────────────
 

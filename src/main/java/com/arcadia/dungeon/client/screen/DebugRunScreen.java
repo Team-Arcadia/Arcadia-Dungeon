@@ -6,8 +6,8 @@ import com.tesseraui.TesseraTemplate;
 import com.tesseraui.TesseraTemplateRenderer;
 import com.arcadia.dungeon.client.state.RunStateClient;
 import com.arcadia.dungeon.network.RunStatePayload;
+import com.tesseraui.TesseraScreen;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 import java.util.Map;
@@ -18,7 +18,7 @@ import java.util.Map;
  * <p>Story S2.6 (AC1, AC4, AC5). Ouvert par {@code /arcadia debug showscreen}.
  * Pas de pause serveur ({@link #isPauseScreen()} = false).
  */
-public final class DebugRunScreen extends Screen {
+public final class DebugRunScreen extends TesseraScreen {
 
     private static final int PANEL_W = 248;
     private static final int PANEL_H = 148;
@@ -64,6 +64,9 @@ public final class DebugRunScreen extends Screen {
     public boolean isPauseScreen() {
         return false;
     }
+
+    @Override
+    protected TesseraPanel tesseraRoot() { return panel; }
 
     // ── Internals ─────────────────────────────────────────────────────────
 

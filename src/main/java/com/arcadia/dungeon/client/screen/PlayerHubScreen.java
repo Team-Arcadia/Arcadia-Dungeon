@@ -7,9 +7,9 @@ import com.tesseraui.TesseraTemplateRenderer;
 import com.arcadia.dungeon.client.state.DungeonListClient;
 import com.arcadia.dungeon.network.DungeonListPayload;
 import com.arcadia.dungeon.network.RequestDungeonListPayload;
+import com.tesseraui.TesseraScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -23,7 +23,7 @@ import java.util.Map;
  * <p>Envoie {@link RequestDungeonListPayload} à l'init, se rafraîchit quand
  * {@link DungeonListClient} est mis à jour (détection changement count en render).
  */
-public final class PlayerHubScreen extends Screen {
+public final class PlayerHubScreen extends TesseraScreen {
 
     private static final int PANEL_W = 340;
     private static final int PANEL_H = 240;
@@ -71,6 +71,9 @@ public final class PlayerHubScreen extends Screen {
     public boolean isPauseScreen() {
         return false;
     }
+
+    @Override
+    protected TesseraPanel tesseraRoot() { return panel; }
 
     // ── Internals ─────────────────────────────────────────────────────────
 
