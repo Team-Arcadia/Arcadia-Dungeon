@@ -22,8 +22,8 @@ import java.util.function.Consumer;
 public final class AdminDungeonBossDetailScreen extends com.tesseraui.TesseraScreen {
 
     private static final int MARGIN = 8;
-    private static final int MAX_W = 460;
-    private static final int MAX_H = 330;
+    private static final int MAX_W = 560;
+    private static final int MAX_H = 360;
 
     private final String dungeonId;
     private final String dungeonName;
@@ -73,7 +73,7 @@ public final class AdminDungeonBossDetailScreen extends com.tesseraui.TesseraScr
     @Override protected TesseraPanel tesseraRoot() { return panel; }
 
     private void rebuildPanel() {
-        int panelW = Math.max(300, Math.min(MAX_W, width - MARGIN * 2));
+        int panelW = Math.max(330, Math.min(MAX_W, width - MARGIN * 2));
         int panelH = Math.max(220, Math.min(MAX_H, height - MARGIN * 2));
         int px = (width - panelW) / 2, py = (height - panelH) / 2;
 
@@ -126,6 +126,7 @@ public final class AdminDungeonBossDetailScreen extends com.tesseraui.TesseraScr
             ph.addProperty("speedMultiplier", 1.0);
             phases.add(ph);
             boss.add("phases", phases);
+            clearDynamicInputStates();
             panelDirty = true;
         });
         handlers.put("addReward", () -> {
@@ -136,6 +137,7 @@ public final class AdminDungeonBossDetailScreen extends com.tesseraui.TesseraScr
             reward.addProperty("chance", 1.0);
             rewards.add(reward);
             boss.add("rewards", rewards);
+            clearDynamicInputStates();
             panelDirty = true;
         });
 
@@ -178,6 +180,7 @@ public final class AdminDungeonBossDetailScreen extends com.tesseraui.TesseraScr
             handlers.put("delPhase." + i, () -> {
                 if (idx < phases.size()) phases.remove(idx);
                 boss.add("phases", phases);
+                clearDynamicInputStates();
                 panelDirty = true;
             });
         }
@@ -213,9 +216,21 @@ public final class AdminDungeonBossDetailScreen extends com.tesseraui.TesseraScr
             handlers.put("delReward." + i, () -> {
                 if (idx < rewards.size()) rewards.remove(idx);
                 boss.add("rewards", rewards);
+                clearDynamicInputStates();
                 panelDirty = true;
             });
         }
+    }
+
+    private void clearDynamicInputStates() {
+        inputStates.keySet().removeIf(key ->
+            key.startsWith("phaseHp_")
+                || key.startsWith("phaseDmg_")
+                || key.startsWith("phaseSpd_")
+                || key.startsWith("rewardItem_")
+                || key.startsWith("rewardMin_")
+                || key.startsWith("rewardMax_")
+                || key.startsWith("rewardChance_"));
     }
 
     private static JsonArray getBosses(JsonObject cfg) {

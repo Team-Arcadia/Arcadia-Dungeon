@@ -426,15 +426,71 @@
   flex: 1;
 }
 
-.boss-detail-list {
-  height: 68px;
-  min-height: 48px;
+.boss-main-row,
+.boss-option-row,
+.boss-list-head,
+.boss-edit-row {
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
 }
 
 .boss-option-row {
-  align-items: center;
-  gap: 6px;
   flex-wrap: wrap;
+}
+
+.boss-detail-list {
+  height: 78px;
+  min-height: 56px;
+  flex-shrink: 0;
+}
+
+.boss-entity-field {
+  width: 100%;
+}
+
+.boss-toggle {
+  width: 82px;
+}
+
+.boss-list-head {
+  padding: 0 3px;
+}
+
+.boss-head {
+  color: var(--text-muted);
+  font-size: 6;
+  overflow: hidden;
+}
+
+.boss-col-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.boss-col-hp,
+.boss-col-chance {
+  width: 64px;
+  min-width: 64px;
+  flex-shrink: 0;
+}
+
+.boss-col-small,
+.boss-col-num {
+  width: 46px;
+  min-width: 46px;
+  flex-shrink: 0;
+}
+
+.boss-col-del {
+  width: 18px;
+  min-width: 18px;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.boss-edit-row {
+  padding-right: 2px;
 }
 
 /* Hub */
