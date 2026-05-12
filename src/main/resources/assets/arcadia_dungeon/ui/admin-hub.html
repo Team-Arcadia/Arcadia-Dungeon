@@ -1,32 +1,52 @@
 <col class="admin-hub">
-
+  <!-- ── Header ── -->
   <row class="hub-header">
-    <label class="hub-title">⚙ Admin — Donjons</label>
-    <label class="hub-stat">{{ dungeon.count }} donjon(s)</label>
+    <label class="hub-title" data-i18n="arcadia.admin.hub.title">⚙ Admin — Donjons</label>
+    <label class="hub-stat">{{ dungeon.count }}</label>
   </row>
 
+  <!-- ── Toolbar ── -->
   <row class="hub-toolbar">
-    <input class="search-field" placeholder="Filtrer..." oninput="filter" />
-    <button class="btn-create" onclick="create">+ Créer</button>
+    <input id="search"
+           class="search-field"
+           placeholder="Filtrer..."
+           oninput="filter"
+           tooltip-i18n="arcadia.admin.hub.tooltip.filter" />
+    <button class="btn-create"
+            onclick="create"
+            tooltip-i18n="arcadia.admin.hub.tooltip.create"
+            data-i18n="arcadia.admin.hub.create">+ Créer</button>
   </row>
 
-  <col class="hub-list">
-    <col v-for="d in dungeon.filtered" class="dungeon-row">
-      <row class="row-inner">
-        <label class="row-status {{ d.status-class }}">{{ d.status }}</label>
+  <!-- ── Dungeon list ── -->
+  <col class="hub-list" oncontextmenu="ctxList">
+    <virtual-list class="hub-vlist" v-for="d in dungeon.filtered" row-height="28">
+      <row class="dungeon-row" oncontextmenu="{{ d.ctxKey }}">
+        <label class="status-dot {{ d.statusClass }}">■</label>
         <col class="row-info">
           <label class="row-name">{{ d.name }}</label>
-          <label class="row-id muted">{{ d.id }} · schema {{ d.schema }}</label>
+          <label class="row-meta">{{ d.id }} · {{ d.schema }}</label>
         </col>
-        <button class="btn-manage" onclick="{{ d.manage-key }}">Gérer →</button>
+        <button class="btn-manage"
+                onclick="{{ d.manageKey }}"
+                tooltip-i18n="arcadia.admin.hub.tooltip.manage">Gérer →</button>
       </row>
-    </col>
-    <label class="empty-hint" v-show="filter.hint">{{ filter.hint }}</label>
+    </virtual-list>
+    <label class="empty-hint" v-if="filter.hint">{{ filter.hint }}</label>
   </col>
 
+  <!-- ── Footer ── -->
   <row class="hub-footer">
-    <button class="btn-reload" onclick="reload">⟳ Recharger</button>
-    <button class="btn-close"  onclick="close">Fermer</button>
+    <button class="btn-reload"
+            onclick="reload"
+            tooltip-i18n="arcadia.admin.hub.tooltip.reload"
+            data-i18n="arcadia.admin.hub.reload">⟳ Recharger</button>
+    <button class="btn-monitor"
+            onclick="monitor"
+            tooltip-i18n="arcadia.admin.hub.tooltip.monitor">◉ Monitor</button>
+    <button class="btn-close"
+            onclick="close"
+            data-i18n="arcadia.admin.hub.close">Fermer</button>
   </row>
 
 </col>

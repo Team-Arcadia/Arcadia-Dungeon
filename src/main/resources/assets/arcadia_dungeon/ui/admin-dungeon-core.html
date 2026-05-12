@@ -1,0 +1,67 @@
+<col class="cfg-screen">
+  <!-- ── Header ── -->
+  <row class="cfg-header">
+    <label class="cfg-title">{{ cfg.title }}</label>
+  </row>
+
+  <!-- ── Body ── -->
+  <col class="cfg-body">
+
+    <!-- Lives -->
+    <col class="field-group">
+      <label class="field-label" data-i18n="arcadia.admin.core.lives">Vies</label>
+      <input id="lives"
+             class="field-input"
+             placeholder="3"
+             value="{{ v.lives }}"
+             oninput="onLives"
+             tooltip-i18n="arcadia.admin.core.tooltip.lives" />
+    </col>
+
+    <!-- Structure -->
+    <col class="field-group">
+      <label class="field-label" data-i18n="arcadia.admin.core.structure">Réf. structure</label>
+      <input id="structure"
+             class="field-input wide"
+             placeholder="arcadia_dungeon:chateau_defaut"
+             value="{{ v.structure }}"
+             oninput="onStructure"
+             tooltip-i18n="arcadia.admin.core.tooltip.structure" />
+    </col>
+
+    <!-- Dimension -->
+    <col class="field-group">
+      <label class="field-label" data-i18n="arcadia.admin.core.dimension">Dimension</label>
+      <input id="dimension"
+             class="field-input wide"
+             placeholder="minecraft:overworld"
+             value="{{ v.dimension }}"
+             oninput="onDimension"
+             tooltip-i18n="arcadia.admin.core.tooltip.dimension" />
+    </col>
+
+    <!-- Placement Y -->
+    <col class="field-group">
+      <label class="field-label" data-i18n="arcadia.admin.core.placementy">Y placement</label>
+      <input id="placementy"
+             class="field-input"
+             placeholder="64"
+             value="{{ v.placementY }}"
+             oninput="onPlacementY"
+             tooltip-i18n="arcadia.admin.core.tooltip.placementy" />
+    </col>
+
+  </col>
+
+  <!-- ── Footer ── -->
+  <row class="cfg-footer">
+    <button class="btn-back"
+            onclick="back"
+            data-i18n="arcadia.admin.core.back">← Retour</button>
+    <col class="spacer" />
+    <button class="btn-save"
+            onclick="save"
+            data-i18n="arcadia.admin.core.save">✔ Sauvegarder</button>
+  </row>
+
+</col>

@@ -1,0 +1,61 @@
+<col class="cfg-screen">
+  <!-- ── Header ── -->
+  <row class="cfg-header">
+    <label class="cfg-title">{{ cfg.title }}</label>
+    <label class="cfg-subtitle" data-i18n="arcadia.admin.config.subtitle">Sélectionnez une section</label>
+  </row>
+
+  <!-- ── Navigation grid (col + flex-direction:row + flex-wrap via CSS) ── -->
+  <col class="cfg-body">
+    <col class="cfg-grid">
+      <button class="btn-cfg-section"
+              onclick="core"
+              tooltip-i18n="arcadia.admin.config.tooltip.core"
+              data-i18n="arcadia.admin.config.btn.core">⚔ Principal</button>
+      <button class="btn-cfg-section"
+              onclick="boss"
+              tooltip-i18n="arcadia.admin.config.tooltip.boss"
+              data-i18n="arcadia.admin.config.btn.boss">☠ Boss</button>
+      <button class="btn-cfg-section"
+              onclick="rooms"
+              tooltip-i18n="arcadia.admin.config.tooltip.rooms"
+              data-i18n="arcadia.admin.config.btn.rooms">Salles</button>
+      <button class="btn-cfg-section"
+              onclick="rewards"
+              tooltip-i18n="arcadia.admin.config.tooltip.rewards"
+              data-i18n="arcadia.admin.config.btn.rewards">Récompenses</button>
+      <button class="btn-cfg-section"
+              onclick="archetypes"
+              tooltip-i18n="arcadia.admin.config.tooltip.archetypes"
+              data-i18n="arcadia.admin.config.btn.archetypes">Archétypes</button>
+      <button class="btn-cfg-section"
+              onclick="messages"
+              tooltip-i18n="arcadia.admin.config.tooltip.messages"
+              data-i18n="arcadia.admin.config.btn.messages">✉ Messages</button>
+      <button class="btn-cfg-section"
+              onclick="zone"
+              tooltip-i18n="arcadia.admin.config.tooltip.zone"
+              data-i18n="arcadia.admin.config.btn.zone">Zone</button>
+      <button class="btn-cfg-section"
+              onclick="debug"
+              tooltip-i18n="arcadia.admin.config.tooltip.debug"
+              data-i18n="arcadia.admin.config.btn.debug">Debug</button>
+      <button class="btn-cfg-section"
+              onclick="arcadia"
+              tooltip-i18n="arcadia.admin.config.tooltip.arcadia"
+              data-i18n="arcadia.admin.config.btn.arcadia">Arcadia</button>
+    </col>
+  </col>
+
+  <!-- ── Footer ── -->
+  <row class="cfg-footer">
+    <button class="btn-back"
+            onclick="back"
+            data-i18n="arcadia.admin.config.back">← Retour</button>
+    <col class="spacer" />
+    <button class="btn-close"
+            onclick="close"
+            data-i18n="arcadia.admin.config.close">Fermer</button>
+  </row>
+
+</col>

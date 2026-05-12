@@ -49,11 +49,16 @@
     }
   ],
 
-  "_doc_boss": "Boss du donjon. 1 boss minimum, à phases configurables (HP threshold trigger).",
-  "boss": {
-    "type": "minecraft:wither_skeleton",
-    "hp": 200,
-    "phases": [
+  "_doc_bosses": "Boss du donjon. 1 boss minimum. Chaque entree peut etre optionnelle via optional + spawnChance.",
+  "bosses": [
+    {
+      "id": "guardian",
+      "type": "minecraft:wither_skeleton",
+      "hp": 200,
+      "optional": false,
+      "spawnChance": 1.0,
+      "requiredKill": true,
+      "phases": [
       {
         "_doc": "Phase 2 : à 50% HP, dégâts boss × 1.2.",
         "triggerHpPercent": 50,
@@ -66,8 +71,12 @@
         "damageMultiplier": 1.5,
         "speedMultiplier": 1.1
       }
-    ]
-  },
+      ],
+      "rewards": [
+        { "item": "minecraft:diamond", "min": 1, "max": 1, "chance": 0.5 }
+      ]
+    }
+  ],
 
   "_doc_rewards": "Récompenses VICTORY. DEFEAT = currency × 0.25 (pas de loot).",
   "rewards": {

@@ -9,10 +9,24 @@ import com.arcadia.dungeon.network.DungeonListPayload;
 import com.arcadia.dungeon.network.JoinRunPayload;
 import com.arcadia.dungeon.network.OpenDebugScreenPayload;
 import com.arcadia.dungeon.network.OpenResultScreenPayload;
+import com.arcadia.dungeon.command.ArcadiaAdminCommand;
+import com.arcadia.dungeon.network.CaptureSpawnPayload;
 import com.arcadia.dungeon.network.CreateDungeonPayload;
+import com.arcadia.dungeon.network.DeleteDungeonPayload;
+import com.arcadia.dungeon.network.DungeonDetailPayload;
+import com.arcadia.dungeon.network.DungeonEditDataPayload;
+import com.arcadia.dungeon.network.ForceEndRunPayload;
+import com.arcadia.dungeon.network.KillDungeonRunsPayload;
+import com.arcadia.dungeon.network.MonitorDataPayload;
+import com.arcadia.dungeon.network.MonitorRefreshPayload;
+import com.arcadia.dungeon.network.OpenAdminHubPayload;
 import com.arcadia.dungeon.network.ReloadRequestPayload;
+import com.arcadia.dungeon.network.RequestDungeonDetailPayload;
+import com.arcadia.dungeon.network.RequestDungeonEditPayload;
 import com.arcadia.dungeon.network.RequestDungeonListPayload;
 import com.arcadia.dungeon.network.RequestRunResyncPayload;
+import com.arcadia.dungeon.network.SaveDungeonConfigPayload;
+import com.arcadia.dungeon.network.SaveZonePayload;
 import com.arcadia.dungeon.network.RunStatePayload;
 import com.arcadia.dungeon.network.ServerPayloadHandler;
 import com.arcadia.dungeon.network.StartRunPayload;
@@ -174,7 +188,34 @@ public class ArcadiaDungeon {
             ServerPayloadHandler::handleReloadRequest);
         registrar.playToServer(CreateDungeonPayload.TYPE, CreateDungeonPayload.CODEC,
             ServerPayloadHandler::handleCreateDungeon);
-        LOGGER.info("[Arcadia][BOOT] Payloads registered (RunState/DungeonList/OpenResultScreen S2C, StartRun/AbandonRun/JoinRun/RequestResync/RequestDungeonList/ReloadRequest/CreateDungeon C2S, OpenDebugScreen S2C)");
+        registrar.playToServer(DeleteDungeonPayload.TYPE, DeleteDungeonPayload.CODEC,
+            ServerPayloadHandler::handleDeleteDungeon);
+        registrar.playToServer(RequestDungeonDetailPayload.TYPE, RequestDungeonDetailPayload.CODEC,
+            ServerPayloadHandler::handleRequestDungeonDetail);
+        registrar.playToClient(DungeonDetailPayload.TYPE, DungeonDetailPayload.CODEC,
+            ClientPayloadHandler::handleDungeonDetail);
+        registrar.playToClient(OpenAdminHubPayload.TYPE, OpenAdminHubPayload.CODEC,
+            ClientPayloadHandler::handleOpenAdminHub);
+        registrar.playToServer(MonitorRefreshPayload.TYPE, MonitorRefreshPayload.CODEC,
+            ServerPayloadHandler::handleMonitorRefresh);
+        registrar.playToClient(MonitorDataPayload.TYPE, MonitorDataPayload.CODEC,
+            ClientPayloadHandler::handleMonitorData);
+        registrar.playToServer(ForceEndRunPayload.TYPE, ForceEndRunPayload.CODEC,
+            ServerPayloadHandler::handleForceEndRun);
+        // ── Post-MVP — édition complète donjon ──
+        registrar.playToServer(RequestDungeonEditPayload.TYPE, RequestDungeonEditPayload.CODEC,
+            ServerPayloadHandler::handleRequestDungeonEdit);
+        registrar.playToClient(DungeonEditDataPayload.TYPE, DungeonEditDataPayload.CODEC,
+            ClientPayloadHandler::handleDungeonEditData);
+        registrar.playToServer(SaveDungeonConfigPayload.TYPE, SaveDungeonConfigPayload.CODEC,
+            ServerPayloadHandler::handleSaveDungeonConfig);
+        registrar.playToServer(SaveZonePayload.TYPE, SaveZonePayload.CODEC,
+            ServerPayloadHandler::handleSaveZone);
+        registrar.playToServer(CaptureSpawnPayload.TYPE, CaptureSpawnPayload.CODEC,
+            ServerPayloadHandler::handleCaptureSpawn);
+        registrar.playToServer(KillDungeonRunsPayload.TYPE, KillDungeonRunsPayload.CODEC,
+            ServerPayloadHandler::handleKillDungeonRuns);
+        LOGGER.info("[Arcadia][BOOT] Payloads registered (S2C: RunState/DungeonList/DungeonDetail/OpenAdminHub/OpenResultScreen/OpenDebugScreen/MonitorData/DungeonEditData | C2S: StartRun/AbandonRun/JoinRun/RequestResync/RequestDungeonList/ReloadRequest/CreateDungeon/DeleteDungeon/RequestDungeonDetail/MonitorRefresh/ForceEndRun/RequestDungeonEdit/SaveDungeonConfig/SaveZone/CaptureSpawn/KillDungeonRuns)");
     }
 
     /** Listeners serveur : boot + commandes + shutdown. */
@@ -258,7 +299,8 @@ public class ArcadiaDungeon {
             if (placementRegistry == null) placementRegistry = new PlacementRegistry();
             if (structurePlacer == null) structurePlacer = new StructurePlacer();
             new ArcadiaSetupCommand(structurePlacer, placementRegistry).register(event.getDispatcher());
-            LOGGER.info("[Arcadia][BOOT] Commands registered (/arcadia reload, /arcadia setup, /arcadia debug *)");
+            new ArcadiaAdminCommand().register(event.getDispatcher());
+            LOGGER.info("[Arcadia][BOOT] Commands registered (/arcadia reload, /arcadia setup, /arcadia debug *, /arcadia admin)");
         }
     }
 }

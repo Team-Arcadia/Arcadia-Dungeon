@@ -44,7 +44,7 @@ class RunLifecycleServiceTest {
               "currency": { "nameKey": "Coins", "iconPath": "x:y" },
               "lives": 3,
               "rooms": [{ "id": "r1", "templateRef": "arcadia:crypt_entry", "waves": [] }],
-              "boss": { "type": "minecraft:zombie", "hp": 100, "phases": [] },
+              "bosses": [{ "id": "boss_1", "type": "minecraft:zombie", "hp": 100, "phases": [], "optional": false, "spawnChance": 1.0, "requiredKill": true, "rewards": [] }],
               "rewards": { "currency": 10, "loot": [] },
               "archetypes": []
             }

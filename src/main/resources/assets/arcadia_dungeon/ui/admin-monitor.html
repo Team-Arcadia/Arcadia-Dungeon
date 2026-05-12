@@ -1,0 +1,57 @@
+<col class="monitor-screen">
+  <!-- ── Header ── -->
+  <row class="monitor-header">
+    <row class="monitor-header-left">
+      <button class="btn-back" onclick="back" tooltip-i18n="arcadia.admin.monitor.back">←</button>
+      <col class="monitor-header-info">
+        <label class="monitor-title" data-i18n="arcadia.admin.monitor.title">◉ Runs actives</label>
+        <label class="monitor-subtitle">{{ runs }} run(s) · {{ playerCount }}</label>
+      </col>
+    </row>
+    <button class="btn-refresh-sm"
+            onclick="refresh"
+            tooltip-i18n="arcadia.admin.monitor.refresh">⟳</button>
+  </row>
+
+  <!-- ── Column headers ── -->
+  <row class="monitor-col-headers">
+    <label class="col-run  col-hdr" data-i18n="arcadia.admin.monitor.col.run">Run</label>
+    <label class="col-dng  col-hdr" data-i18n="arcadia.admin.monitor.col.dng">Donjon</label>
+    <label class="col-pl   col-hdr" data-i18n="arcadia.admin.monitor.col.pl">J.</label>
+    <label class="col-room col-hdr" data-i18n="arcadia.admin.monitor.col.room">Salle</label>
+    <label class="col-time col-hdr" data-i18n="arcadia.admin.monitor.col.time">Temps</label>
+    <label class="col-lv   col-hdr" data-i18n="arcadia.admin.monitor.col.lives">♥</label>
+    <label class="col-st   col-hdr" data-i18n="arcadia.admin.monitor.col.state">État</label>
+    <label class="col-act  col-hdr">⚡</label>
+  </row>
+
+  <!-- ── Run list ── -->
+  <col class="monitor-list">
+    <virtual-list class="monitor-vlist" v-for="r in runs" row-height="26">
+      <row class="run-row">
+        <label class="col-run  run-id">{{ r.shortId }}</label>
+        <label class="col-dng  run-dng">{{ r.dungeon }}</label>
+        <label class="col-pl   run-num">{{ r.players }}</label>
+        <label class="col-room run-num">{{ r.room }}</label>
+        <label class="col-time run-dim">{{ r.timer }}</label>
+        <label class="col-lv   run-num">{{ r.lives }}</label>
+        <label class="col-st   state-badge {{ r.stateBadge }}">{{ r.state }}</label>
+        <row class="col-act row-actions">
+          <button class="btn-win"  onclick="{{ r.winKey }}"
+                  tooltip-i18n="arcadia.admin.monitor.win">✓</button>
+          <button class="btn-stop" onclick="{{ r.stopKey }}"
+                  tooltip-i18n="arcadia.admin.monitor.stop">✗</button>
+        </row>
+      </row>
+    </virtual-list>
+    <label class="empty-hint" v-if="monitor.empty"
+           data-i18n="arcadia.admin.monitor.none">Aucune run active.</label>
+  </col>
+
+  <!-- ── Footer ── -->
+  <row class="monitor-footer">
+    <button class="btn-close" onclick="close"
+            data-i18n="arcadia.admin.monitor.close">Fermer</button>
+  </row>
+
+</col>

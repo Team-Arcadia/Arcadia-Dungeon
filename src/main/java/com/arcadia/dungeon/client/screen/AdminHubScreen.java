@@ -1,10 +1,13 @@
 package com.arcadia.dungeon.client.screen;
 
+import com.tesseraui.TesseraContextMenu;
+import com.tesseraui.TesseraInputState;
 import com.tesseraui.TesseraModel;
 import com.tesseraui.TesseraPanel;
 import com.tesseraui.TesseraTemplate;
 import com.tesseraui.TesseraTemplateRenderer;
 import com.arcadia.dungeon.client.state.DungeonListClient;
+import com.arcadia.dungeon.network.DeleteDungeonPayload;
 import com.arcadia.dungeon.network.DungeonListPayload;
 import com.arcadia.dungeon.network.ReloadRequestPayload;
 import com.arcadia.dungeon.network.RequestDungeonListPayload;
@@ -27,11 +30,16 @@ import java.util.stream.Collectors;
  */
 public final class AdminHubScreen extends com.tesseraui.TesseraScreen {
 
-    private static final int PANEL_W = 420;
-    private static final int PANEL_H = 280;
+    /** Marge minimale de chaque côté (px GUI) — garantit la visibilité à GUI scale 4. */
+    private static final int MARGIN = 8;
+    private static final int MAX_W  = 460;
+    private static final int MAX_H  = 290;
 
     private TesseraPanel panel;
+    private final Map<String, TesseraInputState> inputStates = new HashMap<>();
     private List<DungeonListPayload.DungeonSummary> allDungeons = List.of();
+    private DungeonListPayload.DungeonSummary clipboard = null;
+    private double lastMx, lastMy;
     private List<DungeonListPayload.DungeonSummary> filtered    = List.of();
     private String filterText = "";
     private boolean panelDirty = true;
@@ -49,28 +57,45 @@ public final class AdminHubScreen extends com.tesseraui.TesseraScreen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics g, int mx, int my, float pt) {
-        g.fill(0, 0, width, height, 0x88000000);
-    }
-
-    @Override
     public void render(GuiGraphics g, int mx, int my, float pt) {
         // Rafraîchit si la liste change côté client (après réponse réseau)
         List<DungeonListPayload.DungeonSummary> current = DungeonListClient.get();
         if (!current.equals(allDungeons)) {
             allDungeons = current;
             applyFilter();
+            panelDirty = true; // forcer le rebuild quand la liste arrive du réseau
         }
         if (panelDirty) { rebuildPanel(); panelDirty = false; }
-        renderBackground(g, mx, my, pt);
-        if (panel != null) panel.render(g, mx, my);
         super.render(g, mx, my, pt);
+        if (panel != null) panel.render(g, mx, my);
+        TesseraContextMenu.render(g, mx, my);
     }
 
     @Override
     public boolean mouseClicked(double mx, double my, int btn) {
+        if (TesseraContextMenu.mouseClicked(mx, my, btn)) return true;
+        lastMx = mx; lastMy = my;
         if (panel != null && panel.mouseClicked(mx, my, btn)) return true;
         return super.mouseClicked(mx, my, btn);
+    }
+
+    @Override
+    public boolean charTyped(char c, int modifiers) {
+        if (panel != null && panel.charTyped(c, modifiers)) return true;
+        return super.charTyped(c, modifiers);
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (panel != null && panel.keyPressed(keyCode, scanCode, modifiers)) return true;
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mx, double my, double dx, double dy) {
+        // panel.mouseScrolled prend 3 args (mx, my, dy) — propagé jusqu'à TesseraVirtualList
+        if (panel != null && panel.mouseScrolled(mx, my, dy)) return true;
+        return super.mouseScrolled(mx, my, dx, dy);
     }
 
     @Override
@@ -82,8 +107,10 @@ public final class AdminHubScreen extends com.tesseraui.TesseraScreen {
     // ── Internals ─────────────────────────────────────────────────────────
 
     private void rebuildPanel() {
-        int px = (width  - PANEL_W) / 2;
-        int py = (height - PANEL_H) / 2;
+        int panelW = Math.max(260, Math.min(MAX_W, width  - MARGIN * 2));
+        int panelH = Math.max(160, Math.min(MAX_H, height - MARGIN * 2));
+        int px = (width  - panelW) / 2;
+        int py = (height - panelH) / 2;
 
         Map<String, String> modelData = new HashMap<>();
         modelData.put("dungeon.count",    String.valueOf(allDungeons.size()));
@@ -96,24 +123,43 @@ public final class AdminHubScreen extends com.tesseraui.TesseraScreen {
             modelData.put("d.name." + i,         d.name());
             modelData.put("d.id." + i,           d.id());
             modelData.put("d.schema." + i,       "v" + d.schemaVersion());
-            modelData.put("d.status." + i,       warn ? "⚠" : "✓");
-            modelData.put("d.status-class." + i, warn ? "status-warn" : "status-ok");
-            modelData.put("d.manage-key." + i,   "manage." + i);
+            modelData.put("d.status." + i,      warn ? "⚠" : "✓");
+            modelData.put("d.statusClass." + i, warn ? "status-warn" : "status-ok");
+            modelData.put("d.manageKey." + i,   "manage." + i);
         }
 
         Map<String, Runnable> handlers = new HashMap<>();
         handlers.put("create",  () -> ArcadiaNavigator.push(new AdminDungeonCreateScreen()));
         handlers.put("reload",  () -> PacketDistributor.sendToServer(new ReloadRequestPayload()));
+        handlers.put("monitor", () -> ArcadiaNavigator.push(new AdminMonitorScreen()));
         handlers.put("close",   ArcadiaNavigator::closeAll);
 
         for (int i = 0; i < filtered.size(); i++) {
             final DungeonListPayload.DungeonSummary d = filtered.get(i);
-            handlers.put("manage." + i, () -> {
-                // Story 8.4 : AdminDungeonDetailScreen(d.id())
-                // Placeholder : refresh pour l'instant
-                PacketDistributor.sendToServer(new RequestDungeonListPayload());
+            handlers.put("manage." + i, () -> ArcadiaNavigator.push(new AdminDungeonConfigScreen(d.id(), d.name())));
+            handlers.put("ctx." + i, () -> {
+                final boolean canPaste = clipboard != null;
+                TesseraContextMenu.builder()
+                    .item("Copier",   () -> clipboard = d)
+                    .item("Coller",   () -> ArcadiaNavigator.push(new AdminDungeonCreateScreen(clipboard.name())), canPaste)
+                    .separator()
+                    .item("Supprimer", () -> {
+                        PacketDistributor.sendToServer(new DeleteDungeonPayload(d.id()));
+                        panelDirty = true;
+                    })
+                    .showAt((int) lastMx, (int) lastMy);
             });
+            modelData.put("d.ctxKey." + i, "ctx." + i);
         }
+
+        // Menu contextuel sur la zone vide de la liste (coller sans sélection)
+        handlers.put("ctxList", () -> {
+            if (clipboard == null) return;
+            TesseraContextMenu.builder()
+                .item("Coller — " + clipboard.name(),
+                    () -> ArcadiaNavigator.push(new AdminDungeonCreateScreen(clipboard.name())))
+                .showAt((int) lastMx, (int) lastMy);
+        });
 
         Map<String, Consumer<String>> inputHandlers = new HashMap<>();
         inputHandlers.put("filter", text -> {
@@ -124,7 +170,7 @@ public final class AdminHubScreen extends com.tesseraui.TesseraScreen {
 
         TesseraModel model = key -> modelData.getOrDefault(key, null);
         TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin-hub");
-        panel = TesseraTemplateRenderer.build(template, model, handlers, inputHandlers, px, py, PANEL_W, PANEL_H);
+        panel = TesseraTemplateRenderer.build(template, model, handlers, inputHandlers, inputStates, px, py, panelW, panelH);
     }
 
     private void applyFilter() {

@@ -1,38 +1,57 @@
 <col class="create-screen">
-
+  <!-- ── Header ── -->
   <row class="create-header">
-    <label class="create-title">Créer un donjon</label>
+    <label class="create-title" data-i18n="arcadia.admin.create.title">✦ Nouveau Donjon</label>
   </row>
 
+  <!-- ── Form body ── -->
   <col class="create-body">
 
+    <!-- ID -->
     <col class="field-group {{ err.class.id }}">
-      <label class="field-label">ID <span class="field-hint">(a–z, 0–9, _)</span></label>
-      <input class="field-input" placeholder="ex: foret_maudite" oninput="onId" />
-      <label class="field-error" v-show="err.id">{{ err.id }}</label>
+      <label class="field-label" data-i18n="arcadia.admin.create.id">ID</label>
+      <input id="did"
+             class="field-input"
+             placeholder="ex: foret_maudite"
+             oninput="onId"
+             tooltip-i18n="arcadia.admin.create.tooltip.id" />
+      <label class="field-error-msg" v-show="err.id">{{ err.id }}</label>
     </col>
 
+    <!-- Nom affiché -->
     <col class="field-group {{ err.class.name }}">
-      <label class="field-label">Nom affiché</label>
-      <input class="field-input" placeholder="ex: Forêt Maudite" oninput="onName" />
-      <label class="field-error" v-show="err.name">{{ err.name }}</label>
+      <label class="field-label" data-i18n="arcadia.admin.create.name">Nom affiché</label>
+      <input id="dname"
+             class="field-input"
+             placeholder="ex: Forêt Maudite"
+             value="{{ prefill.name }}"
+             oninput="onName"
+             tooltip-i18n="arcadia.admin.create.tooltip.name" />
+      <label class="field-error-msg" v-show="err.name">{{ err.name }}</label>
     </col>
 
+    <!-- Vies -->
     <col class="field-group {{ err.class.lives }}">
-      <label class="field-label">Vies <span class="field-hint">(1–99)</span></label>
-      <input class="field-input" placeholder="3" oninput="onLives" />
-      <label class="field-error" v-show="err.lives">{{ err.lives }}</label>
+      <label class="field-label" data-i18n="arcadia.admin.create.lives">Vies</label>
+      <input id="dlives"
+             class="field-input"
+             placeholder="3"
+             oninput="onLives"
+             tooltip-i18n="arcadia.admin.create.tooltip.lives" />
+      <label class="field-error-msg" v-show="err.lives">{{ err.lives }}</label>
     </col>
-
-    <label class="create-note">
-      Le JSON sera créé dans config/arcadia/dungeon/. Complétez-y rooms, boss et rewards.
-    </label>
 
   </col>
 
+  <!-- ── Footer ── -->
   <row class="create-footer">
-    <button class="btn-cancel" onclick="cancel">Annuler</button>
-    <button class="btn-confirm" onclick="create">Créer</button>
+    <button class="btn-cancel"
+            onclick="cancel"
+            data-i18n="arcadia.admin.create.cancel">Annuler</button>
+    <button class="btn-confirm"
+            onclick="create"
+            tooltip-i18n="arcadia.admin.create.tooltip.name"
+            data-i18n="arcadia.admin.create.confirm">✦ Créer</button>
   </row>
 
 </col>

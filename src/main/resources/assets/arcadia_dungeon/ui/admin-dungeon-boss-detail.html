@@ -1,0 +1,95 @@
+<col class="cfg-screen">
+  <row class="cfg-header">
+    <label class="cfg-title">{{ cfg.title }}</label>
+  </row>
+
+  <col class="cfg-body">
+    <label class="section-title">Identite</label>
+
+    <row class="sub-row">
+      <col class="field-group flex-1">
+        <label class="field-label">Id</label>
+        <input id="bossId" class="field-input wide"
+               value="{{ v.bossId }}" oninput="onBossId" placeholder="boss_1" />
+      </col>
+      <col class="field-group flex-2">
+        <label class="field-label">Entite</label>
+        <input id="bossType" class="field-input wide"
+               value="{{ v.bossType }}" oninput="onBossType" placeholder="minecraft:wither_skeleton" />
+      </col>
+      <col class="field-group w-60">
+        <label class="field-label">HP</label>
+        <input id="bossHp" class="field-input wide"
+               value="{{ v.bossHp }}" oninput="onBossHp" placeholder="100" />
+      </col>
+    </row>
+
+    <row class="boss-option-row">
+      <col class="field-group w-80">
+        <label class="field-label">Spawn</label>
+        <input id="bossChance" class="field-input wide"
+               value="{{ v.bossChance }}" oninput="onBossChance" placeholder="1.0" />
+      </col>
+      <button class="btn-add" onclick="toggleOptional">{{ v.bossOptional }}</button>
+      <button class="btn-add" onclick="toggleRequired">{{ v.bossRequired }}</button>
+    </row>
+
+    <label class="section-title">Phases</label>
+
+    <virtual-list id="phaseList" class="boss-detail-list" v-for="p in phase.count" row-height="26">
+      <row class="list-row">
+        <label class="row-idx">{{ p.phaseIndex }}</label>
+        <col class="field-group flex-1">
+          <input id="{{ p.phaseHpId }}" class="field-input wide"
+                 value="{{ p.phaseHp }}" oninput="{{ p.phaseHpKey }}" placeholder="HP %" />
+        </col>
+        <col class="field-group flex-1">
+          <input id="{{ p.phaseDmgId }}" class="field-input wide"
+                 value="{{ p.phaseDmg }}" oninput="{{ p.phaseDmgKey }}" placeholder="dmg" />
+        </col>
+        <col class="field-group flex-1">
+          <input id="{{ p.phaseSpdId }}" class="field-input wide"
+                 value="{{ p.phaseSpd }}" oninput="{{ p.phaseSpdKey }}" placeholder="spd" />
+        </col>
+        <button class="btn-del" onclick="{{ p.phaseDelKey }}">X</button>
+      </row>
+    </virtual-list>
+
+    <button class="btn-add" onclick="addPhase">+ Ajouter phase</button>
+
+    <label class="section-title">Drops boss</label>
+
+    <virtual-list id="rewardList" class="boss-detail-list" v-for="r in reward.count" row-height="26">
+      <row class="list-row">
+        <label class="row-idx">{{ r.rewardIndex }}</label>
+        <col class="field-group flex-2">
+          <input id="{{ r.rewardItemId }}" class="field-input wide"
+                 value="{{ r.rewardItem }}" oninput="{{ r.rewardItemKey }}"
+                 placeholder="minecraft:diamond" />
+        </col>
+        <col class="field-group w-36">
+          <input id="{{ r.rewardMinId }}" class="field-input wide"
+                 value="{{ r.rewardMin }}" oninput="{{ r.rewardMinKey }}" placeholder="1" />
+        </col>
+        <col class="field-group w-36">
+          <input id="{{ r.rewardMaxId }}" class="field-input wide"
+                 value="{{ r.rewardMax }}" oninput="{{ r.rewardMaxKey }}" placeholder="1" />
+        </col>
+        <col class="field-group w-60">
+          <input id="{{ r.rewardChanceId }}" class="field-input wide"
+                 value="{{ r.rewardChance }}" oninput="{{ r.rewardChanceKey }}" placeholder="chance" />
+        </col>
+        <button class="btn-del" onclick="{{ r.rewardDelKey }}">X</button>
+      </row>
+    </virtual-list>
+
+    <button class="btn-add" onclick="addReward">+ Ajouter drop</button>
+  </col>
+
+  <row class="cfg-footer">
+    <button class="btn-back" onclick="back" data-i18n="arcadia.admin.boss.back">Retour</button>
+    <button class="btn-danger" onclick="deleteBoss">Supprimer</button>
+    <col class="spacer" />
+    <button class="btn-save" onclick="save" data-i18n="arcadia.admin.boss.save">Sauver</button>
+  </row>
+</col>

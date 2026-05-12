@@ -1,0 +1,49 @@
+<col class="cfg-screen">
+  <row class="cfg-header">
+    <label class="cfg-title">{{ cfg.title }}</label>
+  </row>
+
+  <col class="cfg-body">
+
+    <virtual-list id="archList" class="hub-vlist" v-for="a in arch.count" row-height="64">
+      <col class="list-row-col">
+
+        <row class="sub-row">
+          <col class="field-group flex-1">
+            <label class="field-label" data-i18n="arcadia.admin.arch.id">ID</label>
+            <input id="{{ a.archIdId }}" class="field-input wide"
+                   value="{{ a.archId }}" oninput="{{ a.archIdKey }}"
+                   placeholder="warrior" />
+          </col>
+          <col class="field-group flex-2">
+            <label class="field-label" data-i18n="arcadia.admin.arch.name">Clé nom</label>
+            <input id="{{ a.archNameId }}" class="field-input wide"
+                   value="{{ a.archName }}" oninput="{{ a.archNameKey }}"
+                   placeholder="arcadia.archetype.warrior.name" />
+          </col>
+          <button class="btn-del" onclick="{{ a.archDelKey }}">✗</button>
+        </row>
+
+        <col class="field-group">
+          <label class="field-label" data-i18n="arcadia.admin.arch.items">Items (séparés par virgule)</label>
+          <input id="{{ a.archItemsId }}" class="field-input wide"
+                 value="{{ a.archItems }}" oninput="{{ a.archItemsKey }}"
+                 placeholder="minecraft:iron_sword, minecraft:bread" />
+        </col>
+
+      </col>
+    </virtual-list>
+
+    <button class="btn-add"
+            onclick="addArch"
+            data-i18n="arcadia.admin.arch.add">+ Ajouter archétype</button>
+
+  </col>
+
+  <row class="cfg-footer">
+    <button class="btn-back" onclick="back" data-i18n="arcadia.admin.arch.back">← Retour</button>
+    <col class="spacer" />
+    <button class="btn-save" onclick="save" data-i18n="arcadia.admin.arch.save">✔ Sauvegarder</button>
+  </row>
+
+</col>

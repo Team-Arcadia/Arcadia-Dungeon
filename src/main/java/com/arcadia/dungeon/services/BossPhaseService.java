@@ -9,8 +9,10 @@ import com.arcadia.dungeon.domain.run.RunPhase;
 import com.arcadia.dungeon.domain.run.RunResult;
 import com.arcadia.dungeon.network.ServerPayloadHandler;
 import com.arcadia.dungeon.persistence.DungeonRegistry;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,7 +22,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
-import net.minecraft.core.Holder;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -30,19 +31,15 @@ import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 
-import net.minecraft.server.MinecraftServer;
-
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Service boss : spawn (S4.1), transitions de phase (S4.2), mort → victoire (S4.4).
- *
- * <p>Doit être enregistré sur {@code NeoForge.EVENT_BUS}.
- * Toutes les mutations de Run se font sur le SGT — LivingDamageEvent et
- * LivingDeathEvent s'exécutent sur le SGT par le jeu.
+ * Service boss: spawn, transitions de phase, mort -> victoire.
  */
 public final class BossPhaseService {
 
@@ -55,10 +52,9 @@ public final class BossPhaseService {
     private final RewardDistributionService rewardService;
     private final DungeonRegistry dungeonRegistry;
 
-    /** Boss entity UUID → RunId pour lookup rapide. */
-    private final Map<UUID, RunId> bossToRun = new ConcurrentHashMap<>();
-    /** RunId → barre de vie boss (ServerBossEvent vanilla). */
-    private final Map<RunId, ServerBossEvent> bossBars = new ConcurrentHashMap<>();
+    private final Map<UUID, BossRuntime> bossToRun = new ConcurrentHashMap<>();
+    private final Map<RunId, Set<UUID>> runBosses = new ConcurrentHashMap<>();
+    private final Map<UUID, ServerBossEvent> bossBars = new ConcurrentHashMap<>();
 
     public BossPhaseService(RunLifecycleService runLifecycleService,
                             RewardDistributionService rewardService,
@@ -68,33 +64,221 @@ public final class BossPhaseService {
         this.dungeonRegistry = dungeonRegistry;
     }
 
-    // ── S4.1 — Spawn ──────────────────────────────────────────────────────
-
     /**
-     * Spawn le boss à la position donnée et initialise {@link BossState} sur la run.
-     * Doit être appelé sur le SGT.
+     * Spawn tous les boss configures pour la run.
      */
     public void spawnBoss(Run run, ServerLevel level, Vec3 spawnPos) {
         if (run.phase() == RunPhase.ENDED) return;
-        if (bossToRun.containsValue(run.id())) return; // boss déjà spawné pour cette run
-        DungeonConfig config = dungeonRegistry.get(run.dungeonId()).orElse(null);
-        if (config == null || config.boss() == null) return;
+        if (runBosses.containsKey(run.id())) return;
 
-        DungeonConfig.BossDefinition bossDef = config.boss();
+        DungeonConfig config = dungeonRegistry.get(run.dungeonId()).orElse(null);
+        if (config == null) return;
+
+        List<DungeonConfig.BossDefinition> bossDefs = config.configuredBosses();
+        if (bossDefs.isEmpty()) {
+            completeVictory(run);
+            return;
+        }
+
+        Set<UUID> spawned = ConcurrentHashMap.newKeySet();
+        for (int i = 0; i < bossDefs.size(); i++) {
+            DungeonConfig.BossDefinition bossDef = bossDefs.get(i);
+            if (bossDef.optionalOrDefault()
+                && ThreadLocalRandom.current().nextDouble() > bossDef.spawnChanceOrDefault()) {
+                ArcadiaDungeon.LOGGER.info("[Arcadia][BOSS] event=optional_skipped runId={} bossId={}",
+                    run.id(), bossDef.idOrDefault(i));
+                continue;
+            }
+
+            Entity entity = spawnOneBoss(run, level, offsetSpawn(spawnPos, i), bossDef, i);
+            if (entity != null) {
+                spawned.add(entity.getUUID());
+            }
+        }
+
+        if (spawned.isEmpty()) {
+            completeVictory(run);
+            return;
+        }
+
+        runBosses.put(run.id(), spawned);
+        if (!hasRequiredBossAlive(spawned)) {
+            discardRemainingBosses(run.id(), level.getServer());
+            runBosses.remove(run.id());
+            completeVictory(run);
+            return;
+        }
+
+        ServerPayloadHandler.broadcastRunState(run);
+    }
+
+    public void cleanupBoss(RunId runId) {
+        Set<UUID> entityIds = runBosses.remove(runId);
+        if (entityIds == null) {
+            entityIds = ConcurrentHashMap.newKeySet();
+            for (Map.Entry<UUID, BossRuntime> entry : bossToRun.entrySet()) {
+                if (entry.getValue().runId().equals(runId)) {
+                    entityIds.add(entry.getKey());
+                }
+            }
+        }
+
+        if (entityIds.isEmpty()) {
+            return;
+        }
+
+        for (UUID entityId : entityIds) {
+            bossToRun.remove(entityId);
+            ServerBossEvent bar = bossBars.remove(entityId);
+            if (bar != null) bar.removeAllPlayers();
+        }
+    }
+
+    /**
+     * Tue un boss de la run. Pour une run multi-boss, retient le premier boss vivant trouve.
+     */
+    public boolean forceKillBoss(RunId runId, MinecraftServer server) {
+        Set<UUID> bossUuids = runBosses.get(runId);
+        if (bossUuids == null || bossUuids.isEmpty()) return false;
+
+        for (UUID bossUuid : bossUuids) {
+            for (ServerLevel level : server.getAllLevels()) {
+                var entity = level.getEntity(bossUuid);
+                if (entity instanceof LivingEntity living) {
+                    living.hurt(level.damageSources().genericKill(), Float.MAX_VALUE);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @SubscribeEvent
+    public void onBossDamage(LivingDamageEvent.Pre event) {
+        UUID entityId = event.getEntity().getUUID();
+        BossRuntime runtime = bossToRun.get(entityId);
+        if (runtime == null) return;
+
+        Run run = runLifecycleService.findById(runtime.runId()).orElse(null);
+        if (run == null || run.bossState() == null) return;
+
+        DungeonConfig config = dungeonRegistry.get(run.dungeonId()).orElse(null);
+        if (config == null) return;
+        List<DungeonConfig.BossDefinition> bosses = config.configuredBosses();
+        if (runtime.bossIndex() < 0 || runtime.bossIndex() >= bosses.size()) return;
+
+        List<DungeonConfig.Phase> phases = bosses.get(runtime.bossIndex()).phasesOrEmpty();
+        if (phases.isEmpty()) return;
+
+        float hpAfter = event.getEntity().getHealth() - event.getNewDamage();
+        float hpMax = event.getEntity().getMaxHealth();
+        if (hpMax <= 0) return;
+        int hpPercent = Math.max(0, (int) ((hpAfter / hpMax) * 100));
+
+        BossState bossState = run.bossState();
+        bossState.setHpCurrent(Math.round(hpAfter));
+
+        ServerBossEvent bar = bossBars.get(entityId);
+        if (bar != null) bar.setProgress(Math.max(0f, Math.min(1f, hpAfter / hpMax)));
+
+        int currentIdx = bossState.currentPhaseIndex();
+        if (currentIdx < phases.size()) {
+            DungeonConfig.Phase nextPhase = phases.get(currentIdx);
+            if (hpPercent <= nextPhase.triggerHpPercent()) {
+                applyPhase(event.getEntity(), nextPhase);
+                bossState.setCurrentPhaseIndex(currentIdx + 1);
+                ServerPayloadHandler.broadcastRunState(run);
+                ArcadiaDungeon.LOGGER.info(
+                    "[Arcadia][BOSS] event=phase_transition bossIndex={} phase={} hp={}",
+                    runtime.bossIndex(), currentIdx + 1, hpPercent);
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public void onBossDrops(LivingDropsEvent event) {
+        if (bossToRun.containsKey(event.getEntity().getUUID())) {
+            event.setCanceled(true);
+        }
+    }
+
+    @SubscribeEvent
+    public void onBossDeath(LivingDeathEvent event) {
+        UUID entityId = event.getEntity().getUUID();
+        BossRuntime runtime = bossToRun.remove(entityId);
+        if (runtime == null) return;
+
+        ServerBossEvent bar = bossBars.remove(entityId);
+        if (bar != null) bar.removeAllPlayers();
+
+        Run run = runLifecycleService.findById(runtime.runId()).orElse(null);
+        if (run == null) return;
+
+        DungeonConfig config = dungeonRegistry.get(run.dungeonId()).orElse(null);
+        if (config != null && runtime.bossIndex() >= 0 && runtime.bossIndex() < config.configuredBosses().size()) {
+            rewardService.distributeBossRewards(run, config.configuredBosses().get(runtime.bossIndex()));
+        }
+
+        Set<UUID> alive = runBosses.get(runtime.runId());
+        if (alive != null) {
+            alive.remove(entityId);
+            if (!alive.isEmpty() && hasRequiredBossAlive(alive)) {
+                ServerPayloadHandler.broadcastRunState(run);
+                ArcadiaDungeon.LOGGER.info("[Arcadia][BOSS] event=boss_killed runId={} remaining={}",
+                    run.id(), alive.size());
+                return;
+            }
+            discardRemainingBosses(runtime.runId(), event.getEntity().level().getServer());
+            runBosses.remove(runtime.runId());
+        }
+
+        completeVictory(run);
+        ArcadiaDungeon.LOGGER.info("[Arcadia][BOSS] event=all_bosses_killed runId={}", run.id());
+    }
+
+    private boolean hasRequiredBossAlive(Set<UUID> alive) {
+        for (UUID bossId : alive) {
+            BossRuntime runtime = bossToRun.get(bossId);
+            if (runtime != null && runtime.requiredKill()) return true;
+        }
+        return false;
+    }
+
+    private void discardRemainingBosses(RunId runId, MinecraftServer server) {
+        Set<UUID> remaining = runBosses.get(runId);
+        if (remaining == null || remaining.isEmpty() || server == null) return;
+
+        for (UUID bossId : remaining) {
+            bossToRun.remove(bossId);
+            ServerBossEvent bar = bossBars.remove(bossId);
+            if (bar != null) bar.removeAllPlayers();
+
+            for (ServerLevel level : server.getAllLevels()) {
+                Entity entity = level.getEntity(bossId);
+                if (entity != null) {
+                    entity.discard();
+                    break;
+                }
+            }
+        }
+    }
+
+    private Entity spawnOneBoss(Run run, ServerLevel level, Vec3 spawnPos,
+                                DungeonConfig.BossDefinition bossDef, int bossIndex) {
         ResourceLocation rl = ResourceLocation.tryParse(bossDef.type());
         if (rl == null) {
             ArcadiaDungeon.LOGGER.error("[Arcadia][BOSS] type invalide: {}", bossDef.type());
-            return;
+            return null;
         }
 
         EntityType<?> entityType = BuiltInRegistries.ENTITY_TYPE.getOptional(rl).orElse(null);
         if (entityType == null) {
-            ArcadiaDungeon.LOGGER.error("[Arcadia][BOSS] entité inconnue: {}", bossDef.type());
-            return;
+            ArcadiaDungeon.LOGGER.error("[Arcadia][BOSS] entite inconnue: {}", bossDef.type());
+            return null;
         }
 
         Entity entity = entityType.create(level);
-        if (entity == null) return;
+        if (entity == null) return null;
 
         entity.moveTo(spawnPos.x(), spawnPos.y(), spawnPos.z(), 0f, 0f);
 
@@ -109,10 +293,9 @@ public final class BossPhaseService {
         }
 
         level.addFreshEntity(entity);
-        bossToRun.put(entity.getUUID(), run.id());
+        bossToRun.put(entity.getUUID(), new BossRuntime(run.id(), bossIndex, bossDef.requiredKillOrDefault()));
         run.setBossState(new BossState(bossDef.type(), bossDef.hp()));
 
-        // Boss bar — affichée à tous les joueurs de la run
         ServerBossEvent bossBar = new ServerBossEvent(
             entityType.getDescription(), BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.PROGRESS);
         bossBar.setProgress(1.0f);
@@ -120,113 +303,24 @@ public final class BossPhaseService {
             ServerPlayer p = level.getServer().getPlayerList().getPlayer(playerId);
             if (p != null) bossBar.addPlayer(p);
         }
-        bossBars.put(run.id(), bossBar);
+        bossBars.put(entity.getUUID(), bossBar);
 
-        ServerPayloadHandler.broadcastRunState(run);
-        ArcadiaDungeon.LOGGER.info("[Arcadia][BOSS] event=spawn runId={} type={} hp={}",
-            run.id(), bossDef.type(), bossDef.hp());
+        ArcadiaDungeon.LOGGER.info("[Arcadia][BOSS] event=spawn runId={} bossId={} type={} hp={} requiredKill={}",
+            run.id(), bossDef.idOrDefault(bossIndex), bossDef.type(), bossDef.hp(), bossDef.requiredKillOrDefault());
+        return entity;
     }
 
-    public void cleanupBoss(RunId runId) {
-        bossToRun.values().removeIf(id -> id.equals(runId));
-        ServerBossEvent bar = bossBars.remove(runId);
-        if (bar != null) bar.removeAllPlayers();
-    }
-
-    /**
-     * Tue l'entité boss en jeu via {@code hurt(genericKill, MAX_VALUE)}, ce qui
-     * déclenche {@link LivingDeathEvent} → {@link #onBossDeath} → completeRun VICTORY.
-     * Retourne {@code false} si aucun boss n'est enregistré pour cette run ou
-     * si l'entité n'est plus présente dans aucun level.
-     *
-     * <p>Appelé par {@code /arcadia debug killboss <runId>} (S7.1 AC3).
-     */
-    public boolean forceKillBoss(RunId runId, MinecraftServer server) {
-        UUID bossUuid = bossToRun.entrySet().stream()
-            .filter(e -> e.getValue().equals(runId))
-            .map(Map.Entry::getKey)
-            .findFirst().orElse(null);
-        if (bossUuid == null) return false;
-
-        for (ServerLevel level : server.getAllLevels()) {
-            var entity = level.getEntity(bossUuid);
-            if (entity instanceof LivingEntity living) {
-                living.hurt(level.damageSources().genericKill(), Float.MAX_VALUE);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // ── S4.2 — Transitions de phase ───────────────────────────────────────
-
-    @SubscribeEvent
-    public void onBossDamage(LivingDamageEvent.Pre event) {
-        UUID entityId = event.getEntity().getUUID();
-        RunId runId = bossToRun.get(entityId);
-        if (runId == null) return;
-
-        Run run = runLifecycleService.findById(runId).orElse(null);
-        if (run == null || run.bossState() == null) return;
-
-        DungeonConfig config = dungeonRegistry.get(run.dungeonId()).orElse(null);
-        if (config == null || config.boss() == null || config.boss().phases().isEmpty()) return;
-
-        float hpAfter = event.getEntity().getHealth() - event.getNewDamage();
-        float hpMax = event.getEntity().getMaxHealth();
-        if (hpMax <= 0) return;
-        int hpPercent = Math.max(0, (int) ((hpAfter / hpMax) * 100));
-
-        BossState bossState = run.bossState();
-        bossState.setHpCurrent(Math.round(hpAfter));
-
-        ServerBossEvent bar = bossBars.get(runId);
-        if (bar != null) bar.setProgress(Math.max(0f, Math.min(1f, hpAfter / hpMax)));
-
-        List<DungeonConfig.Phase> phases = config.boss().phases();
-        int currentIdx = bossState.currentPhaseIndex();
-        if (currentIdx < phases.size()) {
-            DungeonConfig.Phase nextPhase = phases.get(currentIdx);
-            if (hpPercent <= nextPhase.triggerHpPercent()) {
-                applyPhase(event.getEntity(), nextPhase);
-                bossState.setCurrentPhaseIndex(currentIdx + 1);
-                ServerPayloadHandler.broadcastRunState(run);
-                ArcadiaDungeon.LOGGER.info(
-                    "[Arcadia][BOSS] event=phase_transition phase={} hp={}",
-                    currentIdx + 1, hpPercent);
-            }
-        }
-    }
-
-    // ── S4.4 — Boss mort → VICTORY ────────────────────────────────────────
-
-    @SubscribeEvent
-    public void onBossDrops(LivingDropsEvent event) {
-        if (bossToRun.containsKey(event.getEntity().getUUID())) {
-            event.setCanceled(true);
-        }
-    }
-
-    @SubscribeEvent
-    public void onBossDeath(LivingDeathEvent event) {
-        UUID entityId = event.getEntity().getUUID();
-        RunId runId = bossToRun.remove(entityId);
-        if (runId == null) return;
-
-        ServerBossEvent bar = bossBars.remove(runId);
-        if (bar != null) bar.removeAllPlayers();
-
-        Run run = runLifecycleService.findById(runId).orElse(null);
-        if (run == null) return;
-
+    private void completeVictory(Run run) {
         runLifecycleService.completeRun(run, RunResult.VICTORY);
         rewardService.distribute(run, RunResult.VICTORY);
         ServerPayloadHandler.broadcastRunState(run);
-
-        ArcadiaDungeon.LOGGER.info("[Arcadia][BOSS] event=boss_killed runId={}", run.id());
     }
 
-    // ── Internals ──────────────────────────────────────────────────────────
+    private static Vec3 offsetSpawn(Vec3 base, int index) {
+        int xOffset = (index % 3) - 1;
+        int zOffset = index / 3;
+        return base.add(xOffset * 2.0, 0.0, zOffset * 2.0);
+    }
 
     private void applyPhase(LivingEntity entity, DungeonConfig.Phase phase) {
         applyMultiplier(entity, Attributes.MOVEMENT_SPEED, PHASE_MOD_SPD, phase.speedMultiplier());
@@ -245,4 +339,6 @@ public final class BossPhaseService {
                 modId, multiplier - 1.0, AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
         }
     }
+
+    private record BossRuntime(RunId runId, int bossIndex, boolean requiredKill) {}
 }

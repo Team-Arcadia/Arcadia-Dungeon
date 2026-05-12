@@ -1,0 +1,41 @@
+<col class="cfg-screen">
+  <row class="cfg-header">
+    <label class="cfg-title">{{ cfg.title }}</label>
+  </row>
+
+  <col class="cfg-body">
+
+    <virtual-list id="roomList" class="hub-vlist" v-for="r in rooms.count" row-height="72">
+      <col class="list-row-col">
+
+        <row class="sub-row">
+          <label class="row-idx">{{ r.roomLabel }}</label>
+          <col class="field-group flex-1">
+            <label class="field-label" data-i18n="arcadia.admin.rooms.template">Template ref</label>
+            <input id="{{ r.roomTemplateId }}" class="field-input wide"
+                   value="{{ r.roomTemplate }}" oninput="{{ r.roomTemplateKey }}"
+                   placeholder="arcadia_dungeon:rooms/entry_basic" />
+          </col>
+          <button class="btn-del" onclick="{{ r.roomDelKey }}">✗</button>
+        </row>
+
+        <label class="cfg-note">{{ r.waveCount }}</label>
+
+        <button class="btn-add" onclick="{{ r.roomEditKey }}">✎ Gérer les vagues</button>
+
+      </col>
+    </virtual-list>
+
+    <button class="btn-add"
+            onclick="addRoom"
+            data-i18n="arcadia.admin.rooms.add.room">+ Ajouter salle</button>
+
+  </col>
+
+  <row class="cfg-footer">
+    <button class="btn-back" onclick="back" data-i18n="arcadia.admin.rooms.back">← Retour</button>
+    <col class="spacer" />
+    <button class="btn-save" onclick="save" data-i18n="arcadia.admin.rooms.save">✔ Sauvegarder</button>
+  </row>
+
+</col>

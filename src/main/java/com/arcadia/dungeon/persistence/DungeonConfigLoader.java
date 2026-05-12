@@ -71,7 +71,8 @@ public final class DungeonConfigLoader {
      * Retourne le nouveau config si succès, empty si invalide ou absent.
      */
     public Optional<DungeonConfig> reload(String dungeonId) {
-        Path file = configDir.resolve(sanitizeFileName(dungeonId) + ".json");
+        Path file = findFileByConfigId(dungeonId)
+            .orElse(configDir.resolve(sanitizeFileName(dungeonId) + ".json"));
         if (!Files.exists(file)) {
             ArcadiaDungeon.LOGGER.warn("[Arcadia][CONFIG] reload_miss dungeonId={} path={}", dungeonId, file);
             loaded.remove(dungeonId);
@@ -100,7 +101,8 @@ public final class DungeonConfigLoader {
             ArcadiaDungeon.LOGGER.error("[Arcadia][CONFIG] save_rejected reason=null_or_blank_id");
             return;
         }
-        Path file = configDir.resolve(sanitizeFileName(cfg.id()) + ".json");
+        Path file = findFileByConfigId(cfg.id())
+            .orElse(configDir.resolve(sanitizeFileName(cfg.id()) + ".json"));
         try {
             Files.createDirectories(configDir);
             Gson pretty = new GsonBuilder().setPrettyPrinting().create();
@@ -109,6 +111,28 @@ public final class DungeonConfigLoader {
             ArcadiaDungeon.LOGGER.info("[Arcadia][CONFIG] saved dungeonId={} path={}", cfg.id(), file);
         } catch (IOException e) {
             ArcadiaDungeon.LOGGER.error("[Arcadia][CONFIG] save_failed dungeonId={} error={}", cfg.id(), e.getMessage());
+        }
+    }
+
+    /**
+     * Supprime le fichier JSON du donjon {@code id} du disque et de la map in-memory.
+     *
+     * @return {@code true} si le fichier existait et a été supprimé, {@code false} sinon
+     */
+    public boolean delete(String id) {
+        if (id == null || id.isBlank()) return false;
+        Path file = findFileByConfigId(id)
+            .orElse(configDir.resolve(sanitizeFileName(id) + ".json"));
+        try {
+            boolean existed = Files.deleteIfExists(file);
+            if (existed) {
+                loaded.remove(id);
+                ArcadiaDungeon.LOGGER.info("[Arcadia][CONFIG] deleted dungeonId={} path={}", id, file);
+            }
+            return existed;
+        } catch (IOException e) {
+            ArcadiaDungeon.LOGGER.error("[Arcadia][CONFIG] delete_failed dungeonId={} error={}", id, e.getMessage());
+            return false;
         }
     }
 
@@ -141,6 +165,28 @@ public final class DungeonConfigLoader {
         }
     }
 
+    private Optional<Path> findFileByConfigId(String dungeonId) {
+        if (dungeonId == null || dungeonId.isBlank() || !Files.exists(configDir)) {
+            return Optional.empty();
+        }
+
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(configDir, "*.json")) {
+            for (Path file : stream) {
+                try {
+                    DungeonConfig cfg = GSON.fromJson(Files.readString(file), DungeonConfig.class);
+                    if (cfg != null && dungeonId.equals(cfg.id())) {
+                        return Optional.of(file);
+                    }
+                } catch (JsonSyntaxException | IOException ignored) {
+                    // Invalid files are reported by loadAll(); lookup should stay best-effort.
+                }
+            }
+        } catch (IOException e) {
+            ArcadiaDungeon.LOGGER.error("[Arcadia][CONFIG] file_lookup_failed dungeonId={} error={}", dungeonId, e.getMessage());
+        }
+        return Optional.empty();
+    }
+
     /**
      * Validation best-effort des champs obligatoires.
      * Retourne null si OK, message d'erreur sinon.
@@ -165,8 +211,14 @@ public final class DungeonConfigLoader {
             return "lives must be > 0 (got " + cfg.lives() + ")";
         }
         if (cfg.rooms() == null || cfg.rooms().isEmpty()) return "rooms must contain >= 1 entry";
-        if (cfg.boss() == null) return "missing boss";
-        if (cfg.boss().hp() <= 0) return "boss.hp must be > 0";
+        var configuredBosses = cfg.configuredBosses();
+        if (configuredBosses.isEmpty()) return "bosses must contain >= 1 entry";
+        int bossIndex = 0;
+        for (DungeonConfig.BossDefinition boss : configuredBosses) {
+            if (boss.type() == null || boss.type().isBlank()) return "bosses[" + bossIndex + "].type missing";
+            if (boss.hp() <= 0) return "bosses[" + bossIndex + "].hp must be > 0";
+            bossIndex++;
+        }
         if (cfg.rewards() == null) return "missing rewards";
         return null;
     }

@@ -107,19 +107,52 @@ public final class RewardDistributionService {
             run.id(), result, currency, multiplier);
     }
 
+    public List<String> distributeBossRewards(Run run, DungeonConfig.BossDefinition boss) {
+        if (boss == null || boss.rewardsOrEmpty().isEmpty()) return List.of();
+
+        var server = ServerLifecycleHooks.getCurrentServer();
+        if (server == null) return List.of();
+
+        List<String> distributed = new ArrayList<>();
+        for (UUID playerId : run.playerIds()) {
+            ServerPlayer player = server.getPlayerList().getPlayer(playerId);
+            if (player == null) continue;
+
+            for (DungeonConfig.BossReward reward : boss.rewardsOrEmpty()) {
+                if (random.nextDouble() > clamp01(reward.chance())) continue;
+                int count = giveItem(player, reward.item(), reward.min(), reward.max());
+                if (count > 0) {
+                    ResourceLocation rl = ResourceLocation.tryParse(reward.item());
+                    if (rl != null) distributed.add(count + "x " + formatItemName(rl));
+                }
+            }
+        }
+
+        if (!distributed.isEmpty()) {
+            ArcadiaDungeon.LOGGER.info(
+                "[Arcadia][BOSS] event=boss_rewards_distributed runId={} bossId={} rewards={}",
+                run.id(), boss.id(), distributed.size());
+        }
+        return distributed;
+    }
+
     private int giveItem(ServerPlayer player, DungeonConfig.LootEntry entry) {
-        ResourceLocation rl = ResourceLocation.tryParse(entry.item());
+        return giveItem(player, entry.item(), entry.min(), entry.max());
+    }
+
+    private int giveItem(ServerPlayer player, String itemId, int minValue, int maxValue) {
+        ResourceLocation rl = ResourceLocation.tryParse(itemId);
         if (rl == null) {
-            ArcadiaDungeon.LOGGER.warn("[Arcadia][RUN] loot item invalide: {}", entry.item());
+            ArcadiaDungeon.LOGGER.warn("[Arcadia][RUN] loot item invalide: {}", itemId);
             return 0;
         }
         var item = BuiltInRegistries.ITEM.getOptional(rl).orElse(null);
         if (item == null) {
-            ArcadiaDungeon.LOGGER.warn("[Arcadia][RUN] item inconnu: {}", entry.item());
+            ArcadiaDungeon.LOGGER.warn("[Arcadia][RUN] item inconnu: {}", itemId);
             return 0;
         }
-        int min = Math.min(entry.min(), entry.max());
-        int max = Math.max(entry.min(), entry.max());
+        int min = Math.min(minValue, maxValue);
+        int max = Math.max(minValue, maxValue);
         int count = min >= max ? max : min + random.nextInt(max - min + 1);
         if (count <= 0) return 0;
 
@@ -128,6 +161,10 @@ public final class RewardDistributionService {
             player.drop(stack, false);
         }
         return count;
+    }
+
+    private static double clamp01(double value) {
+        return Math.max(0.0, Math.min(1.0, value));
     }
 
     private static String formatItemName(ResourceLocation rl) {

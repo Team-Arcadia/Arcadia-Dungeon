@@ -49,12 +49,14 @@ class DungeonConfigGsonTest {
                     List.of()
                 )
             ),
-            new DungeonConfig.BossDefinition(
-                "minecraft:wither_skeleton",
-                200,
-                List.of(
-                    new DungeonConfig.Phase(50, 1.2, 1.0),
-                    new DungeonConfig.Phase(25, 1.5, 1.1)
+            List.of(
+                new DungeonConfig.BossDefinition(
+                    "minecraft:wither_skeleton",
+                    200,
+                    List.of(
+                        new DungeonConfig.Phase(50, 1.2, 1.0),
+                        new DungeonConfig.Phase(25, 1.5, 1.1)
+                    )
                 )
             ),
             new DungeonConfig.Rewards(
@@ -79,7 +81,15 @@ class DungeonConfigGsonTest {
                     "arcadia.archetype.archer.name",
                     List.of("minecraft:bow", "minecraft:leather_chestplate", "minecraft:arrow")
                 )
-            )
+            ),
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
         );
 
         // When : serialize → deserialize
@@ -92,7 +102,8 @@ class DungeonConfigGsonTest {
         assertEquals("arcadia_dungeon:example", roundtrip.id());
         assertEquals(3, roundtrip.lives());
         assertEquals(2, roundtrip.rooms().size());
-        assertEquals(2, roundtrip.boss().phases().size());
+        assertEquals(1, roundtrip.configuredBosses().size());
+        assertEquals(2, roundtrip.configuredBosses().get(0).phases().size());
         assertEquals(50, roundtrip.rewards().currency());
         assertEquals(3, roundtrip.archetypes().size());
         assertEquals("warrior", roundtrip.archetypes().get(0).id());

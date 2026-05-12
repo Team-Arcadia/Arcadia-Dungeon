@@ -33,7 +33,7 @@ class DungeonRegistryTest {
         assertEquals(1, dungeons.size());
         DungeonConfig cfg = dungeons.values().iterator().next();
         assertEquals(1, cfg.schemaVersion());
-        assertNotNull(cfg.boss());
+        assertFalse(cfg.configuredBosses().isEmpty());
         assertEquals(3, cfg.archetypes().size());
     }
 
@@ -71,7 +71,7 @@ class DungeonRegistryTest {
               "currency": { "nameKey": "Coins", "iconPath": "minecraft:textures/items/coin.png" },
               "lives": 5,
               "rooms": [{ "id": "r1", "templateRef": "test:room1", "waves": [] }],
-              "boss": { "type": "minecraft:zombie", "hp": 100, "phases": [] },
+              "bosses": [{ "id": "boss_1", "type": "minecraft:zombie", "hp": 100, "phases": [], "optional": false, "spawnChance": 1.0, "requiredKill": true, "rewards": [] }],
               "rewards": { "currency": 10, "loot": [] },
               "archetypes": []
             }
@@ -92,8 +92,8 @@ class DungeonRegistryTest {
     }
 
     @Test
-    void missingObligatoryFieldSkipsConfig(@TempDir Path tmp) throws IOException {
-        // Given : un JSON sans 'boss' (champ obligatoire)
+    void missingObligatoryBossSkipsConfig(@TempDir Path tmp) throws IOException {
+        // Given : un JSON sans boss
         Path configDir = tmp.resolve("dungeon");
         Files.createDirectories(configDir);
         Files.writeString(configDir.resolve("noboss.json"), """

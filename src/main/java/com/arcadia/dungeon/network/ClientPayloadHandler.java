@@ -2,8 +2,12 @@ package com.arcadia.dungeon.network;
 
 import com.arcadia.dungeon.ArcadiaDungeon;
 import com.arcadia.dungeon.client.screen.AdminHubScreen;
+import com.arcadia.dungeon.client.screen.ArcadiaNavigator;
 import com.arcadia.dungeon.client.screen.DebugRunScreen;
 import com.arcadia.dungeon.client.screen.ResultScreen;
+import com.arcadia.dungeon.client.state.ActiveRunsClient;
+import com.arcadia.dungeon.client.state.DungeonDetailClient;
+import com.arcadia.dungeon.client.state.DungeonEditClient;
 import com.arcadia.dungeon.client.state.DungeonListClient;
 import com.arcadia.dungeon.client.state.RunStateClient;
 import net.minecraft.client.Minecraft;
@@ -42,12 +46,34 @@ public final class ClientPayloadHandler {
         });
     }
 
+    public static void handleOpenAdminHub(OpenAdminHubPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            ArcadiaNavigator.reset();
+            Minecraft.getInstance().setScreen(new AdminHubScreen());
+        });
+    }
+
     public static void handleOpenDebugScreen(OpenDebugScreenPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> Minecraft.getInstance().setScreen(new DebugRunScreen()));
     }
 
     public static void handleDungeonList(DungeonListPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> DungeonListClient.update(payload.dungeons()));
+    }
+
+    public static void handleDungeonDetail(DungeonDetailPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> DungeonDetailClient.update(payload));
+    }
+
+    public static void handleMonitorData(MonitorDataPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> ActiveRunsClient.update(payload));
+    }
+
+    public static void handleDungeonEditData(DungeonEditDataPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> DungeonEditClient.update(
+            payload.dungeonId(), payload.configJson(),
+            payload.spawnX(), payload.spawnY(), payload.spawnZ(),
+            payload.spawnDim(), payload.spawnSet()));
     }
 
     public static void handleOpenResultScreen(OpenResultScreenPayload payload, IPayloadContext context) {

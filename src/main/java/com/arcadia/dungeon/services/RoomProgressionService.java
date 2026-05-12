@@ -227,7 +227,7 @@ public final class RoomProgressionService {
         } else {
             // Toutes les salles clearées → boss ou victoire directe
             ArcadiaDungeon.LOGGER.info("[Arcadia][ROOM] event=all_rooms_cleared runId={}", run.id());
-            if (config.boss() == null) {
+            if (config.configuredBosses().isEmpty()) {
                 runLifecycleService.completeRun(run, RunResult.VICTORY);
             } else {
                 Vec3 spawnPos = spawnPositions.getOrDefault(run.id(), Vec3.ZERO);

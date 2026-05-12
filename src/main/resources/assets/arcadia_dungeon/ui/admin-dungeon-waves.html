@@ -1,0 +1,44 @@
+<col class="cfg-screen">
+  <row class="cfg-header">
+    <label class="cfg-title">{{ cfg.title }}</label>
+  </row>
+
+  <col class="cfg-body">
+
+    <virtual-list id="waveList" class="hub-vlist" v-for="w in waves.count" row-height="68">
+      <col class="list-row-col">
+
+        <row class="sub-row">
+          <label class="row-idx">{{ w.waveLabel }}</label>
+          <col class="field-group w-60">
+            <label class="field-label" data-i18n="arcadia.admin.rooms.wave.delay">Délai (ticks)</label>
+            <input id="{{ w.waveDelayId }}" class="field-input wide"
+                   value="{{ w.waveDelay }}" oninput="{{ w.waveDelayKey }}"
+                   placeholder="20" />
+          </col>
+          <button class="btn-del" onclick="{{ w.waveDelKey }}">✗</button>
+        </row>
+
+        <col class="field-group">
+          <label class="field-label" data-i18n="arcadia.admin.rooms.wave.mobs">Mobs (type:count, ...)</label>
+          <input id="{{ w.waveMobsId }}" class="field-input wide"
+                 value="{{ w.waveMobs }}" oninput="{{ w.waveMobsKey }}"
+                 placeholder="minecraft:zombie:2, minecraft:skeleton:1" />
+        </col>
+
+      </col>
+    </virtual-list>
+
+    <button class="btn-add"
+            onclick="addWave"
+            data-i18n="arcadia.admin.rooms.add.wave">+ Ajouter vague</button>
+
+  </col>
+
+  <row class="cfg-footer">
+    <button class="btn-back" onclick="back" data-i18n="arcadia.admin.rooms.back">← Retour</button>
+    <col class="spacer" />
+    <button class="btn-save" onclick="save" data-i18n="arcadia.admin.rooms.save">✔ Sauvegarder</button>
+  </row>
+
+</col>

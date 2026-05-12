@@ -1,0 +1,65 @@
+name: CI Multi-version NeoForge
+
+on:
+  push:
+    branches:
+      - 'mc/**'
+
+jobs:
+  build:
+    name: build-mc${{ matrix.mc_major }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - branch_suffix: '1.20'
+            mc_major: '1.20'
+            props_file: 'buildSrc/versions/1.20.properties'
+          - branch_suffix: '1.21'
+            mc_major: '1.21'
+            props_file: 'buildSrc/versions/1.21.properties'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Load version properties
+        id: version
+        run: |
+          source ${{ matrix.props_file }}
+          echo "minecraft_version=$minecraft_version" >> $GITHUB_OUTPUT
+          echo "neo_version=$neo_version" >> $GITHUB_OUTPUT
+          echo "neoforge_gradle_version=$neoforge_gradle_version" >> $GITHUB_OUTPUT
+
+      - name: Override gradle.properties
+        run: |
+          sed -i "s/^minecraft_version=.*/minecraft_version=${{ steps.version.outputs.minecraft_version }}/" gradle.properties
+          sed -i "s/^neo_version=.*/neo_version=${{ steps.version.outputs.neo_version }}/" gradle.properties
+
+      - name: Grant Gradle execute permission
+        run: chmod +x gradlew
+
+      - name: Compile Java (MC ${{ matrix.mc_major }})
+        run: ./gradlew compileJava --no-daemon --stacktrace
+
+      - name: Run GameTests (MC ${{ matrix.mc_major }})
+        run: ./gradlew runGameTestServer --no-daemon
+        continue-on-error: false
+
+      - name: Upload GameTest results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gametest-results-mc${{ matrix.mc_major }}
+          path: |
+            build/gametest/**
+            logs/gametest*.log
+          if-no-files-found: ignore

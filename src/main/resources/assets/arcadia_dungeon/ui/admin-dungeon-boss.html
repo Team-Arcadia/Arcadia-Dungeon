@@ -1,0 +1,31 @@
+<col class="cfg-screen">
+  <row class="cfg-header">
+    <label class="cfg-title">{{ cfg.title }}</label>
+  </row>
+
+  <col class="cfg-body">
+    <label class="section-title" data-i18n="arcadia.admin.boss.list">Boss</label>
+
+    <virtual-list id="bossList" class="hub-vlist" v-for="b in boss.count" row-height="34">
+      <row class="dungeon-row">
+        <label class="row-idx">{{ b.bossIndex }}</label>
+        <col class="row-info">
+          <label class="row-name">{{ b.bossName }}</label>
+          <label class="row-meta">{{ b.bossType }}</label>
+          <label class="row-meta">{{ b.bossMeta }}</label>
+        </col>
+        <button class="btn-manage" onclick="{{ b.manageKey }}">Gerer</button>
+      </row>
+    </virtual-list>
+
+    <button class="btn-add"
+            onclick="addBoss"
+            data-i18n="arcadia.admin.boss.add.boss">+ Ajouter boss</button>
+  </col>
+
+  <row class="cfg-footer">
+    <button class="btn-back" onclick="back" data-i18n="arcadia.admin.boss.back">Retour</button>
+    <col class="spacer" />
+    <button class="btn-save" onclick="save" data-i18n="arcadia.admin.boss.save">Sauver</button>
+  </row>
+</col>

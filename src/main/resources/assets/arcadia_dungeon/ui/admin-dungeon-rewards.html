@@ -1,0 +1,55 @@
+<col class="cfg-screen">
+  <row class="cfg-header">
+    <label class="cfg-title">{{ cfg.title }}</label>
+  </row>
+
+  <col class="cfg-body">
+
+    <!-- Currency -->
+    <col class="field-group">
+      <label class="field-label" data-i18n="arcadia.admin.rewards.currency">Currency gagnée</label>
+      <input id="currency"
+             class="field-input"
+             value="{{ v.currency }}"
+             oninput="onCurrency"
+             placeholder="0" />
+    </col>
+
+    <!-- Loot table -->
+    <label class="section-title" data-i18n="arcadia.admin.rewards.loot">Table de butin</label>
+
+    <virtual-list id="lootList" class="hub-vlist" v-for="l in loot.count" row-height="26">
+      <row class="list-row">
+        <label class="row-idx">{{ l.lootIndex }}</label>
+        <col class="field-group flex-2">
+          <input id="{{ l.lootItemId }}" class="field-input wide"
+                 value="{{ l.lootItem }}" oninput="{{ l.lootItemKey }}"
+                 placeholder="minecraft:diamond" />
+        </col>
+        <col class="field-group w-36">
+          <input id="{{ l.lootMinId }}" class="field-input wide"
+                 value="{{ l.lootMin }}" oninput="{{ l.lootMinKey }}"
+                 placeholder="1" />
+        </col>
+        <col class="field-group w-36">
+          <input id="{{ l.lootMaxId }}" class="field-input wide"
+                 value="{{ l.lootMax }}" oninput="{{ l.lootMaxKey }}"
+                 placeholder="3" />
+        </col>
+        <button class="btn-del" onclick="{{ l.lootDelKey }}">✗</button>
+      </row>
+    </virtual-list>
+
+    <button class="btn-add"
+            onclick="addLoot"
+            data-i18n="arcadia.admin.rewards.add.loot">+ Ajouter butin</button>
+
+  </col>
+
+  <row class="cfg-footer">
+    <button class="btn-back" onclick="back" data-i18n="arcadia.admin.rewards.back">← Retour</button>
+    <col class="spacer" />
+    <button class="btn-save" onclick="save" data-i18n="arcadia.admin.rewards.save">✔ Sauvegarder</button>
+  </row>
+
+</col>

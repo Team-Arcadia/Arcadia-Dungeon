@@ -74,6 +74,17 @@ public final class DungeonRegistry {
         fallbackActive = false;
     }
 
+    /**
+     * Supprime le donjon {@code id} du disque et du registre en mémoire.
+     *
+     * @return {@code true} si le donjon existait et a été supprimé
+     */
+    public boolean delete(String id) {
+        boolean deleted = loader.delete(id);
+        if (deleted) dungeons.remove(id);
+        return deleted;
+    }
+
     /** True si le mod tourne en mode fail-safe (donjon exemple uniquement, depuis JAR). */
     public boolean isFallbackActive() {
         return fallbackActive;

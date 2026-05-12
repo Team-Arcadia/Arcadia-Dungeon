@@ -1,0 +1,58 @@
+<col class="cfg-screen">
+  <row class="cfg-header">
+    <label class="cfg-title">{{ cfg.title }}</label>
+  </row>
+
+  <col class="cfg-body">
+
+    <!-- Statut spawn (texte déjà résolu en Java via I18n.get()) -->
+    <label class="{{ zone.statusClass }}">{{ zone.status }}</label>
+
+    <!-- Capture button -->
+    <button class="btn-capture"
+            onclick="capture"
+            tooltip-i18n="arcadia.admin.zone.tooltip.capture"
+            data-i18n="arcadia.admin.zone.capture">◎ Capturer ma position</button>
+
+    <!-- Coordonnées manuelles -->
+    <label class="section-title" data-i18n="arcadia.admin.zone.spawn">Coordonnées spawn</label>
+
+    <row class="sub-row">
+      <col class="field-group flex-1">
+        <label class="field-label" data-i18n="arcadia.admin.zone.x">X</label>
+        <input id="zx" class="field-input wide"
+               value="{{ v.x }}" oninput="onX"
+               tooltip-i18n="arcadia.admin.zone.tooltip.x" />
+      </col>
+      <col class="field-group flex-1">
+        <label class="field-label" data-i18n="arcadia.admin.zone.y">Y</label>
+        <input id="zy" class="field-input wide"
+               value="{{ v.y }}" oninput="onY"
+               tooltip-i18n="arcadia.admin.zone.tooltip.y" />
+      </col>
+      <col class="field-group flex-1">
+        <label class="field-label" data-i18n="arcadia.admin.zone.z">Z</label>
+        <input id="zz" class="field-input wide"
+               value="{{ v.z }}" oninput="onZ"
+               tooltip-i18n="arcadia.admin.zone.tooltip.z" />
+      </col>
+    </row>
+
+    <col class="field-group">
+      <label class="field-label" data-i18n="arcadia.admin.zone.dim">Dimension</label>
+      <input id="zdim"
+             class="field-input wide"
+             value="{{ v.dim }}"
+             oninput="onDim"
+             tooltip-i18n="arcadia.admin.zone.tooltip.dim" />
+    </col>
+
+  </col>
+
+  <row class="cfg-footer">
+    <button class="btn-back" onclick="back" data-i18n="arcadia.admin.zone.back">← Retour</button>
+    <col class="spacer" />
+    <button class="btn-save" onclick="save" data-i18n="arcadia.admin.zone.save">✔ Sauvegarder</button>
+  </row>
+
+</col>

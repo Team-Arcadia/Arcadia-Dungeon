@@ -19,16 +19,31 @@ public record DungeonConfig(
     Currency currency,
     int lives,
     List<RoomRef> rooms,
-    BossDefinition boss,
+    List<BossDefinition> bosses,
     Rewards rewards,
     List<ArchetypeDefinition> archetypes,
     String structureRef,  // nullable — ex: "arcadia_dungeon:chateau_defaut"
     String dimension,     // nullable — ex: "arcadia_dungeon:dungeon". Null = dimension courante de l'admin au setup
-    Integer placementY    // nullable — Y forcé pour le placement NBT (ex: 64). Null = Y courant de l'admin
+    Integer placementY,   // nullable — Y forcé pour le placement NBT (ex: 64). Null = Y courant de l'admin
+    // ── Post-MVP configurable fields ──────────────────────────────────────────
+    String startMessage,   // nullable — message diffusé en chat au début du run
+    String victoryMessage, // nullable — message diffusé sur victoire
+    String failMessage,    // nullable — message diffusé sur défaite
+    Integer requiredLevel, // nullable — niveau Arcadia minimum requis pour rejoindre
+    Double xpMultiplier    // nullable — multiplicateur XP Arcadia pour ce donjon (1.0 = normal)
 ) {
 
     /** Schema version supportée en MVP. */
     public static final int CURRENT_SCHEMA_VERSION = 1;
+
+    public List<BossDefinition> configuredBosses() {
+        return bosses != null ? bosses : List.of();
+    }
+
+    public BossDefinition primaryBoss() {
+        List<BossDefinition> list = configuredBosses();
+        return list.isEmpty() ? null : list.get(0);
+    }
 
     // ============================================================
     // Sub-records (cohérents avec architecture-v1.md §4.2)
@@ -67,7 +82,54 @@ public record DungeonConfig(
      * @param hp          HP max du boss
      * @param phases      transitions configurables
      */
-    public record BossDefinition(String type, int hp, List<Phase> phases) {}
+    public record BossDefinition(
+        String id,
+        String type,
+        int hp,
+        List<Phase> phases,
+        Boolean optional,
+        Double spawnChance,
+        Boolean requiredKill,
+        List<BossReward> rewards
+    ) {
+        public BossDefinition(String type, int hp, List<Phase> phases) {
+            this(null, type, hp, phases, false, 1.0, true, List.of());
+        }
+
+        public String idOrDefault(int index) {
+            return id != null && !id.isBlank() ? id : "boss_" + (index + 1);
+        }
+
+        public List<Phase> phasesOrEmpty() {
+            return phases != null ? phases : List.of();
+        }
+
+        public boolean optionalOrDefault() {
+            return optional != null && optional;
+        }
+
+        public double spawnChanceOrDefault() {
+            if (spawnChance == null) return 1.0;
+            return Math.max(0.0, Math.min(1.0, spawnChance));
+        }
+
+        public boolean requiredKillOrDefault() {
+            return requiredKill == null || requiredKill;
+        }
+
+        public List<BossReward> rewardsOrEmpty() {
+            return rewards != null ? rewards : List.of();
+        }
+    }
+
+    /**
+     * Drop distribue quand ce boss precis meurt.
+     * @param item   resourceLocation item (ex: "minecraft:diamond")
+     * @param min    quantite min
+     * @param max    quantite max
+     * @param chance chance par joueur, entre 0.0 et 1.0
+     */
+    public record BossReward(String item, int min, int max, double chance) {}
 
     /**
      * Phase boss avec trigger HP et multiplicateurs.
