@@ -57,7 +57,7 @@ public final class RunLifecycleService {
     public Run startRun(String dungeonId, List<UUID> playerIds) {
         DungeonConfig config = dungeonRegistry.get(dungeonId)
             .orElseThrow(() -> new IllegalArgumentException("Unknown dungeon: " + dungeonId));
-        int totalRooms = config.rooms() != null ? config.rooms().size() : 0;
+        int totalRooms = 1;
         Run run = new Run(RunId.generate(), dungeonId, playerIds, config.lives(), totalRooms);
         activeRuns.put(run.id(), run);
         ArcadiaDungeon.LOGGER.info("[Arcadia][RUN] event=start runId={} dungeon={} players={}",

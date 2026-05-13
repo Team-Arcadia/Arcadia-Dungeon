@@ -210,7 +210,6 @@ public final class DungeonConfigLoader {
             ArcadiaDungeon.LOGGER.warn("[Arcadia][CONFIG] dungeonId={} lives={} invalide — doit être > 0, ignoré", cfg.id(), cfg.lives());
             return "lives must be > 0 (got " + cfg.lives() + ")";
         }
-        if (cfg.rooms() == null || cfg.rooms().isEmpty()) return "rooms must contain >= 1 entry";
         var configuredBosses = cfg.configuredBosses();
         if (configuredBosses.isEmpty()) return "bosses must contain >= 1 entry";
         int bossIndex = 0;

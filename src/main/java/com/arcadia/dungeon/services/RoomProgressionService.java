@@ -12,8 +12,13 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
@@ -21,6 +26,7 @@ import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import java.util.Map;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -67,6 +73,7 @@ public final class RoomProgressionService {
     public void startRunWaves(Run run, ServerLevel level, Vec3 spawnPos) {
         spawnPositions.put(run.id(), spawnPos);
         run.startActivePhase();
+        bossPhaseService.spawnStartBosses(run, level, spawnPos);
         triggerCurrentWave(run, level);
         ArcadiaDungeon.LOGGER.info("[Arcadia][ROOM] event=run_waves_start runId={} spawnPos={}",
             run.id(), spawnPos);
@@ -82,7 +89,7 @@ public final class RoomProgressionService {
         DungeonConfig config = dungeonRegistry.get(run.dungeonId()).orElse(null);
         if (config == null) return;
 
-        if (run.currentRoomIndex() >= config.rooms().size()) {
+        if (run.currentRoomIndex() > 0) {
             ArcadiaDungeon.LOGGER.info("[Arcadia][ROOM] event=all_rooms_cleared runId={}", run.id());
             return;
         }
@@ -147,20 +154,21 @@ public final class RoomProgressionService {
         DungeonConfig config = dungeonRegistry.get(run.dungeonId()).orElse(null);
         if (config == null) return;
 
-        if (run.currentRoomIndex() >= config.rooms().size()) return;
-        DungeonConfig.RoomRef currentRoom = config.rooms().get(run.currentRoomIndex());
+        List<DungeonConfig.Wave> waves = wavesFor(config, run.currentRoomIndex());
 
-        if (run.currentWaveIndex() >= currentRoom.waves().size()) {
+        if (run.currentWaveIndex() >= waves.size()) {
             // Salle sans waves (transition pure) → considérée clearée immédiatement
             onWaveCleared(run, level);
             return;
         }
 
-        DungeonConfig.Wave wave = currentRoom.waves().get(run.currentWaveIndex());
+        DungeonConfig.Wave wave = waves.get(run.currentWaveIndex());
         Vec3 spawnPos = spawnPositions.getOrDefault(run.id(), Vec3.ZERO);
         Set<UUID> mobs = ConcurrentHashMap.newKeySet();
+        broadcastWaveMessage(run, level, wave.startMessage());
 
-        for (DungeonConfig.MobSpawn mobSpawn : wave.mobs()) {
+        List<DungeonConfig.MobSpawn> waveMobs = wave.mobs() != null ? wave.mobs() : List.of();
+        for (DungeonConfig.MobSpawn mobSpawn : waveMobs) {
             ResourceLocation rl = ResourceLocation.tryParse(mobSpawn.mobType());
             if (rl == null) {
                 ArcadiaDungeon.LOGGER.warn("[Arcadia][ROOM] invalid mob type: {}", mobSpawn.mobType());
@@ -171,17 +179,25 @@ public final class RoomProgressionService {
                 ArcadiaDungeon.LOGGER.warn("[Arcadia][ROOM] unknown mob type: {}", mobSpawn.mobType());
                 continue;
             }
+            Vec3 mobSpawnPos = configuredSpawnOrDefault(mobSpawn, spawnPos);
+            ServerLevel spawnLevel = configuredLevelOrDefault(level, mobSpawn);
             for (int i = 0; i < mobSpawn.count(); i++) {
-                double ox = (random.nextDouble() - 0.5) * 6;
-                double oz = (random.nextDouble() - 0.5) * 6;
-                Entity entity = entityType.create(level);
+                double scatter = mobSpawn.spawnPoint() == null ? 6.0 : 1.0;
+                double ox = (random.nextDouble() - 0.5) * scatter;
+                double oz = (random.nextDouble() - 0.5) * scatter;
+                Entity entity = entityType.create(spawnLevel);
                 if (entity == null) continue;
-                entity.moveTo(spawnPos.x() + ox, spawnPos.y(), spawnPos.z() + oz, 0f, 0f);
+                entity.addTag(DungeonZoneProtectionService.MANAGED_ENTITY_TAG);
+                entity.moveTo(mobSpawnPos.x() + ox, mobSpawnPos.y(), mobSpawnPos.z() + oz, 0f, 0f);
                 if (entity instanceof Mob mob) {
-                    mob.finalizeSpawn(level, level.getCurrentDifficultyAt(entity.blockPosition()),
+                    mob.finalizeSpawn(spawnLevel, spawnLevel.getCurrentDifficultyAt(entity.blockPosition()),
                         MobSpawnType.COMMAND, null);
+                    applyMobConfig(mob, mobSpawn);
                 }
-                boolean added = level.addFreshEntity(entity);
+                if (Boolean.TRUE.equals(wave.glowingAfterDelay())) {
+                    entity.setGlowingTag(true);
+                }
+                boolean added = spawnLevel.addFreshEntity(entity);
                 if (!added) {
                     ArcadiaDungeon.LOGGER.warn("[Arcadia][ROOM] addFreshEntity failed — mob not tracked type={}", mobSpawn.mobType());
                     continue;
@@ -209,28 +225,25 @@ public final class RoomProgressionService {
     private void onWaveCleared(Run run, ServerLevel level) {
         DungeonConfig config = dungeonRegistry.get(run.dungeonId()).orElse(null);
         if (config == null) return;
-        DungeonConfig.RoomRef currentRoom = config.rooms().get(run.currentRoomIndex());
+        List<DungeonConfig.Wave> waves = wavesFor(config, run.currentRoomIndex());
+        Vec3 spawnPos = spawnPositions.getOrDefault(run.id(), Vec3.ZERO);
 
-        if (run.currentWaveIndex() + 1 < currentRoom.waves().size()) {
+        if (run.currentWaveIndex() < waves.size()) {
+            bossPhaseService.spawnBossesAfterWave(run, level, spawnPos, run.currentWaveIndex() + 1);
+        }
+
+        if (run.currentWaveIndex() + 1 < waves.size()) {
             // Il reste des waves dans cette salle
             run.nextWave();
             triggerCurrentWave(run, level);
             ArcadiaDungeon.LOGGER.info("[Arcadia][ROOM] event=wave_cleared_next runId={} room={} nextWave={}",
                 run.id(), run.currentRoomIndex(), run.currentWaveIndex());
-        } else if (run.currentRoomIndex() + 1 < config.rooms().size()) {
-            // Toutes les waves de la salle sont clearées → avance à la suivante
-            ArcadiaDungeon.LOGGER.info("[Arcadia][ROOM] event=cleared runId={} room={}",
-                run.id(), run.currentRoomIndex());
-            cleanupWaveTracking(run.id());
-            run.advanceToNextRoom();
-            triggerCurrentWave(run, level);
         } else {
             // Toutes les salles clearées → boss ou victoire directe
             ArcadiaDungeon.LOGGER.info("[Arcadia][ROOM] event=all_rooms_cleared runId={}", run.id());
             if (config.configuredBosses().isEmpty()) {
                 runLifecycleService.completeRun(run, RunResult.VICTORY);
             } else {
-                Vec3 spawnPos = spawnPositions.getOrDefault(run.id(), Vec3.ZERO);
                 bossPhaseService.spawnBoss(run, level, spawnPos);
             }
         }
@@ -241,6 +254,90 @@ public final class RoomProgressionService {
         if (mobs == null) return;
         mobs.forEach(mobToRun::remove);
         discardEntities(mobs);
+    }
+
+    private static List<DungeonConfig.Wave> wavesFor(DungeonConfig config, int roomIndex) {
+        return roomIndex == 0 ? config.configuredWaves() : List.of();
+    }
+
+    private static Vec3 configuredSpawnOrDefault(DungeonConfig.MobSpawn mobSpawn, Vec3 fallback) {
+        DungeonConfig.SpawnPoint spawnPoint = mobSpawn.spawnPoint();
+        if (spawnPoint == null) return fallback;
+        return new Vec3(spawnPoint.x(), spawnPoint.y(), spawnPoint.z());
+    }
+
+    private static ServerLevel configuredLevelOrDefault(ServerLevel fallback, DungeonConfig.MobSpawn mobSpawn) {
+        DungeonConfig.SpawnPoint spawnPoint = mobSpawn.spawnPoint();
+        if (spawnPoint == null || spawnPoint.dimension() == null || spawnPoint.dimension().isBlank()) {
+            return fallback;
+        }
+        ResourceLocation dim = ResourceLocation.tryParse(spawnPoint.dimension());
+        if (dim == null) return fallback;
+        ServerLevel configured = fallback.getServer().getLevel(
+            net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, dim));
+        return configured != null ? configured : fallback;
+    }
+
+    private static void applyMobConfig(Mob mob, DungeonConfig.MobSpawn mobSpawn) {
+        if (mobSpawn.customName() != null && !mobSpawn.customName().isBlank()) {
+            mob.setCustomName(Component.literal(mobSpawn.customName()));
+            mob.setCustomNameVisible(true);
+        }
+        applyDoubleBase(mob, Attributes.MAX_HEALTH, mobSpawn.health(), true);
+        applyDoubleBase(mob, Attributes.ATTACK_DAMAGE, mobSpawn.damage(), false);
+        applyDoubleBase(mob, Attributes.MOVEMENT_SPEED, mobSpawn.speed(), false);
+        applyEquipment(mob, mobSpawn.equipment());
+        applyCustomAttributes(mob, mobSpawn.customAttributes());
+    }
+
+    private static void applyDoubleBase(LivingEntity entity,
+                                        net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute,
+                                        Double value,
+                                        boolean healToMax) {
+        if (value == null || value <= 0.0) return;
+        var instance = entity.getAttribute(attribute);
+        if (instance == null) return;
+        instance.setBaseValue(value);
+        if (healToMax) entity.setHealth(value.floatValue());
+    }
+
+    private static void applyEquipment(Mob mob, DungeonConfig.Equipment equipment) {
+        if (equipment == null) return;
+        equip(mob, EquipmentSlot.MAINHAND, equipment.mainHand());
+        equip(mob, EquipmentSlot.OFFHAND, equipment.offHand());
+        equip(mob, EquipmentSlot.HEAD, equipment.helmet());
+        equip(mob, EquipmentSlot.CHEST, equipment.chestplate());
+        equip(mob, EquipmentSlot.LEGS, equipment.leggings());
+        equip(mob, EquipmentSlot.FEET, equipment.boots());
+    }
+
+    private static void equip(Mob mob, EquipmentSlot slot, String itemId) {
+        if (itemId == null || itemId.isBlank()) return;
+        ResourceLocation rl = ResourceLocation.tryParse(itemId.trim());
+        if (rl == null) return;
+        BuiltInRegistries.ITEM.getOptional(rl).ifPresent(item ->
+            mob.setItemSlot(slot, new ItemStack(item)));
+    }
+
+    private static void applyCustomAttributes(LivingEntity entity, Map<String, Double> attributes) {
+        if (attributes == null || attributes.isEmpty()) return;
+        attributes.forEach((key, value) -> {
+            if (key == null || value == null) return;
+            ResourceLocation rl = ResourceLocation.tryParse(key);
+            if (rl == null) return;
+            BuiltInRegistries.ATTRIBUTE.getHolder(rl).ifPresent(attribute -> {
+                var instance = entity.getAttribute(attribute);
+                if (instance != null) instance.setBaseValue(value);
+            });
+        });
+    }
+
+    private static void broadcastWaveMessage(Run run, ServerLevel level, String message) {
+        if (message == null || message.isBlank()) return;
+        for (UUID playerId : run.playerIds()) {
+            var player = level.getServer().getPlayerList().getPlayer(playerId);
+            if (player != null) player.sendSystemMessage(Component.literal(message));
+        }
     }
 
     private void discardEntities(Set<UUID> mobIds) {

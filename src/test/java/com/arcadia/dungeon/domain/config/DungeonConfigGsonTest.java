@@ -31,13 +31,13 @@ class DungeonConfigGsonTest {
                     List.of(
                         new DungeonConfig.Wave(
                             List.of(
-                                new DungeonConfig.MobSpawn("minecraft:zombie", 2)
+                                new DungeonConfig.MobSpawn("minecraft:zombie", 2, null)
                             ),
                             0
                         ),
                         new DungeonConfig.Wave(
                             List.of(
-                                new DungeonConfig.MobSpawn("minecraft:skeleton", 1)
+                                new DungeonConfig.MobSpawn("minecraft:skeleton", 1, null)
                             ),
                             30
                         )
@@ -49,6 +49,7 @@ class DungeonConfigGsonTest {
                     List.of()
                 )
             ),
+            List.of(),
             List.of(
                 new DungeonConfig.BossDefinition(
                     "minecraft:wither_skeleton",
@@ -82,6 +83,8 @@ class DungeonConfigGsonTest {
                     List.of("minecraft:bow", "minecraft:leather_chestplate", "minecraft:arrow")
                 )
             ),
+            null,
+            null,
             null,
             null,
             null,

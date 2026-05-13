@@ -1,16 +1,17 @@
 package com.arcadia.dungeon.domain.config;
 
 import java.util.List;
+import java.util.Map;
 
 /**
- * Agrégat domain — config JSON immutable d'un donjon.
+ * Domain aggregate - immutable dungeon JSON config.
  *
- * <p>Chargée depuis {@code config/arcadia/dungeon/<id>.json} au boot serveur,
+ * <p>Loaded from config/arcadia/dungeon/<id>.json during server boot,
  * hot-reload via commande {@code /arcadia reload}.
  *
- * <p>Tous les sub-records sont also sérialisables/désérialisables via Gson.
+ * <p>All sub-records are serializable/deserializable through Gson.
  *
- * @see <a href="../../../../../../../../_bmad-output/planning-artifacts/architecture-v1.md">architecture-v1 §4.2</a>
+ * @see <a href="../../../../../../../../_bmad-output/planning-artifacts/architecture-v1.md">architecture-v1 section 4.2</a>
  */
 public record DungeonConfig(
     int schemaVersion,
@@ -19,21 +20,24 @@ public record DungeonConfig(
     Currency currency,
     int lives,
     List<RoomRef> rooms,
+    List<Wave> waves,
     List<BossDefinition> bosses,
     Rewards rewards,
     List<ArchetypeDefinition> archetypes,
-    String structureRef,  // nullable — ex: "arcadia_dungeon:chateau_defaut"
-    String dimension,     // nullable — ex: "arcadia_dungeon:dungeon". Null = dimension courante de l'admin au setup
-    Integer placementY,   // nullable — Y forcé pour le placement NBT (ex: 64). Null = Y courant de l'admin
-    // ── Post-MVP configurable fields ──────────────────────────────────────────
-    String startMessage,   // nullable — message diffusé en chat au début du run
-    String victoryMessage, // nullable — message diffusé sur victoire
-    String failMessage,    // nullable — message diffusé sur défaite
-    Integer requiredLevel, // nullable — niveau Arcadia minimum requis pour rejoindre
-    Double xpMultiplier    // nullable — multiplicateur XP Arcadia pour ce donjon (1.0 = normal)
+    String structureRef,  // nullable - ex: "arcadia_dungeon:chateau_defaut"
+    String dimension,     // nullable - ex: "arcadia_dungeon:dungeon". Null = current admin dimension during setup
+    Integer placementY,   // nullable - forced Y for NBT placement (ex: 64). Null = current admin Y
+    AreaPos areaPos1,     // nullable - coin 1 de la zone globale du donjon
+    AreaPos areaPos2,     // nullable - coin 2 de la zone globale du donjon
+    // Post-MVP configurable fields
+    String startMessage,   // nullable - chat message broadcast when the run starts
+    String victoryMessage, // nullable - victory chat message
+    String failMessage,    // nullable - defeat chat message
+    Integer requiredLevel, // nullable - minimum Arcadia level required to join
+    Double xpMultiplier    // nullable - Arcadia XP multiplier for this dungeon (1.0 = normal)
 ) {
 
-    /** Schema version supportée en MVP. */
+    /** Schema version supported by the MVP. */
     public static final int CURRENT_SCHEMA_VERSION = 1;
 
     public List<BossDefinition> configuredBosses() {
@@ -45,40 +49,120 @@ public record DungeonConfig(
         return list.isEmpty() ? null : list.get(0);
     }
 
+    public List<Wave> configuredWaves() {
+        return waves != null ? waves : List.of();
+    }
+
+    public boolean hasArea() {
+        return areaPos1 != null && areaPos2 != null;
+    }
+
+    public boolean isInArea(String dimension, double px, double py, double pz) {
+        return isInsideArea(areaPos1, areaPos2, dimension, px, py, pz);
+    }
+
+    public DungeonConfig withArea(AreaPos pos1, AreaPos pos2) {
+        return new DungeonConfig(schemaVersion, id, nameKey, currency, lives, rooms, waves, bosses, rewards,
+            archetypes, structureRef, dimension, placementY, pos1, pos2, startMessage, victoryMessage,
+            failMessage, requiredLevel, xpMultiplier);
+    }
+
+    public static boolean isInsideArea(AreaPos areaPos1, AreaPos areaPos2, String dimension,
+                                       double px, double py, double pz) {
+        if (areaPos1 == null || areaPos2 == null) return false;
+        String expectedDim = areaPos1.dimension() != null ? areaPos1.dimension() : "";
+        if (!expectedDim.equals(dimension)) return false;
+
+        int minX = Math.min(areaPos1.x(), areaPos2.x());
+        int maxX = Math.max(areaPos1.x(), areaPos2.x());
+        int minY = Math.min(areaPos1.y(), areaPos2.y());
+        int maxY = Math.max(areaPos1.y(), areaPos2.y());
+        int minZ = Math.min(areaPos1.z(), areaPos2.z());
+        int maxZ = Math.max(areaPos1.z(), areaPos2.z());
+
+        return px >= minX && px <= maxX + 1
+            && py >= minY && py <= maxY + 1
+            && pz >= minZ && pz <= maxZ + 1;
+    }
+
     // ============================================================
-    // Sub-records (cohérents avec architecture-v1.md §4.2)
+    // Sub-records
     // ============================================================
 
     /**
      * Currency Arcadia configurable par donjon.
-     * @param nameKey clé i18n du nom (ex: "arcadia.currency.gears.name") ou literal
+     * @param nameKey i18n key for the display name (ex: "arcadia.currency.gears.name") or literal
      * @param iconPath chemin texture (ex: "arcadia_dungeon:textures/icons/gear.png")
      */
     public record Currency(String nameKey, String iconPath) {}
 
+    /** Coin de zone cuboide dans une dimension. */
+    public record AreaPos(String dimension, int x, int y, int z) {}
+
     /**
-     * Référence à un {@link com.arcadia.dungeon.domain.room.RoomTemplate} pour ce donjon.
+     * Reference to a room template for this dungeon.
      * Permet d'override les waves par donjon sans dupliquer le template.
      *
      * @param id          identifiant de la salle dans le donjon (unique au donjon)
      * @param templateRef ref vers un RoomTemplate (ex: "arcadia_dungeon:rooms/entry_basic")
-     * @param waves       waves de mobs spécifiques à cette salle
+     * @param waves       room-specific mob waves
      */
     public record RoomRef(String id, String templateRef, List<Wave> waves) {}
 
-    /** Wave de mobs dans une salle. */
-    public record Wave(List<MobSpawn> mobs, int delayTicks) {}
+    /** Wave de mobs dans l'ordre global de spawn du donjon. */
+    public record Wave(
+        String name,
+        List<MobSpawn> mobs,
+        int delayTicks,
+        String startMessage,
+        Boolean glowingAfterDelay,
+        Integer glowingDelaySeconds
+    ) {
+        public Wave(List<MobSpawn> mobs, int delayTicks) {
+            this(null, mobs, delayTicks, null, true, 60);
+        }
+    }
 
     /**
      * Spawn d'un type de mob, count fois.
      * @param mobType  resourceLocation (ex: "minecraft:zombie")
-     * @param count    nombre d'instances à spawn
+     * @param count    number of instances to spawn
      */
-    public record MobSpawn(String mobType, int count) {}
+    public record MobSpawn(
+        String mobType,
+        int count,
+        SpawnPoint spawnPoint,
+        String customName,
+        Double health,
+        Double damage,
+        Double speed,
+        Equipment equipment,
+        Map<String, Double> customAttributes,
+        CombatTuning combat
+    ) {
+        public MobSpawn(String mobType, int count, SpawnPoint spawnPoint) {
+            this(mobType, count, spawnPoint, null, null, null, null, null, null, null);
+        }
+    }
+
+    public record SpawnPoint(String dimension, double x, double y, double z) {}
+
+    public record Equipment(String mainHand, String offHand, String helmet, String chestplate, String leggings, String boots) {}
+
+    public record CombatTuning(
+        Double attackRange,
+        Integer attackCooldownMs,
+        Double aggroRange,
+        Integer projectileCooldownMs,
+        Double dodgeChance,
+        Integer dodgeCooldownMs,
+        Boolean dodgeProjectilesOnly,
+        String dodgeMessage
+    ) {}
 
     /**
-     * Définition du boss du donjon.
-     * @param type        resourceLocation entité (ex: "minecraft:wither_skeleton" ou "arcadia_dungeon:custom_boss")
+     * Dungeon boss definition.
+     * @param type        entity resourceLocation (ex: "minecraft:wither_skeleton" or "arcadia_dungeon:custom_boss")
      * @param hp          HP max du boss
      * @param phases      transitions configurables
      */
@@ -90,10 +174,26 @@ public record DungeonConfig(
         Boolean optional,
         Double spawnChance,
         Boolean requiredKill,
-        List<BossReward> rewards
+        List<BossReward> rewards,
+        String customName,
+        Double baseDamage,
+        Boolean adaptivePower,
+        Double healthMultiplierPerPlayer,
+        Double damageMultiplierPerPlayer,
+        SpawnPoint spawnPoint,
+        Boolean showBossBar,
+        String bossBarColor,
+        String spawnMessage,
+        String skipMessage,
+        Integer spawnAfterWave,
+        Boolean spawnAtStart,
+        Equipment equipment,
+        Map<String, Double> customAttributes,
+        CombatTuning combat
     ) {
         public BossDefinition(String type, int hp, List<Phase> phases) {
-            this(null, type, hp, phases, false, 1.0, true, List.of());
+            this(null, type, hp, phases, false, 1.0, true, List.of(),
+                null, null, true, 0.5, 0.1, null, true, "RED", null, null, 0, false, null, null, null);
         }
 
         public String idOrDefault(int index) {
@@ -120,6 +220,18 @@ public record DungeonConfig(
         public List<BossReward> rewardsOrEmpty() {
             return rewards != null ? rewards : List.of();
         }
+
+        public boolean spawnAtStartOrDefault() {
+            return spawnAtStart != null && spawnAtStart;
+        }
+
+        public int spawnAfterWaveOrDefault() {
+            return spawnAfterWave != null ? Math.max(0, spawnAfterWave) : 0;
+        }
+
+        public boolean showBossBarOrDefault() {
+            return showBossBar == null || showBossBar;
+        }
     }
 
     /**
@@ -133,33 +245,69 @@ public record DungeonConfig(
 
     /**
      * Phase boss avec trigger HP et multiplicateurs.
-     * @param triggerHpPercent  HP threshold (ex: 50 = trigger quand boss à 50% HP)
-     * @param damageMultiplier  multiplicateur dégâts boss durant cette phase (1.0 = normal)
+     * @param triggerHpPercent  HP threshold (ex: 50 = trigger when boss reaches 50% HP)
+     * @param damageMultiplier  boss damage multiplier during this phase (1.0 = normal)
      * @param speedMultiplier   multiplicateur vitesse boss
      */
-    public record Phase(int triggerHpPercent, double damageMultiplier, double speedMultiplier) {}
+    public record Phase(
+        int triggerHpPercent,
+        double damageMultiplier,
+        double speedMultiplier,
+        String description,
+        List<MobSpawn> summonMobs,
+        String requiredAction,
+        String phaseStartMessage,
+        Boolean invulnerableDuringTransition,
+        Double transitionDurationSeconds,
+        Double immunityDuration,
+        List<PhaseEffect> playerEffects,
+        List<String> phaseCommands,
+        Boolean vignetteEnabled,
+        Boolean shakeEnabled,
+        String vignetteColorHex,
+        String soundId
+    ) {
+        public Phase(int triggerHpPercent, double damageMultiplier, double speedMultiplier) {
+            this(triggerHpPercent, damageMultiplier, speedMultiplier, null, List.of(), "NONE", null,
+                false, 2.0, 0.0, List.of(), List.of(), false, false, "#FF0000", null);
+        }
+
+        public List<MobSpawn> summonsOrEmpty() {
+            return summonMobs != null ? summonMobs : List.of();
+        }
+
+        public List<PhaseEffect> effectsOrEmpty() {
+            return playerEffects != null ? playerEffects : List.of();
+        }
+
+        public List<String> commandsOrEmpty() {
+            return phaseCommands != null ? phaseCommands : List.of();
+        }
+    }
+
+    public record PhaseEffect(String effect, int durationSeconds, int amplifier) {}
 
     /**
-     * Récompenses distribuées à fin de run.
-     * @param currency  montant currency à créditer (chaque joueur OU group selon design)
-     * @param loot      items distribués (shared multi)
+     * Rewards distributed at end of run.
+     * @param currency  currency amount to credit
+     * @param loot      distributed loot items
      */
     public record Rewards(long currency, List<LootEntry> loot) {}
 
     /**
      * Item de loot avec range min-max.
      * @param item  resourceLocation item (ex: "minecraft:diamond")
-     * @param min   quantité min
-     * @param max   quantité max (inclusif)
+     * @param min   minimum quantity
+     * @param max   maximum quantity (inclusive)
      */
     public record LootEntry(String item, int min, int max) {}
 
     /**
-     * Archétype = kit d'items de départ.
+     * Archetype = starting item kit.
      * Version MVP ULTRA simple : juste id + nameKey + items fixes (pas de stats).
      *
      * @param id        identifiant unique (ex: "warrior", "mage", "archer")
-     * @param nameKey   clé i18n du nom affiché
+     * @param nameKey   display name i18n key
      * @param items     items du kit (resourceLocation)
      */
     public record ArchetypeDefinition(String id, String nameKey, List<String> items) {}

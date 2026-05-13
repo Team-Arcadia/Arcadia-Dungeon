@@ -6,6 +6,7 @@ import com.arcadia.dungeon.domain.run.Run;
 import com.arcadia.dungeon.domain.run.RunId;
 import com.arcadia.dungeon.domain.run.RunPhase;
 import com.arcadia.dungeon.domain.run.RunResult;
+import com.arcadia.dungeon.event.DungeonAreaWandEventHandler;
 import com.arcadia.dungeon.services.ArchetypeService;
 import com.arcadia.dungeon.services.RoomProgressionService;
 import com.arcadia.dungeon.services.RunLifecycleService;
@@ -30,8 +31,8 @@ import java.util.UUID;
 /**
  * Handlers serveur pour les payloads C2S (Stories S2.5, S3.2, S3.4).
  *
- * <p>Toutes les mutations sont exécutées via {@code context.enqueueWork()}
- * pour garantir l'exécution sur le SGT.
+ * <p>Toutes les mutations sont exÃ©cutÃ©es via {@code context.enqueueWork()}
+ * pour garantir l'exÃ©cution sur le SGT.
  */
 public final class ServerPayloadHandler {
 
@@ -54,12 +55,12 @@ public final class ServerPayloadHandler {
 
     private ServerPayloadHandler() {}
 
-    // ── S2.5 ──────────────────────────────────────────────────────────────
+    // â”€â”€ S2.5 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public static void handleStartRun(StartRunPayload payload, IPayloadContext context) {
         ServerPlayer player = (ServerPlayer) context.player();
 
-        // Fix #2 — rate-limit sur StartRun
+        // Fix #2 â€” rate-limit sur StartRun
         if (!START_RUN_LIMITER.tryAcquire(player.getUUID())) {
             ArcadiaDungeon.LOGGER.debug("[Arcadia][RUN] event=start_run_rate_limited player={}",
                 player.getGameProfile().getName());
@@ -71,37 +72,37 @@ public final class ServerPayloadHandler {
             RoomProgressionService progression = ArcadiaDungeon.roomProgressionService();
 
             if (lifecycle.findActiveRunForPlayer(player.getUUID()).isPresent()) {
-                player.sendSystemMessage(Component.literal("§c✗ Tu es déjà dans une run."));
+                player.sendSystemMessage(Component.literal("Â§câœ— Tu es dÃ©jÃ  dans une run."));
                 return;
             }
 
             var dungeonOpt = ArcadiaDungeon.dungeonRegistry().get(payload.dungeonId());
             if (dungeonOpt.isEmpty()) {
-                player.sendSystemMessage(Component.literal("§c✗ Donjon inconnu : " + sanitize(payload.dungeonId())));
+                player.sendSystemMessage(Component.literal("Â§câœ— Donjon inconnu : " + sanitize(payload.dungeonId())));
                 return;
             }
 
-            // Fix #1 — valider que l'archetypeId existe dans la config du donjon
+            // Fix #1 â€” valider que l'archetypeId existe dans la config du donjon
             var dungeonConfig = dungeonOpt.get();
             boolean archetypeValid = dungeonConfig.archetypes() != null &&
                 dungeonConfig.archetypes().stream().anyMatch(a -> a.id().equals(payload.archetypeId()));
             if (!archetypeValid) {
                 ArcadiaDungeon.LOGGER.warn("[Arcadia][RUN] event=start_run_invalid_archetype player={} archetypeId={}",
                     player.getGameProfile().getName(), sanitize(payload.archetypeId()));
-                player.sendSystemMessage(Component.literal("§c✗ Archétype invalide : " + sanitize(payload.archetypeId())));
+                player.sendSystemMessage(Component.literal("Â§câœ— ArchÃ©type invalide : " + sanitize(payload.archetypeId())));
                 return;
             }
 
-            // Vérifier que le donjon a été configuré via /arcadia setup
+            // VÃ©rifier que le donjon a Ã©tÃ© configurÃ© via /arcadia setup
             var registry = ArcadiaDungeon.placementRegistry();
             Vec3 spawnPos = registry.getSpawn(payload.dungeonId()).orElse(null);
             if (spawnPos == null) {
                 player.sendSystemMessage(Component.literal(
-                    "§c✗ Donjon non configuré. Un admin doit lancer : /arcadia setup " + sanitize(payload.dungeonId())));
+                    "Â§câœ— Donjon non configurÃ©. Un admin doit lancer : /arcadia setup " + sanitize(payload.dungeonId())));
                 return;
             }
 
-            // Résoudre la dimension du donjon depuis le registre (enregistrée au /arcadia setup)
+            // RÃ©soudre la dimension du donjon depuis le registre (enregistrÃ©e au /arcadia setup)
             ServerLevel level = registry.getDimension(payload.dungeonId())
                 .map(dimId -> {
                     ResourceKey<Level> key = ResourceKey.create(Registries.DIMENSION,
@@ -114,13 +115,13 @@ public final class ServerPayloadHandler {
             Run run = lifecycle.startRun(payload.dungeonId(), List.of(player.getUUID()));
             run.setArchetype(player.getUUID(), payload.archetypeId());
 
-            // Sauvegarder la position d'origine avant le téléport
+            // Sauvegarder la position d'origine avant le tÃ©lÃ©port
             lifecycle.savePlayerOrigin(player.getUUID(), player);
 
-            // S6.6 — strip inventaire + kit archétype
+            // S6.6 â€” strip inventaire + kit archÃ©type
             ArcadiaDungeon.archetypeService().preparePlayer(player, payload.dungeonId(), payload.archetypeId());
 
-            // Téléporter le joueur dans la dimension du donjon
+            // TÃ©lÃ©porter le joueur dans la dimension du donjon
             player.teleportTo(level, spawnPos.x, spawnPos.y, spawnPos.z,
                 player.getYRot(), player.getXRot());
 
@@ -142,23 +143,23 @@ public final class ServerPayloadHandler {
                 ArcadiaDungeon.playerDeathService().cancelPendingRespawn(player.getUUID());
                 ArcadiaDungeon.roomProgressionService().cleanupRun(run.id());
                 lifecycle.abandonRun(run, player.getUUID());
-                player.sendSystemMessage(Component.literal("§7Run abandonnée."));
+                player.sendSystemMessage(Component.literal("Â§7Run abandonnÃ©e."));
             }, () -> {
-                player.sendSystemMessage(Component.literal("§c✗ Pas de run active."));
+                player.sendSystemMessage(Component.literal("Â§câœ— Pas de run active."));
             });
         });
     }
 
-    // ── S3.2 + S3.3 ───────────────────────────────────────────────────────
+    // â”€â”€ S3.2 + S3.3 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public static void handleJoinRun(JoinRunPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             ServerPlayer player = (ServerPlayer) context.player();
             RunLifecycleService lifecycle = ArcadiaDungeon.runLifecycleService();
 
-            // Joueur pas déjà en run
+            // Joueur pas dÃ©jÃ  en run
             if (lifecycle.findActiveRunForPlayer(player.getUUID()).isPresent()) {
-                player.sendSystemMessage(Component.literal("§c✗ Tu es déjà dans une run."));
+                player.sendSystemMessage(Component.literal("Â§câœ— Tu es dÃ©jÃ  dans une run."));
                 return;
             }
 
@@ -167,49 +168,49 @@ public final class ServerPayloadHandler {
             try {
                 targetId = new RunId(UUID.fromString(payload.runId()));
             } catch (IllegalArgumentException e) {
-                player.sendSystemMessage(Component.literal("§c✗ runId invalide."));
+                player.sendSystemMessage(Component.literal("Â§câœ— runId invalide."));
                 return;
             }
 
             Run run = lifecycle.findById(targetId).orElse(null);
             if (run == null) {
-                player.sendSystemMessage(Component.literal("§c✗ Run introuvable."));
+                player.sendSystemMessage(Component.literal("Â§câœ— Run introuvable."));
                 return;
             }
 
             // Run en phase STARTING
             if (run.phase() != RunPhase.STARTING) {
-                player.sendSystemMessage(Component.literal("§c✗ La run a déjà commencé."));
+                player.sendSystemMessage(Component.literal("Â§câœ— La run a dÃ©jÃ  commencÃ©."));
                 return;
             }
 
-            // Capacité max
+            // CapacitÃ© max
             if (run.playerIds().size() >= MAX_PLAYERS_PER_RUN) {
-                player.sendSystemMessage(Component.literal("§c✗ Run complète (" + MAX_PLAYERS_PER_RUN + " joueurs max)."));
+                player.sendSystemMessage(Component.literal("Â§câœ— Run complÃ¨te (" + MAX_PLAYERS_PER_RUN + " joueurs max)."));
                 return;
             }
 
-            // Fix #1 — valider que l'archetypeId existe dans la config du donjon
+            // Fix #1 â€” valider que l'archetypeId existe dans la config du donjon
             var dungeonConfig = ArcadiaDungeon.dungeonRegistry().get(run.dungeonId()).orElse(null);
             boolean archetypeValid = dungeonConfig != null && dungeonConfig.archetypes() != null &&
                 dungeonConfig.archetypes().stream().anyMatch(a -> a.id().equals(payload.archetypeId()));
             if (!archetypeValid) {
                 ArcadiaDungeon.LOGGER.warn("[Arcadia][RUN] event=join_invalid_archetype player={} archetypeId={}",
                     player.getGameProfile().getName(), sanitize(payload.archetypeId()));
-                player.sendSystemMessage(Component.literal("§c✗ Archétype invalide : " + sanitize(payload.archetypeId())));
+                player.sendSystemMessage(Component.literal("Â§câœ— ArchÃ©type invalide : " + sanitize(payload.archetypeId())));
                 return;
             }
 
             run.addPlayer(player.getUUID());
             run.setArchetype(player.getUUID(), payload.archetypeId());
 
-            // Sauvegarder l'origine avant téléport (comme handleStartRun)
+            // Sauvegarder l'origine avant tÃ©lÃ©port (comme handleStartRun)
             lifecycle.savePlayerOrigin(player.getUUID(), player);
 
-            // S6.6 — strip inventaire + kit archétype pour le joueur qui rejoint
+            // S6.6 â€” strip inventaire + kit archÃ©type pour le joueur qui rejoint
             ArcadiaDungeon.archetypeService().preparePlayer(player, run.dungeonId(), payload.archetypeId());
 
-            // S3.3 — resync complet au joueur qui rejoint
+            // S3.3 â€” resync complet au joueur qui rejoint
             player.connection.send(RunStatePayload.from(run));
 
             // Broadcast aux autres joueurs de la run
@@ -222,7 +223,7 @@ public final class ServerPayloadHandler {
         });
     }
 
-    // ── S3.4 ──────────────────────────────────────────────────────────────
+    // â”€â”€ S3.4 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public static void handleRequestResync(RequestRunResyncPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
@@ -247,32 +248,21 @@ public final class ServerPayloadHandler {
         });
     }
 
-    // ── S6.2 — Liste donjons ──────────────────────────────────────────────
+    // â”€â”€ S6.2 â€” Liste donjons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public static void handleRequestDungeonList(RequestDungeonListPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             ServerPlayer player = (ServerPlayer) context.player();
-            List<DungeonListPayload.DungeonSummary> summaries = new ArrayList<>();
-            ArcadiaDungeon.dungeonRegistry().dungeons().forEach((id, config) -> {
-                List<DungeonListPayload.ArchetypeSummary> archetypes = new ArrayList<>();
-                if (config.archetypes() != null) {
-                    for (DungeonConfig.ArchetypeDefinition a : config.archetypes()) {
-                        archetypes.add(new DungeonListPayload.ArchetypeSummary(a.id(), a.nameKey()));
-                    }
-                }
-                summaries.add(new DungeonListPayload.DungeonSummary(
-                    config.id(), config.nameKey(), config.schemaVersion(), archetypes));
-            });
-            player.connection.send(new DungeonListPayload(summaries));
+            sendDungeonList(player);
         });
     }
 
-    // ── S6.4 — Reload admin ───────────────────────────────────────────────
+    // â”€â”€ S6.4 â€” Reload admin â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public static void handleReloadRequest(ReloadRequestPayload payload, IPayloadContext context) {
         ServerPlayer player = (ServerPlayer) context.player();
 
-        // Fix #2 — rate-limit sur ReloadRequest
+        // Fix #2 â€” rate-limit sur ReloadRequest
         if (!RELOAD_LIMITER.tryAcquire(player.getUUID())) {
             ArcadiaDungeon.LOGGER.debug("[Arcadia][ADMIN] event=reload_rate_limited player={}",
                 player.getGameProfile().getName());
@@ -281,23 +271,23 @@ public final class ServerPayloadHandler {
 
         context.enqueueWork(() -> {
             if (!player.hasPermissions(2)) {
-                player.sendSystemMessage(Component.literal("§c✗ Permissions insuffisantes (op2 requis)."));
+                player.sendSystemMessage(Component.literal("Â§câœ— Permissions insuffisantes (op2 requis)."));
                 return;
             }
             ArcadiaDungeon.dungeonRegistry().reload();
-            player.sendSystemMessage(Component.literal("§aDonjons rechargés."));
+            player.sendSystemMessage(Component.literal("Â§aDonjons rechargÃ©s."));
             ArcadiaDungeon.LOGGER.info("[Arcadia][ADMIN] event=reload requestedBy={}", player.getGameProfile().getName());
         });
     }
 
-    // ── 8.3 — Création donjon admin ───────────────────────────────────────
+    // â”€â”€ 8.3 â€” CrÃ©ation donjon admin â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    // [ZeroTrust:OK] — OP2 requis, id validé regex serveur-side, valeurs numériques clampées
+    // [ZeroTrust:OK] â€” OP2 requis, id validÃ© regex serveur-side, valeurs numÃ©riques clampÃ©es
     public static void handleCreateDungeon(CreateDungeonPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             ServerPlayer player = (ServerPlayer) context.player();
             if (!player.hasPermissions(2)) {
-                player.sendSystemMessage(Component.literal("§c✗ Permissions insuffisantes (op2 requis)."));
+                player.sendSystemMessage(Component.literal("Â§câœ— Permissions insuffisantes (op2 requis)."));
                 return;
             }
             if (!CREATE_DUNGEON_LIMITER.tryAcquire(player.getUUID())) return;
@@ -306,19 +296,19 @@ public final class ServerPayloadHandler {
             String nameKey = payload.nameKey() != null ? payload.nameKey().trim() : "";
 
             if (!isValidDungeonResourceId(id)) {
-                player.sendSystemMessage(Component.literal("§c✗ ID invalide (ex: tgh ou arcadia_dungeon:tgh)."));
+                player.sendSystemMessage(Component.literal("Â§câœ— ID invalide (ex: tgh ou arcadia_dungeon:tgh)."));
                 return;
             }
             if (nameKey.isEmpty()) {
-                player.sendSystemMessage(Component.literal("§c✗ Nom requis."));
+                player.sendSystemMessage(Component.literal("Â§câœ— Nom requis."));
                 return;
             }
             if (id.length() > 64 || nameKey.length() > 128) {
-                player.sendSystemMessage(Component.literal("§c✗ ID ou nom trop long."));
+                player.sendSystemMessage(Component.literal("Â§câœ— ID ou nom trop long."));
                 return;
             }
             if (ArcadiaDungeon.dungeonRegistry().get(id).isPresent()) {
-                player.sendSystemMessage(Component.literal("§c✗ Un donjon avec cet ID existe déjà : " + sanitize(id)));
+                player.sendSystemMessage(Component.literal("Â§câœ— Un donjon avec cet ID existe dÃ©jÃ  : " + sanitize(id)));
                 return;
             }
 
@@ -326,20 +316,23 @@ public final class ServerPayloadHandler {
             DungeonConfig.BossDefinition defaultBoss =
                 new DungeonConfig.BossDefinition("minecraft:wither_skeleton", 100, java.util.List.of());
 
-            // Config minimale valide (peut être enrichie via l'UI admin ou JSON direct)
+            // Config minimale valide (peut Ãªtre enrichie via l'UI admin ou JSON direct)
             DungeonConfig cfg = new DungeonConfig(
                 DungeonConfig.CURRENT_SCHEMA_VERSION,
                 id,
                 nameKey,
-                null,   // currency — configurable dans l'UI
+                null,   // currency â€” configurable dans l'UI
                 lives,
-                java.util.List.of(new DungeonConfig.RoomRef("room_1", null, java.util.List.of())),
+                java.util.List.of(),
+                java.util.List.of(),
                 java.util.List.of(defaultBoss),
                 new DungeonConfig.Rewards(0L, java.util.List.of()),
                 java.util.List.of(),   // archetypes
                 null,                  // structureRef
-                null,                  // dimension
+                ArcadiaDungeon.DUNGEON_DIMENSION_ID,
                 null,                  // placementY
+                null,                  // areaPos1
+                null,                  // areaPos2
                 null,                  // startMessage
                 null,                  // victoryMessage
                 null,                  // failMessage
@@ -348,64 +341,54 @@ public final class ServerPayloadHandler {
             );
 
             ArcadiaDungeon.dungeonRegistry().save(cfg);
+            sendDungeonList(player);
             player.sendSystemMessage(Component.literal(
-                "§a✔ Donjon '" + sanitize(nameKey) + "' (id: " + sanitize(id) + ") créé. Complétez le JSON dans config/arcadia/dungeon/" + sanitize(id) + ".json"));
+                "Â§aâœ” Donjon '" + sanitize(nameKey) + "' (id: " + sanitize(id) + ") crÃ©Ã©. ComplÃ©tez le JSON dans config/arcadia/dungeon/" + sanitize(id) + ".json"));
             ArcadiaDungeon.LOGGER.info("[Arcadia][ADMIN] event=create_dungeon admin={} dungeonId={}", player.getGameProfile().getName(), sanitize(id));
         });
     }
 
-    // ── 8.x — Suppression donjon admin ───────────────────────────────────
+    // â”€â”€ 8.x â€” Suppression donjon admin â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    // [ZeroTrust:OK] — OP2 requis, id sanitisé, rate-limited
+    // [ZeroTrust:OK] â€” OP2 requis, id sanitisÃ©, rate-limited
     public static void handleDeleteDungeon(DeleteDungeonPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             ServerPlayer player = (ServerPlayer) context.player();
             if (!player.hasPermissions(2)) {
-                player.sendSystemMessage(Component.literal("§c✗ Permissions insuffisantes (op2 requis)."));
+                player.sendSystemMessage(Component.literal("Â§câœ— Permissions insuffisantes (op2 requis)."));
                 return;
             }
             if (!DELETE_DUNGEON_LIMITER.tryAcquire(player.getUUID())) return;
 
             String id = payload.dungeonId() != null ? payload.dungeonId().trim() : "";
             if (!isValidDungeonResourceId(id)) {
-                player.sendSystemMessage(Component.literal("§c✗ ID invalide."));
+                player.sendSystemMessage(Component.literal("Â§câœ— ID invalide."));
                 return;
             }
 
             boolean deleted = ArcadiaDungeon.dungeonRegistry().delete(id);
             if (deleted) {
-                player.sendSystemMessage(Component.literal("§a✔ Donjon supprimé : " + sanitize(id)));
+                player.sendSystemMessage(Component.literal("Â§aâœ” Donjon supprimÃ© : " + sanitize(id)));
                 ArcadiaDungeon.LOGGER.info("[Arcadia][ADMIN] event=delete_dungeon admin={} dungeonId={}",
                     player.getGameProfile().getName(), sanitize(id));
             } else {
-                player.sendSystemMessage(Component.literal("§c✗ Donjon introuvable : " + sanitize(id)));
+                player.sendSystemMessage(Component.literal("Â§câœ— Donjon introuvable : " + sanitize(id)));
                 return;
             }
 
-            // Envoie la liste mise à jour au demandeur pour rafraîchir l'UI
-            List<DungeonListPayload.DungeonSummary> summaries = new ArrayList<>();
-            ArcadiaDungeon.dungeonRegistry().dungeons().forEach((did, config) -> {
-                List<DungeonListPayload.ArchetypeSummary> archetypes = new ArrayList<>();
-                if (config.archetypes() != null) {
-                    for (com.arcadia.dungeon.domain.config.DungeonConfig.ArchetypeDefinition a : config.archetypes()) {
-                        archetypes.add(new DungeonListPayload.ArchetypeSummary(a.id(), a.nameKey()));
-                    }
-                }
-                summaries.add(new DungeonListPayload.DungeonSummary(
-                    config.id(), config.nameKey(), config.schemaVersion(), archetypes));
-            });
-            player.connection.send(new DungeonListPayload(summaries));
+            // Envoie la liste mise Ã  jour au demandeur pour rafraÃ®chir l'UI
+            sendDungeonList(player);
         });
     }
 
-    // ── 8.4 — Détail donjon admin ─────────────────────────────────────────
+    // â”€â”€ 8.4 â€” DÃ©tail donjon admin â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    // [ZeroTrust:OK] — OP2 requis, dungeonId sanitisé
+    // [ZeroTrust:OK] â€” OP2 requis, dungeonId sanitisÃ©
     public static void handleRequestDungeonDetail(RequestDungeonDetailPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             ServerPlayer player = (ServerPlayer) context.player();
             if (!player.hasPermissions(2)) {
-                player.sendSystemMessage(Component.literal("§c✗ Permissions insuffisantes (op2 requis)."));
+                player.sendSystemMessage(Component.literal("Â§câœ— Permissions insuffisantes (op2 requis)."));
                 return;
             }
             if (!DETAIL_LIMITER.tryAcquire(player.getUUID())) return;
@@ -415,18 +398,13 @@ public final class ServerPayloadHandler {
 
             var configOpt = ArcadiaDungeon.dungeonRegistry().get(id);
             if (configOpt.isEmpty()) {
-                player.sendSystemMessage(Component.literal("§c✗ Donjon introuvable : " + sanitize(id)));
+                player.sendSystemMessage(Component.literal("Â§câœ— Donjon introuvable : " + sanitize(id)));
                 return;
             }
 
             var cfg = configOpt.get();
 
-            int totalWaves = 0;
-            if (cfg.rooms() != null) {
-                for (var room : cfg.rooms()) {
-                    if (room.waves() != null) totalWaves += room.waves().size();
-                }
-            }
+            int totalWaves = cfg.configuredWaves().size();
 
             List<DungeonConfig.BossDefinition> bosses = cfg.configuredBosses();
             DungeonConfig.BossDefinition primaryBoss = cfg.primaryBoss();
@@ -436,13 +414,13 @@ public final class ServerPayloadHandler {
                 cfg.nameKey(),
                 cfg.schemaVersion(),
                 cfg.lives(),
-                cfg.structureRef()  != null ? cfg.structureRef()  : "—",
-                cfg.dimension()     != null ? cfg.dimension()     : "—",
-                primaryBoss         != null ? primaryBoss.type()   : "—",
+                cfg.structureRef()  != null ? cfg.structureRef()  : "â€”",
+                cfg.dimension()     != null ? cfg.dimension()     : "â€”",
+                primaryBoss         != null ? primaryBoss.type()   : "â€”",
                 primaryBoss         != null ? primaryBoss.hp()     : 0,
                 primaryBoss         != null ? primaryBoss.phasesOrEmpty().size() : 0,
                 bosses.size(),
-                cfg.rooms()         != null ? cfg.rooms().size()  : 0,
+                0,
                 totalWaves,
                 cfg.rewards()       != null ? cfg.rewards().currency() : 0L,
                 cfg.rewards()       != null && cfg.rewards().loot() != null ? cfg.rewards().loot().size() : 0,
@@ -451,9 +429,9 @@ public final class ServerPayloadHandler {
         });
     }
 
-    // ── 8.5 — Monitor admin ───────────────────────────────────────────────
+    // â”€â”€ 8.5 â€” Monitor admin â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    // [ZeroTrust:OK] — OP2 requis, rate-limited, lecture seule serveur
+    // [ZeroTrust:OK] â€” OP2 requis, rate-limited, lecture seule serveur
     public static void handleMonitorRefresh(MonitorRefreshPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             ServerPlayer player = (ServerPlayer) context.player();
@@ -465,10 +443,10 @@ public final class ServerPayloadHandler {
 
             List<MonitorDataPayload.RunSummary> summaries = new ArrayList<>();
             ArcadiaDungeon.runLifecycleService().activeRuns().values().forEach(run -> {
-                // Résolution noms de joueurs (en ligne) ou UUID court (hors ligne)
+                // RÃ©solution noms de joueurs (en ligne) ou UUID court (hors ligne)
                 StringBuilder names = new StringBuilder();
                 for (UUID pid : run.playerIds()) {
-                    if (names.length() > 0) names.append(" · ");
+                    if (names.length() > 0) names.append(" Â· ");
                     ServerPlayer sp = server.getPlayerList().getPlayer(pid);
                     names.append(sp != null ? sp.getGameProfile().getName()
                                            : pid.toString().substring(0, 8));
@@ -497,12 +475,12 @@ public final class ServerPayloadHandler {
         });
     }
 
-    // [ZeroTrust:OK] — OP2 requis, runId validé UUID, rate-limited
+    // [ZeroTrust:OK] â€” OP2 requis, runId validÃ© UUID, rate-limited
     public static void handleForceEndRun(ForceEndRunPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             ServerPlayer player = (ServerPlayer) context.player();
             if (!player.hasPermissions(2)) {
-                player.sendSystemMessage(Component.literal("§c✗ Permissions insuffisantes (op2 requis)."));
+                player.sendSystemMessage(Component.literal("Â§câœ— Permissions insuffisantes (op2 requis)."));
                 return;
             }
             if (!FORCE_END_LIMITER.tryAcquire(player.getUUID())) return;
@@ -514,13 +492,13 @@ public final class ServerPayloadHandler {
             try {
                 runId = new RunId(UUID.fromString(rawId));
             } catch (IllegalArgumentException e) {
-                player.sendSystemMessage(Component.literal("§c✗ runId invalide."));
+                player.sendSystemMessage(Component.literal("Â§câœ— runId invalide."));
                 return;
             }
 
             Run run = ArcadiaDungeon.runLifecycleService().findById(runId).orElse(null);
             if (run == null) {
-                player.sendSystemMessage(Component.literal("§c✗ Run introuvable."));
+                player.sendSystemMessage(Component.literal("Â§câœ— Run introuvable."));
                 return;
             }
 
@@ -528,17 +506,17 @@ public final class ServerPayloadHandler {
             ArcadiaDungeon.roomProgressionService().cleanupRun(runId);
             ArcadiaDungeon.runLifecycleService().completeRun(run, result);
 
-            String label = payload.success() ? "§a✔ Victoire" : "§c✔ Défaite";
+            String label = payload.success() ? "Â§aâœ” Victoire" : "Â§câœ” DÃ©faite";
             player.sendSystemMessage(Component.literal(
-                label + " forcée — run " + sanitize(rawId.substring(0, Math.min(8, rawId.length())))));
+                label + " forcÃ©e â€” run " + sanitize(rawId.substring(0, Math.min(8, rawId.length())))));
             ArcadiaDungeon.LOGGER.info("[Arcadia][ADMIN] event=force_end_run admin={} runId={} result={}",
                 player.getGameProfile().getName(), sanitize(rawId), result);
         });
     }
 
-    // ── Post-MVP — Édition complète donjon ────────────────────────────────
+    // â”€â”€ Post-MVP â€” Ã‰dition complÃ¨te donjon â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    // [ZeroTrust:OK] — OP2 requis, dungeonId sanitisé, rate-limited
+    // [ZeroTrust:OK] â€” OP2 requis, dungeonId sanitisÃ©, rate-limited
     public static void handleRequestDungeonEdit(RequestDungeonEditPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             ServerPlayer player = (ServerPlayer) context.player();
@@ -550,7 +528,7 @@ public final class ServerPayloadHandler {
 
             var configOpt = ArcadiaDungeon.dungeonRegistry().get(id);
             if (configOpt.isEmpty()) {
-                player.sendSystemMessage(Component.literal("§c✗ Donjon introuvable : " + sanitize(id)));
+                player.sendSystemMessage(Component.literal("Â§câœ— Donjon introuvable : " + sanitize(id)));
                 return;
             }
 
@@ -573,29 +551,29 @@ public final class ServerPayloadHandler {
         });
     }
 
-    // [ZeroTrust:OK] — OP2 requis, JSON désérialisé + validé côté serveur, rate-limited
+    // [ZeroTrust:OK] â€” OP2 requis, JSON dÃ©sÃ©rialisÃ© + validÃ© cÃ´tÃ© serveur, rate-limited
     public static void handleSaveDungeonConfig(SaveDungeonConfigPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             ServerPlayer player = (ServerPlayer) context.player();
             if (!player.hasPermissions(2)) {
-                player.sendSystemMessage(Component.literal("§c✗ Permissions insuffisantes (op2 requis)."));
+                player.sendSystemMessage(Component.literal("Â§câœ— Permissions insuffisantes (op2 requis)."));
                 return;
             }
             if (!SAVE_CONFIG_LIMITER.tryAcquire(player.getUUID())) return;
 
             String id = payload.dungeonId() != null ? payload.dungeonId().trim() : "";
             if (!isValidDungeonResourceId(id)) {
-                player.sendSystemMessage(Component.literal("§c✗ ID donjon invalide."));
+                player.sendSystemMessage(Component.literal("Â§câœ— ID donjon invalide."));
                 return;
             }
             if (ArcadiaDungeon.dungeonRegistry().get(id).isEmpty()) {
-                player.sendSystemMessage(Component.literal("§c✗ Donjon introuvable : " + sanitize(id)));
+                player.sendSystemMessage(Component.literal("Â§câœ— Donjon introuvable : " + sanitize(id)));
                 return;
             }
 
             String json = payload.configJson() != null ? payload.configJson() : "";
             if (json.isEmpty() || json.length() > 65536) {
-                player.sendSystemMessage(Component.literal("§c✗ JSON invalide ou trop long."));
+                player.sendSystemMessage(Component.literal("Â§câœ— JSON invalide ou trop long."));
                 return;
             }
 
@@ -603,28 +581,29 @@ public final class ServerPayloadHandler {
             try {
                 cfg = GSON.fromJson(json, DungeonConfig.class);
             } catch (JsonSyntaxException e) {
-                player.sendSystemMessage(Component.literal("§c✗ Erreur JSON : " + e.getMessage()));
+                player.sendSystemMessage(Component.literal("Â§câœ— Erreur JSON : " + e.getMessage()));
                 return;
             }
 
             if (cfg == null || cfg.id() == null || !cfg.id().equals(id)) {
-                player.sendSystemMessage(Component.literal("§c✗ ID du JSON ne correspond pas."));
+                player.sendSystemMessage(Component.literal("Â§câœ— ID du JSON ne correspond pas."));
                 return;
             }
 
             ArcadiaDungeon.dungeonRegistry().save(cfg);
-            player.sendSystemMessage(Component.literal("§a✔ Config sauvegardée : " + sanitize(id)));
+            player.sendSystemMessage(Component.literal("Â§aâœ” Config sauvegardÃ©e : " + sanitize(id)));
+            sendDungeonList(player);
             ArcadiaDungeon.LOGGER.info("[Arcadia][ADMIN] event=save_dungeon_config admin={} dungeonId={}",
                 player.getGameProfile().getName(), sanitize(id));
         });
     }
 
-    // [ZeroTrust:OK] — OP2 requis, coords validées serveur-side, rate-limited
+    // [ZeroTrust:OK] â€” OP2 requis, coords validÃ©es serveur-side, rate-limited
     public static void handleSaveZone(SaveZonePayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             ServerPlayer player = (ServerPlayer) context.player();
             if (!player.hasPermissions(2)) {
-                player.sendSystemMessage(Component.literal("§c✗ Permissions insuffisantes (op2 requis)."));
+                player.sendSystemMessage(Component.literal("Â§câœ— Permissions insuffisantes (op2 requis)."));
                 return;
             }
             if (!SAVE_ZONE_LIMITER.tryAcquire(player.getUUID())) return;
@@ -632,25 +611,54 @@ public final class ServerPayloadHandler {
             String id = payload.dungeonId() != null ? payload.dungeonId().trim() : "";
             if (id.isEmpty() || id.length() > 64) return;
             if (ArcadiaDungeon.dungeonRegistry().get(id).isEmpty()) {
-                player.sendSystemMessage(Component.literal("§c✗ Donjon introuvable : " + sanitize(id)));
+                player.sendSystemMessage(Component.literal("Â§câœ— Donjon introuvable : " + sanitize(id)));
                 return;
             }
 
             String dim = payload.dimension() != null && !payload.dimension().isBlank()
-                ? payload.dimension().trim() : "minecraft:overworld";
+                ? payload.dimension().trim() : ArcadiaDungeon.DUNGEON_DIMENSION_ID;
 
             ArcadiaDungeon.placementRegistry().setSpawn(id,
                 new Vec3(payload.x(), payload.y(), payload.z()), dim);
             player.sendSystemMessage(Component.literal(
-                "§a✔ Spawn enregistré : " + sanitize(id) + " @ " +
+                "Â§aâœ” Spawn enregistrÃ© : " + sanitize(id) + " @ " +
                 String.format("%.1f/%.1f/%.1f", payload.x(), payload.y(), payload.z()) + " [" + dim + "]"));
             ArcadiaDungeon.LOGGER.info("[Arcadia][ADMIN] event=save_zone admin={} dungeonId={} dim={}",
                 player.getGameProfile().getName(), sanitize(id), dim);
         });
     }
 
-    // [ZeroTrust:OK] — le client n'envoie PAS de coordonnées, elles sont lues côté serveur
+    // [ZeroTrust:OK] â€” le client n'envoie PAS de coordonnÃ©es, elles sont lues cÃ´tÃ© serveur
     public static void handleCaptureSpawn(CaptureSpawnPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            ServerPlayer player = (ServerPlayer) context.player();
+            if (!player.hasPermissions(2)) {
+                player.sendSystemMessage(Component.literal("Â§câœ— Permissions insuffisantes (op2 requis)."));
+                return;
+            }
+            if (!SAVE_ZONE_LIMITER.tryAcquire(player.getUUID())) return;
+
+            String id = payload.dungeonId() != null ? payload.dungeonId().trim() : "";
+            if (id.isEmpty() || id.length() > 64) return;
+            if (ArcadiaDungeon.dungeonRegistry().get(id).isEmpty()) {
+                player.sendSystemMessage(Component.literal("Â§câœ— Donjon introuvable : " + sanitize(id)));
+                return;
+            }
+
+            // Zero Trust : coordonnÃ©es lues cÃ´tÃ© serveur depuis le player object
+            Vec3 pos = new Vec3(player.getX(), player.getY(), player.getZ());
+            String dim = player.level().dimension().location().toString();
+
+            ArcadiaDungeon.placementRegistry().setSpawn(id, pos, dim);
+            player.sendSystemMessage(Component.literal(
+                "Â§aâœ” Spawn capturÃ© : " + sanitize(id) + " @ " +
+                String.format("%.1f/%.1f/%.1f", pos.x, pos.y, pos.z) + " [" + dim + "]"));
+            ArcadiaDungeon.LOGGER.info("[Arcadia][ADMIN] event=capture_spawn admin={} dungeonId={} pos={},{},{} dim={}",
+                player.getGameProfile().getName(), sanitize(id), pos.x, pos.y, pos.z, dim);
+        });
+    }
+    // [ZeroTrust:OK] - OP2 required; the server owns wand creation and dungeon selection.
+    public static void handleRequestAreaWand(RequestAreaWandPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             ServerPlayer player = (ServerPlayer) context.player();
             if (!player.hasPermissions(2)) {
@@ -666,25 +674,16 @@ public final class ServerPayloadHandler {
                 return;
             }
 
-            // Zero Trust : coordonnées lues côté serveur depuis le player object
-            Vec3 pos = new Vec3(player.getX(), player.getY(), player.getZ());
-            String dim = player.level().dimension().location().toString();
-
-            ArcadiaDungeon.placementRegistry().setSpawn(id, pos, dim);
-            player.sendSystemMessage(Component.literal(
-                "§a✔ Spawn capturé : " + sanitize(id) + " @ " +
-                String.format("%.1f/%.1f/%.1f", pos.x, pos.y, pos.z) + " [" + dim + "]"));
-            ArcadiaDungeon.LOGGER.info("[Arcadia][ADMIN] event=capture_spawn admin={} dungeonId={} pos={},{},{} dim={}",
-                player.getGameProfile().getName(), sanitize(id), pos.x, pos.y, pos.z, dim);
+            DungeonAreaWandEventHandler.beginSelection(player, id);
         });
     }
 
-    // [ZeroTrust:OK] — OP2 requis, dungeonId sanitisé, rate-limited
+    // [ZeroTrust:OK] â€” OP2 requis, dungeonId sanitisÃ©, rate-limited
     public static void handleKillDungeonRuns(KillDungeonRunsPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             ServerPlayer player = (ServerPlayer) context.player();
             if (!player.hasPermissions(2)) {
-                player.sendSystemMessage(Component.literal("§c✗ Permissions insuffisantes (op2 requis)."));
+                player.sendSystemMessage(Component.literal("Â§câœ— Permissions insuffisantes (op2 requis)."));
                 return;
             }
             if (!KILL_RUNS_LIMITER.tryAcquire(player.getUUID())) return;
@@ -702,18 +701,37 @@ public final class ServerPayloadHandler {
             }
 
             player.sendSystemMessage(Component.literal(
-                "§a✔ " + killed + " run(s) terminée(s) pour : " + sanitize(id)));
+                "Â§aâœ” " + killed + " run(s) terminÃ©e(s) pour : " + sanitize(id)));
             ArcadiaDungeon.LOGGER.info("[Arcadia][ADMIN] event=kill_dungeon_runs admin={} dungeonId={} count={}",
                 player.getGameProfile().getName(), sanitize(id), killed);
         });
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────────
+    // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /**
-     * Sanitise une chaîne venant du client avant de la loguer
-     * (évite l'injection CRLF dans les logs).
+     * Sanitise une chaÃ®ne venant du client avant de la loguer
+     * (Ã©vite l'injection CRLF dans les logs).
      */
+    private static void sendDungeonList(ServerPlayer player) {
+        player.connection.send(new DungeonListPayload(buildDungeonSummaries()));
+    }
+
+    private static List<DungeonListPayload.DungeonSummary> buildDungeonSummaries() {
+        List<DungeonListPayload.DungeonSummary> summaries = new ArrayList<>();
+        ArcadiaDungeon.dungeonRegistry().dungeons().forEach((id, config) -> {
+            List<DungeonListPayload.ArchetypeSummary> archetypes = new ArrayList<>();
+            if (config.archetypes() != null) {
+                for (DungeonConfig.ArchetypeDefinition a : config.archetypes()) {
+                    archetypes.add(new DungeonListPayload.ArchetypeSummary(a.id(), a.nameKey()));
+                }
+            }
+            summaries.add(new DungeonListPayload.DungeonSummary(
+                config.id(), config.nameKey(), config.schemaVersion(), archetypes));
+        });
+        return summaries;
+    }
+
     private static String sanitize(String s) {
         if (s == null) return "null";
         return s.replaceAll("[\\r\\n\\t]", "_").substring(0, Math.min(s.length(), 128));
@@ -732,7 +750,7 @@ public final class ServerPayloadHandler {
             && ResourceLocation.tryParse(id) != null;
     }
 
-    /** Diffuse {@link RunStatePayload} à tous les joueurs connectés de la run. */
+    /** Diffuse {@link RunStatePayload} Ã  tous les joueurs connectÃ©s de la run. */
     public static void broadcastRunState(Run run) {
         MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
         if (server == null) return;
