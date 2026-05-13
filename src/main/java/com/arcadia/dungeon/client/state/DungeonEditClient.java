@@ -1,5 +1,6 @@
 package com.arcadia.dungeon.client.state;
 
+import com.arcadia.dungeon.network.AreaWandStatusPayload;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -27,6 +28,14 @@ public final class DungeonEditClient {
     private static volatile String spawnDim = "";
     private static volatile boolean spawnSet = false;
 
+    private static volatile int areaVersion = 0;
+    private static volatile boolean areaSelecting = false;
+    private static volatile boolean areaSet = false;
+    private static volatile boolean areaPos1Set = false;
+    private static volatile boolean areaPos2Set = false;
+    private static volatile String areaDim = "";
+    private static volatile int areaX1, areaY1, areaZ1, areaX2, areaY2, areaZ2;
+
     // ── Update from server ────────────────────────────────────────────────
 
     public static void update(String dungeonId, String configJson,
@@ -43,6 +52,7 @@ public final class DungeonEditClient {
         spawnZ   = z;
         spawnDim = dim;
         spawnSet = set;
+        readAreaFromConfig();
     }
 
     /** Met à jour uniquement les coords spawn (après CaptureSpawnPayload round-trip). */
@@ -60,6 +70,13 @@ public final class DungeonEditClient {
         spawnX = spawnY = spawnZ = 0.0;
         spawnDim = "";
         spawnSet = false;
+        areaVersion++;
+        areaSelecting = false;
+        areaSet = false;
+        areaPos1Set = false;
+        areaPos2Set = false;
+        areaDim = "";
+        areaX1 = areaY1 = areaZ1 = areaX2 = areaY2 = areaZ2 = 0;
     }
 
     // ── Accessors ─────────────────────────────────────────────────────────
@@ -73,6 +90,50 @@ public final class DungeonEditClient {
     public static double spawnZ()      { return spawnZ; }
     public static String spawnDim()    { return spawnDim; }
     public static boolean spawnSet()   { return spawnSet; }
+    public static int areaVersion()     { return areaVersion; }
+    public static boolean areaSelecting() { return areaSelecting; }
+    public static boolean areaSet()     { return areaSet; }
+    public static boolean areaPos1Set() { return areaPos1Set; }
+    public static boolean areaPos2Set() { return areaPos2Set; }
+    public static String areaDim()      { return areaDim; }
+    public static int areaX1()          { return areaX1; }
+    public static int areaY1()          { return areaY1; }
+    public static int areaZ1()          { return areaZ1; }
+    public static int areaX2()          { return areaX2; }
+    public static int areaY2()          { return areaY2; }
+    public static int areaZ2()          { return areaZ2; }
+
+    public static void updateAreaWand(AreaWandStatusPayload payload) {
+        if (!currentDungeonId.isBlank() && !currentDungeonId.equals(payload.dungeonId())) return;
+
+        areaSelecting = payload.selecting();
+        areaSet = payload.areaSet();
+        areaPos1Set = payload.pos1Set();
+        areaPos2Set = payload.pos2Set();
+        areaDim = payload.dimension();
+        areaX1 = payload.x1();
+        areaY1 = payload.y1();
+        areaZ1 = payload.z1();
+        areaX2 = payload.x2();
+        areaY2 = payload.y2();
+        areaZ2 = payload.z2();
+        areaVersion++;
+
+        if (areaSet) {
+            JsonObject pos1 = new JsonObject();
+            pos1.addProperty("dimension", areaDim);
+            pos1.addProperty("x", areaX1);
+            pos1.addProperty("y", areaY1);
+            pos1.addProperty("z", areaZ1);
+            JsonObject pos2 = new JsonObject();
+            pos2.addProperty("dimension", areaDim);
+            pos2.addProperty("x", areaX2);
+            pos2.addProperty("y", areaY2);
+            pos2.addProperty("z", areaZ2);
+            currentConfig.add("areaPos1", pos1);
+            currentConfig.add("areaPos2", pos2);
+        }
+    }
 
     /** Retourne le JSON sérialisé compact pour l'envoi réseau. */
     public static String toJson() {
@@ -99,5 +160,38 @@ public final class DungeonEditClient {
     public static boolean getBool(String key, boolean def) {
         try { return currentConfig.get(key).getAsBoolean(); }
         catch (Exception e) { return def; }
+    }
+
+    private static void readAreaFromConfig() {
+        try {
+            JsonObject pos1 = currentConfig.getAsJsonObject("areaPos1");
+            JsonObject pos2 = currentConfig.getAsJsonObject("areaPos2");
+            if (pos1 == null || pos2 == null) {
+                areaSet = false;
+                areaSelecting = false;
+                areaPos1Set = false;
+                areaPos2Set = false;
+                areaVersion++;
+                return;
+            }
+            areaDim = pos1.has("dimension") ? pos1.get("dimension").getAsString() : "";
+            areaX1 = pos1.get("x").getAsInt();
+            areaY1 = pos1.get("y").getAsInt();
+            areaZ1 = pos1.get("z").getAsInt();
+            areaX2 = pos2.get("x").getAsInt();
+            areaY2 = pos2.get("y").getAsInt();
+            areaZ2 = pos2.get("z").getAsInt();
+            areaSet = true;
+            areaSelecting = false;
+            areaPos1Set = true;
+            areaPos2Set = true;
+            areaVersion++;
+        } catch (Exception e) {
+            areaSet = false;
+            areaSelecting = false;
+            areaPos1Set = false;
+            areaPos2Set = false;
+            areaVersion++;
+        }
     }
 }

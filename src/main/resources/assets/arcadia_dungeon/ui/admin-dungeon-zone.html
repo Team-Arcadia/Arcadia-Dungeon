@@ -5,17 +5,25 @@
 
   <col class="cfg-body">
 
-    <!-- Statut spawn (texte déjà résolu en Java via I18n.get()) -->
+    <!-- Statut spawn (texte dÃ©jÃ  rÃ©solu en Java via I18n.get()) -->
     <label class="{{ zone.statusClass }}">{{ zone.status }}</label>
 
-    <!-- Capture button -->
+    <label class="section-title">Zone globale</label>
+    <label class="{{ area.statusClass }}">{{ area.status }}</label>
+    <label class="field-label">{{ area.pos1 }}</label>
+    <label class="field-label">{{ area.pos2 }}</label>
+    <button class="btn-capture"
+            onclick="areaWand"
+            tooltip="Donne la wand de zone pour ce donjon. Clic gauche = Pos1, clic droit = Pos2."
+            data-i18n="arcadia.admin.zone.area_wand">Definir avec wand</button>
+
     <button class="btn-capture"
             onclick="capture"
             tooltip-i18n="arcadia.admin.zone.tooltip.capture"
-            data-i18n="arcadia.admin.zone.capture">◎ Capturer ma position</button>
+            data-i18n="arcadia.admin.zone.capture">â—Ž Capturer ma position</button>
 
-    <!-- Coordonnées manuelles -->
-    <label class="section-title" data-i18n="arcadia.admin.zone.spawn">Coordonnées spawn</label>
+    <!-- CoordonnÃ©es manuelles -->
+    <label class="section-title" data-i18n="arcadia.admin.zone.spawn">CoordonnÃ©es spawn</label>
 
     <row class="sub-row">
       <col class="field-group flex-1">
@@ -44,15 +52,16 @@
              class="field-input wide"
              value="{{ v.dim }}"
              oninput="onDim"
+             autocomplete="{{ s.dimensions }}"
              tooltip-i18n="arcadia.admin.zone.tooltip.dim" />
     </col>
 
   </col>
 
   <row class="cfg-footer">
-    <button class="btn-back" onclick="back" data-i18n="arcadia.admin.zone.back">← Retour</button>
+    <button class="btn-back" onclick="back" data-i18n="arcadia.admin.zone.back">â† Retour</button>
     <col class="spacer" />
-    <button class="btn-save" onclick="save" data-i18n="arcadia.admin.zone.save">✔ Sauvegarder</button>
+    <button class="btn-save" onclick="save" data-i18n="arcadia.admin.zone.save">âœ” Sauvegarder</button>
   </row>
 
 </col>

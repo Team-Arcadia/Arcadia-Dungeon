@@ -2,6 +2,7 @@ package com.arcadia.dungeon.network;
 
 import com.arcadia.dungeon.ArcadiaDungeon;
 import com.arcadia.dungeon.client.screen.AdminHubScreen;
+import com.arcadia.dungeon.client.screen.AdminDungeonZoneScreen;
 import com.arcadia.dungeon.client.screen.ArcadiaNavigator;
 import com.arcadia.dungeon.client.screen.DebugRunScreen;
 import com.arcadia.dungeon.client.screen.ResultScreen;
@@ -74,6 +75,24 @@ public final class ClientPayloadHandler {
             payload.dungeonId(), payload.configJson(),
             payload.spawnX(), payload.spawnY(), payload.spawnZ(),
             payload.spawnDim(), payload.spawnSet()));
+    }
+
+    public static void handleAreaWandStatus(AreaWandStatusPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            DungeonEditClient.updateAreaWand(payload);
+            Minecraft mc = Minecraft.getInstance();
+            if (payload.selecting()) {
+                if (mc.screen instanceof AdminDungeonZoneScreen) {
+                    mc.setScreen(null);
+                }
+                return;
+            }
+            if (payload.areaSet() && mc.screen == null) {
+                mc.setScreen(new AdminDungeonZoneScreen(
+                    payload.dungeonId(),
+                    DungeonEditClient.getString("nameKey", payload.dungeonId())));
+            }
+        });
     }
 
     public static void handleOpenResultScreen(OpenResultScreenPayload payload, IPayloadContext context) {

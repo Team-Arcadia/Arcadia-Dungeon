@@ -6,7 +6,9 @@ import com.tesseraui.TesseraTemplate;
 import com.tesseraui.TesseraTemplateRenderer;
 import com.arcadia.dungeon.client.state.DungeonEditClient;
 import com.arcadia.dungeon.network.CaptureSpawnPayload;
+import com.arcadia.dungeon.network.RequestAreaWandPayload;
 import com.arcadia.dungeon.network.SaveZonePayload;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
@@ -29,19 +31,20 @@ public final class AdminDungeonZoneScreen extends com.tesseraui.TesseraScreen {
 
     private static final int MARGIN = 8;
     private static final int MAX_W  = 310;
-    private static final int MAX_H  = 240;
+    private static final int MAX_H  = 270;
 
     private final String dungeonId;
     private final String dungeonName;
 
     private TesseraPanel panel;
-    private final Map<String, com.tesseraui.TesseraInputState> inputStates = new HashMap<>();
+    private final com.tesseraui.TesseraRenderContext renderContext = new com.tesseraui.TesseraRenderContext();
     private boolean panelDirty = true;
 
     // Valeurs de saisie manuelle (fallback sur DungeonEditClient au premier build)
     private double manualX, manualY, manualZ;
-    private String manualDim = "minecraft:overworld";
+    private String manualDim = AdminUiSuggestions.DEFAULT_DIMENSION;
     private boolean initialized = false;
+    private int seenAreaVersion = -1;
 
     public AdminDungeonZoneScreen(String dungeonId, String dungeonName) {
         super(Component.literal("Zone — " + dungeonName));
@@ -57,7 +60,7 @@ public final class AdminDungeonZoneScreen extends com.tesseraui.TesseraScreen {
             manualY   = DungeonEditClient.spawnY();
             manualZ   = DungeonEditClient.spawnZ();
             manualDim = DungeonEditClient.spawnDim().isBlank()
-                ? "minecraft:overworld" : DungeonEditClient.spawnDim();
+                ? AdminUiSuggestions.DEFAULT_DIMENSION : DungeonEditClient.spawnDim();
             initialized = true;
         }
         panelDirty = true;
@@ -65,9 +68,14 @@ public final class AdminDungeonZoneScreen extends com.tesseraui.TesseraScreen {
 
     @Override
     public void render(GuiGraphics g, int mx, int my, float pt) {
+        if (seenAreaVersion != DungeonEditClient.areaVersion()) {
+            seenAreaVersion = DungeonEditClient.areaVersion();
+            panelDirty = true;
+        }
         if (panelDirty) { rebuildPanel(); panelDirty = false; }
         super.render(g, mx, my, pt);
         if (panel != null) panel.render(g, mx, my);
+        AdminUiFeedback.renderToasts(g, width, height);
     }
 
     @Override
@@ -103,23 +111,38 @@ public final class AdminDungeonZoneScreen extends com.tesseraui.TesseraScreen {
         modelData.put("zone.statusKey",    spawnSet ? "arcadia.admin.zone.status.set" : "arcadia.admin.zone.status.unset");
         modelData.put("zone.status",       I18n.get(spawnSet ? "arcadia.admin.zone.status.set" : "arcadia.admin.zone.status.unset"));
         modelData.put("zone.statusClass",  spawnSet ? "status-ok" : "status-unset");
+        modelData.put("area.status",       areaStatus());
+        modelData.put("area.statusClass",  DungeonEditClient.areaSet()
+            ? "status-ok" : (DungeonEditClient.areaSelecting() ? "status-warn" : "status-unset"));
+        modelData.put("area.pos1",         DungeonEditClient.areaPos1Set() ? areaPos(true) : "Pos1: -");
+        modelData.put("area.pos2",         DungeonEditClient.areaPos2Set() ? areaPos(false) : "Pos2: -");
         modelData.put("v.x",   fmt(manualX));
         modelData.put("v.y",   fmt(manualY));
         modelData.put("v.z",   fmt(manualZ));
         modelData.put("v.dim", manualDim);
+        modelData.put("s.dimensions", AdminUiSuggestions.DIMENSIONS);
 
         Map<String, Runnable> handlers = new HashMap<>();
         handlers.put("back",    ArcadiaNavigator::back);
         handlers.put("capture", () -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player != null) {
+                manualX = mc.player.getX();
+                manualY = mc.player.getY();
+                manualZ = mc.player.getZ();
+                manualDim = mc.player.level().dimension().location().toString();
+                panelDirty = true;
+            }
             PacketDistributor.sendToServer(new CaptureSpawnPayload(dungeonId));
             // DungeonEditClient sera mis à jour côté serveur; pas de round-trip S2C pour l'instant
             // On ferme et revient : l'admin peut rouvrir pour voir les coords mises à jour
-            ArcadiaNavigator.back();
+            AdminUiFeedback.saveZone();
         });
         handlers.put("save", () -> {
             PacketDistributor.sendToServer(new SaveZonePayload(dungeonId, manualX, manualY, manualZ, manualDim));
-            ArcadiaNavigator.back();
+            AdminUiFeedback.saveZone();
         });
+        handlers.put("areaWand", () -> PacketDistributor.sendToServer(new RequestAreaWandPayload(dungeonId)));
 
         Map<String, Consumer<String>> inputHandlers = new HashMap<>();
         inputHandlers.put("onX",   v -> { try { manualX = Double.parseDouble(v.trim()); } catch (Exception ignored) {} });
@@ -129,10 +152,29 @@ public final class AdminDungeonZoneScreen extends com.tesseraui.TesseraScreen {
 
         TesseraModel model = key -> modelData.getOrDefault(key, null);
         TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin-dungeon-zone");
-        panel = TesseraTemplateRenderer.build(template, model, handlers, inputHandlers, inputStates, px, py, panelW, panelH);
+        panel = TesseraTemplateRenderer.build(template, model, handlers, inputHandlers, renderContext, px, py, panelW, panelH);
     }
 
     private static String fmt(double v) {
         return v == 0.0 ? "" : String.format("%.2f", v).replaceAll("\\.?0+$", "");
+    }
+
+    private static String areaStatus() {
+        if (DungeonEditClient.areaSet()) {
+            return "Zone definie dans " + DungeonEditClient.areaDim();
+        }
+        if (DungeonEditClient.areaSelecting()) {
+            if (DungeonEditClient.areaPos1Set() && !DungeonEditClient.areaPos2Set()) return "Selection wand: Pos2 attendu";
+            if (!DungeonEditClient.areaPos1Set() && DungeonEditClient.areaPos2Set()) return "Selection wand: Pos1 attendu";
+            return "Selection wand en cours";
+        }
+        return "Zone globale non definie";
+    }
+
+    private static String areaPos(boolean first) {
+        if (first) {
+            return "Pos1: " + DungeonEditClient.areaX1() + " / " + DungeonEditClient.areaY1() + " / " + DungeonEditClient.areaZ1();
+        }
+        return "Pos2: " + DungeonEditClient.areaX2() + " / " + DungeonEditClient.areaY2() + " / " + DungeonEditClient.areaZ2();
     }
 }

@@ -3,7 +3,9 @@ package com.arcadia.dungeon;
 import com.arcadia.dungeon.command.ArcadiaDebugCommand;
 import com.arcadia.dungeon.command.ArcadiaReloadCommand;
 import com.arcadia.dungeon.command.ArcadiaSetupCommand;
+import com.arcadia.dungeon.event.DungeonAreaWandEventHandler;
 import com.arcadia.dungeon.network.AbandonRunPayload;
+import com.arcadia.dungeon.network.AreaWandStatusPayload;
 import com.arcadia.dungeon.network.ClientPayloadHandler;
 import com.arcadia.dungeon.network.DungeonListPayload;
 import com.arcadia.dungeon.network.JoinRunPayload;
@@ -24,6 +26,7 @@ import com.arcadia.dungeon.network.ReloadRequestPayload;
 import com.arcadia.dungeon.network.RequestDungeonDetailPayload;
 import com.arcadia.dungeon.network.RequestDungeonEditPayload;
 import com.arcadia.dungeon.network.RequestDungeonListPayload;
+import com.arcadia.dungeon.network.RequestAreaWandPayload;
 import com.arcadia.dungeon.network.RequestRunResyncPayload;
 import com.arcadia.dungeon.network.SaveDungeonConfigPayload;
 import com.arcadia.dungeon.network.SaveZonePayload;
@@ -36,6 +39,7 @@ import com.arcadia.dungeon.services.StructurePlacer;
 import com.arcadia.dungeon.client.hud.RunOverlayHud;
 import com.arcadia.dungeon.services.ArchetypeService;
 import com.arcadia.dungeon.services.BossPhaseService;
+import com.arcadia.dungeon.services.DungeonZoneProtectionService;
 import com.arcadia.dungeon.services.PlayerDeathService;
 import com.arcadia.dungeon.services.PlayerProgressService;
 import com.arcadia.dungeon.services.RewardDistributionService;
@@ -69,6 +73,7 @@ import org.slf4j.LoggerFactory;
 public class ArcadiaDungeon {
 
     public static final String MODID = "arcadia_dungeon";
+    public static final String DUNGEON_DIMENSION_ID = MODID + ":dungeon";
     public static final Logger LOGGER = LoggerFactory.getLogger("ArcadiaDungeon");
 
     /**
@@ -88,6 +93,8 @@ public class ArcadiaDungeon {
     private static volatile RunCleanupService       runCleanupService;
     private static volatile PlacementRegistry       placementRegistry;
     private static volatile StructurePlacer         structurePlacer;
+    private static volatile DungeonAreaWandEventHandler areaWandEventHandler;
+    private static volatile DungeonZoneProtectionService zoneProtectionService;
 
     public static DungeonRegistry dungeonRegistry() {
         DungeonRegistry r = dungeonRegistry;
@@ -213,6 +220,10 @@ public class ArcadiaDungeon {
             ServerPayloadHandler::handleSaveZone);
         registrar.playToServer(CaptureSpawnPayload.TYPE, CaptureSpawnPayload.CODEC,
             ServerPayloadHandler::handleCaptureSpawn);
+        registrar.playToServer(RequestAreaWandPayload.TYPE, RequestAreaWandPayload.CODEC,
+            ServerPayloadHandler::handleRequestAreaWand);
+        registrar.playToClient(AreaWandStatusPayload.TYPE, AreaWandStatusPayload.CODEC,
+            ClientPayloadHandler::handleAreaWandStatus);
         registrar.playToServer(KillDungeonRunsPayload.TYPE, KillDungeonRunsPayload.CODEC,
             ServerPayloadHandler::handleKillDungeonRuns);
         LOGGER.info("[Arcadia][BOOT] Payloads registered (S2C: RunState/DungeonList/DungeonDetail/OpenAdminHub/OpenResultScreen/OpenDebugScreen/MonitorData/DungeonEditData | C2S: StartRun/AbandonRun/JoinRun/RequestResync/RequestDungeonList/ReloadRequest/CreateDungeon/DeleteDungeon/RequestDungeonDetail/MonitorRefresh/ForceEndRun/RequestDungeonEdit/SaveDungeonConfig/SaveZone/CaptureSpawn/KillDungeonRuns)");
@@ -269,6 +280,16 @@ public class ArcadiaDungeon {
                 structurePlacer = new StructurePlacer();
             }
 
+            if (areaWandEventHandler == null) {
+                areaWandEventHandler = new DungeonAreaWandEventHandler();
+                NeoForge.EVENT_BUS.register(areaWandEventHandler);
+            }
+
+            if (zoneProtectionService == null) {
+                zoneProtectionService = new DungeonZoneProtectionService(dungeonRegistry, runLifecycleService, roomProgressionService);
+                NeoForge.EVENT_BUS.register(zoneProtectionService);
+            }
+
             playerProgressService.load();
 
             LOGGER.info("[Arcadia][BOOT] Services initialized (RunLifecycle, PlayerProgress, Rewards, BossPhase, RoomProgression, PlayerDeath)");
@@ -279,6 +300,8 @@ public class ArcadiaDungeon {
             // Shutdown + null systématique : garantit que onServerStarting recrée tout proprement
             // (évite RejectedExecutionException sur executor terminé lors du prochain boot)
             if (runCleanupService != null)    { runCleanupService.shutdown(); runCleanupService = null; }
+            if (areaWandEventHandler != null) { NeoForge.EVENT_BUS.unregister(areaWandEventHandler); areaWandEventHandler = null; }
+            if (zoneProtectionService != null) { NeoForge.EVENT_BUS.unregister(zoneProtectionService); zoneProtectionService = null; }
             if (playerDeathService != null)   { playerDeathService.shutdown(); NeoForge.EVENT_BUS.unregister(playerDeathService); playerDeathService = null; }
             if (bossPhaseService != null)     { NeoForge.EVENT_BUS.unregister(bossPhaseService); bossPhaseService = null; }
             if (roomProgressionService != null) { NeoForge.EVENT_BUS.unregister(roomProgressionService); roomProgressionService = null; }
