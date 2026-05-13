@@ -1,11 +1,13 @@
 {
   "type": "arcadia_dungeon:dungeon",
   "generator": {
-    "type": "minecraft:noise",
-    "biome_source": {
-      "type": "minecraft:fixed",
-      "biome": "minecraft:the_void"
-    },
-    "settings": "minecraft:end"
+    "type": "minecraft:flat",
+    "settings": {
+      "biome": "minecraft:the_void",
+      "layers": [],
+      "lakes": false,
+      "features": false,
+      "structure_overrides": []
+    }
   }
 }

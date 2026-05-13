@@ -16,7 +16,7 @@ import net.minecraft.resources.ResourceLocation;
  * @param x         coordonnée X du spawn
  * @param y         coordonnée Y du spawn
  * @param z         coordonnée Z du spawn
- * @param dimension identifiant de dimension (ex: "minecraft:overworld")
+ * @param dimension identifiant de dimension (ex: "arcadia_dungeon:dungeon")
  */
 public record SaveZonePayload(String dungeonId, double x, double y, double z, String dimension)
         implements CustomPacketPayload {
