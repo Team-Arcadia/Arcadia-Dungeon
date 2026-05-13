@@ -30,7 +30,7 @@ public final class AdminDungeonMessagesScreen extends com.tesseraui.TesseraScree
     private final String dungeonName;
 
     private TesseraPanel panel;
-    private final Map<String, com.tesseraui.TesseraInputState> inputStates = new HashMap<>();
+    private final com.tesseraui.TesseraRenderContext renderContext = new com.tesseraui.TesseraRenderContext();
     private boolean panelDirty = true;
 
     public AdminDungeonMessagesScreen(String dungeonId, String dungeonName) {
@@ -46,6 +46,7 @@ public final class AdminDungeonMessagesScreen extends com.tesseraui.TesseraScree
         if (panelDirty) { rebuildPanel(); panelDirty = false; }
         super.render(g, mx, my, pt);
         if (panel != null) panel.render(g, mx, my);
+        AdminUiFeedback.renderToasts(g, width, height);
     }
 
     @Override
@@ -85,8 +86,7 @@ public final class AdminDungeonMessagesScreen extends com.tesseraui.TesseraScree
         Map<String, Runnable> handlers = new HashMap<>();
         handlers.put("back", ArcadiaNavigator::back);
         handlers.put("save", () -> {
-            PacketDistributor.sendToServer(new SaveDungeonConfigPayload(dungeonId, DungeonEditClient.toJson()));
-            ArcadiaNavigator.back();
+            AdminUiFeedback.saveDungeonConfig(dungeonId);
         });
 
         Map<String, Consumer<String>> inputHandlers = new HashMap<>();
@@ -96,7 +96,7 @@ public final class AdminDungeonMessagesScreen extends com.tesseraui.TesseraScree
 
         TesseraModel model = key -> modelData.getOrDefault(key, null);
         TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin-dungeon-messages");
-        panel = TesseraTemplateRenderer.build(template, model, handlers, inputHandlers, inputStates, px, py, panelW, panelH);
+        panel = TesseraTemplateRenderer.build(template, model, handlers, inputHandlers, renderContext, px, py, panelW, panelH);
     }
 
     private static String strOrEmpty(JsonObject o, String key) {

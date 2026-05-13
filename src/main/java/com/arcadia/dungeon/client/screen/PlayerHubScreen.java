@@ -29,7 +29,7 @@ public final class PlayerHubScreen extends TesseraScreen {
     private static final int PANEL_H = 240;
 
     private TesseraPanel panel;
-    private int lastKnownDungeonCount = -1;
+    private long lastKnownDungeonListVersion = -1L;
     private boolean panelDirty = true;
 
     public PlayerHubScreen() {
@@ -50,9 +50,9 @@ public final class PlayerHubScreen extends TesseraScreen {
 
     @Override
     public void render(GuiGraphics g, int mx, int my, float partialTick) {
-        List<DungeonListPayload.DungeonSummary> current = DungeonListClient.get();
-        if (current.size() != lastKnownDungeonCount) {
-            lastKnownDungeonCount = current.size();
+        long currentVersion = DungeonListClient.version();
+        if (currentVersion != lastKnownDungeonListVersion) {
+            lastKnownDungeonListVersion = currentVersion;
             panelDirty = true;
         }
         if (panelDirty) { rebuildPanel(); panelDirty = false; }

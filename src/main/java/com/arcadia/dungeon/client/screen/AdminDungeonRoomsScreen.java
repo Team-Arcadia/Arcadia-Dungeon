@@ -33,7 +33,7 @@ public final class AdminDungeonRoomsScreen extends com.tesseraui.TesseraScreen {
     private final String dungeonName;
 
     private TesseraPanel panel;
-    private final Map<String, com.tesseraui.TesseraInputState> inputStates = new HashMap<>();
+    private final com.tesseraui.TesseraRenderContext renderContext = new com.tesseraui.TesseraRenderContext();
     private boolean panelDirty = true;
 
     public AdminDungeonRoomsScreen(String dungeonId, String dungeonName) {
@@ -49,6 +49,7 @@ public final class AdminDungeonRoomsScreen extends com.tesseraui.TesseraScreen {
         if (panelDirty) { rebuildPanel(); panelDirty = false; }
         super.render(g, mx, my, pt);
         if (panel != null) panel.render(g, mx, my);
+        AdminUiFeedback.renderToasts(g, width, height);
     }
 
     @Override public boolean mouseClicked(double mx, double my, int btn) {
@@ -91,8 +92,7 @@ public final class AdminDungeonRoomsScreen extends com.tesseraui.TesseraScreen {
 
         handlers.put("back", ArcadiaNavigator::back);
         handlers.put("save", () -> {
-            PacketDistributor.sendToServer(new SaveDungeonConfigPayload(dungeonId, DungeonEditClient.toJson()));
-            ArcadiaNavigator.back();
+            AdminUiFeedback.saveDungeonConfig(dungeonId);
         });
         handlers.put("addRoom", () -> {
             JsonObject room = new JsonObject();
@@ -100,6 +100,7 @@ public final class AdminDungeonRoomsScreen extends com.tesseraui.TesseraScreen {
             room.addProperty("templateRef", "");
             room.add("waves", new JsonArray());
             rooms.add(room);
+            renderContext.clearInputsWithPrefix("room");
             panelDirty = true;
         });
 
@@ -107,30 +108,29 @@ public final class AdminDungeonRoomsScreen extends com.tesseraui.TesseraScreen {
         for (int i = 0; i < rooms.size(); i++) {
             final int idx = i;
             JsonObject room = rooms.get(i).getAsJsonObject();
-            JsonArray waves = getWaves(room);
             String label = I18n.get("arcadia.admin.rooms.room", String.valueOf(i + 1)) +
                 " (" + strOr(room, "id", "room_" + (i + 1)) + ")";
 
             modelData.put("r.roomLabel."      + i, label);
             modelData.put("r.roomTemplate."   + i, strOr(room, "templateRef", ""));
-            modelData.put("r.waveCount."      + i, waves.size() + " vague(s)");
             modelData.put("r.roomTemplateId." + i, "roomTemplate_"  + i);
             modelData.put("r.roomTemplateKey."+ i, "onRoomTemplate." + i);
             modelData.put("r.roomDelKey."     + i, "delRoom."        + i);
-            modelData.put("r.roomEditKey."    + i, "editRoom."       + i);
 
             inputHandlers.put("onRoomTemplate." + i,
                 v -> room.addProperty("templateRef", v != null ? v.trim() : ""));
             handlers.put("delRoom." + i, () -> {
-                if (idx < rooms.size()) { rooms.remove(idx); panelDirty = true; }
+                if (idx < rooms.size()) {
+                    rooms.remove(idx);
+                    renderContext.clearInputsWithPrefix("room");
+                    panelDirty = true;
+                }
             });
-            handlers.put("editRoom." + i, () ->
-                ArcadiaNavigator.push(new AdminDungeonWavesScreen(dungeonId, dungeonName, idx)));
         }
 
         TesseraModel model = key -> modelData.getOrDefault(key, null);
         TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin-dungeon-rooms");
-        panel = TesseraTemplateRenderer.build(template, model, handlers, inputHandlers, inputStates, px, py, panelW, panelH);
+        panel = TesseraTemplateRenderer.build(template, model, handlers, inputHandlers, renderContext, px, py, panelW, panelH);
     }
 
     // ── JSON helpers ──────────────────────────────────────────────────────
@@ -138,11 +138,6 @@ public final class AdminDungeonRoomsScreen extends com.tesseraui.TesseraScreen {
     private static JsonArray getRooms(JsonObject cfg) {
         try { return cfg.getAsJsonArray("rooms"); }
         catch (Exception e) { JsonArray a = new JsonArray(); cfg.add("rooms", a); return a; }
-    }
-
-    private static JsonArray getWaves(JsonObject room) {
-        try { return room.getAsJsonArray("waves"); }
-        catch (Exception e) { JsonArray a = new JsonArray(); room.add("waves", a); return a; }
     }
 
     private static String strOr(JsonObject o, String k, String def) {

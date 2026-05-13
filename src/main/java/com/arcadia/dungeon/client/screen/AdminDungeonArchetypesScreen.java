@@ -34,7 +34,7 @@ public final class AdminDungeonArchetypesScreen extends com.tesseraui.TesseraScr
     private final String dungeonName;
 
     private TesseraPanel panel;
-    private final Map<String, com.tesseraui.TesseraInputState> inputStates = new HashMap<>();
+    private final com.tesseraui.TesseraRenderContext renderContext = new com.tesseraui.TesseraRenderContext();
     private boolean panelDirty = true;
 
     public AdminDungeonArchetypesScreen(String dungeonId, String dungeonName) {
@@ -50,6 +50,7 @@ public final class AdminDungeonArchetypesScreen extends com.tesseraui.TesseraScr
         if (panelDirty) { rebuildPanel(); panelDirty = false; }
         super.render(g, mx, my, pt);
         if (panel != null) panel.render(g, mx, my);
+        AdminUiFeedback.renderToasts(g, width, height);
     }
 
     @Override public boolean mouseClicked(double mx, double my, int btn) {
@@ -86,14 +87,14 @@ public final class AdminDungeonArchetypesScreen extends com.tesseraui.TesseraScr
         Map<String, String> modelData = new HashMap<>();
         modelData.put("cfg.title",  I18n.get("arcadia.admin.arch.title", dungeonName));
         modelData.put("arch.count", String.valueOf(archs.size()));
+        modelData.put("s.items", AdminUiSuggestions.ITEMS);
 
         Map<String, Runnable> handlers = new HashMap<>();
         Map<String, Consumer<String>> inputHandlers = new HashMap<>();
 
         handlers.put("back", ArcadiaNavigator::back);
         handlers.put("save", () -> {
-            PacketDistributor.sendToServer(new SaveDungeonConfigPayload(dungeonId, DungeonEditClient.toJson()));
-            ArcadiaNavigator.back();
+            AdminUiFeedback.saveDungeonConfig(dungeonId);
         });
         handlers.put("addArch", () -> {
             JsonObject a = new JsonObject();
@@ -101,6 +102,7 @@ public final class AdminDungeonArchetypesScreen extends com.tesseraui.TesseraScr
             a.addProperty("nameKey",  "");
             a.add("items", new JsonArray());
             archs.add(a);
+            renderContext.clearInputsWithPrefix("arch");
             panelDirty = true;
         });
 
@@ -113,6 +115,7 @@ public final class AdminDungeonArchetypesScreen extends com.tesseraui.TesseraScr
             modelData.put("a.archId."      + i, strOr(arch, "id",      ""));
             modelData.put("a.archName."    + i, strOr(arch, "nameKey", ""));
             modelData.put("a.archItems."   + i, items);
+            modelData.put("a.itemSuggestions." + i, AdminUiSuggestions.ITEMS);
             modelData.put("a.archIdId."    + i, "archId_"    + i);
             modelData.put("a.archNameId."  + i, "archName_"  + i);
             modelData.put("a.archItemsId." + i, "archItems_" + i);
@@ -132,13 +135,17 @@ public final class AdminDungeonArchetypesScreen extends com.tesseraui.TesseraScr
                 arch.add("items", arr);
             });
             handlers.put("delArch." + i, () -> {
-                if (idx < archs.size()) { archs.remove(idx); panelDirty = true; }
+                if (idx < archs.size()) {
+                    archs.remove(idx);
+                    renderContext.clearInputsWithPrefix("arch");
+                    panelDirty = true;
+                }
             });
         }
 
         TesseraModel model = key -> modelData.getOrDefault(key, null);
         TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin-dungeon-archetypes");
-        panel = TesseraTemplateRenderer.build(template, model, handlers, inputHandlers, inputStates, px, py, panelW, panelH);
+        panel = TesseraTemplateRenderer.build(template, model, handlers, inputHandlers, renderContext, px, py, panelW, panelH);
     }
 
     // ── JSON helpers ──────────────────────────────────────────────────────

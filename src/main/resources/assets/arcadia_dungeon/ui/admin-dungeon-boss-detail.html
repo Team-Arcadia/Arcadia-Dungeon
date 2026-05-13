@@ -4,45 +4,187 @@
   </row>
 
   <row class="boss-tab-bar">
-    <button class="boss-tab-btn" onclick="tabOptions">{{ tab.optionsLabel }}</button>
+    <button class="boss-tab-btn" onclick="tabIdentity">{{ tab.identityLabel }}</button>
+    <button class="boss-tab-btn" onclick="tabSpawn">{{ tab.spawnLabel }}</button>
+    <button class="boss-tab-btn" onclick="tabCombat">{{ tab.combatLabel }}</button>
     <button class="boss-tab-btn" onclick="tabPhases">{{ tab.phasesLabel }}</button>
     <button class="boss-tab-btn" onclick="tabDrops">{{ tab.dropsLabel }}</button>
   </row>
 
-  <col class="boss-tab-body" v-if="tab.options">
+  <col class="boss-tab-body" v-if="tab.identity">
     <label class="section-title">Identite</label>
-
     <row class="boss-main-row">
       <col class="field-group flex-1">
         <label class="field-label">Id</label>
         <input id="bossId" class="field-input wide"
-               value="{{ v.bossId }}" oninput="onBossId" placeholder="boss_1" />
+               value="{{ v.bossId }}" oninput="onBossId" placeholder="boss_1"
+               tooltip="Identifiant unique du boss dans ce donjon." />
       </col>
-      <col class="field-group boss-col-hp">
-        <label class="field-label">HP</label>
-        <input id="bossHp" class="field-input wide"
-               value="{{ v.bossHp }}" oninput="onBossHp" placeholder="100" />
+      <col class="field-group flex-1">
+        <label class="field-label">Nom</label>
+        <input id="bossName" class="field-input wide"
+               value="{{ v.bossName }}" oninput="onBossName" placeholder="Boss"
+               tooltip="Nom affiche en jeu. Laisse vide pour garder le nom vanilla." />
       </col>
     </row>
-
     <col class="field-group boss-entity-field">
       <label class="field-label">Entite</label>
       <input id="bossType" class="field-input wide"
-             value="{{ v.bossType }}" oninput="onBossType" placeholder="minecraft:wither_skeleton" />
+             value="{{ v.bossType }}" oninput="onBossType" placeholder="minecraft:wither_skeleton"
+             autocomplete="{{ s.entities }}"
+             tooltip="Id d'entite Minecraft ou moddee a faire spawn." />
     </col>
-
-    <label class="section-title">Spawn</label>
-    <row class="boss-option-row">
-      <col class="field-group boss-col-chance">
-        <label class="field-label">Chance</label>
-        <input id="bossChance" class="field-input wide"
-               value="{{ v.bossChance }}" oninput="onBossChance" placeholder="1.0"
-               tooltip="Probabilite de spawn. 1.0 = toujours, 0.0 = jamais." />
+    <row class="boss-main-row">
+      <col class="value-slider-group boss-slider-main" tooltip="Vie max du boss. Plage rapide: 1 a 1000 HP.">
+        <row class="value-label-row">
+          <label class="field-label flex-1">HP</label>
+          <label class="value-current">{{ v.bossHp }}</label>
+        </row>
+        <slider class="value-slider" min="1" max="1000" value="{{ v.bossHp }}" oninput="onBossHp"></slider>
       </col>
-      <button class="btn-add boss-toggle" onclick="toggleOptional"
-              tooltip="Fixe: spawn garanti. Optionnel: applique la chance de spawn.">{{ v.bossOptional }}</button>
-      <button class="btn-add boss-toggle" onclick="toggleRequired"
-              tooltip="Kill requis: necessaire pour finir. Kill libre: optionnel pour la victoire.">{{ v.bossRequired }}</button>
+      <col class="value-slider-group boss-slider-main" tooltip="Degats d'attaque de base du boss.">
+        <row class="value-label-row">
+          <label class="field-label flex-1">Dmg</label>
+          <label class="value-current">{{ v.bossDamage }}</label>
+        </row>
+        <slider class="value-slider" min="0" max="100" value="{{ v.bossDamage }}" oninput="onBossDamage"></slider>
+      </col>
+      <row class="boss-check-row boss-check-inline" tooltip="Affiche ou masque la barre de boss.">
+        <checkbox class="boss-check" checked="{{ v.showBossBarChecked }}" oninput="onBossBar"></checkbox>
+        <label class="boss-check-label">Barre</label>
+      </row>
+    </row>
+  </col>
+
+  <col class="boss-tab-body" v-if="tab.spawn">
+    <label class="section-title">Regles de spawn</label>
+    <row class="boss-main-row">
+      <col class="value-slider-group boss-slider-main" tooltip="Probabilite de spawn. 1.0 = toujours, 0.0 = jamais.">
+        <row class="value-label-row">
+          <label class="field-label flex-1">Chance</label>
+          <label class="value-current">{{ v.bossChance }}</label>
+        </row>
+        <slider class="value-slider" min="0" max="1" value="{{ v.bossChance }}" oninput="onBossChance"></slider>
+      </col>
+      <row class="boss-check-row boss-check-inline" tooltip="Coche: applique la chance de spawn. Decoche: spawn garanti.">
+        <checkbox class="boss-check" checked="{{ v.bossOptionalChecked }}" oninput="onBossOptional"></checkbox>
+        <label class="boss-check-label">Optionnel</label>
+      </row>
+      <row class="boss-check-row boss-check-inline" tooltip="Coche: le boss doit etre tue pour valider. Decoche: kill libre.">
+        <checkbox class="boss-check" checked="{{ v.bossRequiredChecked }}" oninput="onBossRequired"></checkbox>
+        <label class="boss-check-label">Kill req.</label>
+      </row>
+      <row class="boss-check-row boss-check-inline" tooltip="Coche: spawn au lancement. Decoche: spawn apres les vagues.">
+        <checkbox class="boss-check" checked="{{ v.spawnAtStartChecked }}" oninput="onSpawnAtStart"></checkbox>
+        <label class="boss-check-label">Spawn debut</label>
+      </row>
+      <col class="field-group boss-col-small">
+        <label class="field-label">Apres</label>
+        <input id="spawnAfterWave" class="field-input wide"
+               value="{{ v.spawnAfterWave }}" oninput="onSpawnAfterWave" placeholder="0"
+               tooltip="Index de vague apres laquelle ce boss apparait si Spawn debut est decoche." />
+      </col>
+    </row>
+
+    <label class="section-title">Position</label>
+    <row class="boss-main-row">
+      <col class="field-group boss-col-small">
+        <label class="field-label">X</label>
+        <input id="spawnX" class="field-input wide" value="{{ v.spawnX }}" oninput="onSpawnX" placeholder="0"
+               tooltip="Coordonnee X du spawn boss." />
+      </col>
+      <col class="field-group boss-col-small">
+        <label class="field-label">Y</label>
+        <input id="spawnY" class="field-input wide" value="{{ v.spawnY }}" oninput="onSpawnY" placeholder="64"
+               tooltip="Coordonnee Y du spawn boss." />
+      </col>
+      <col class="field-group boss-col-small">
+        <label class="field-label">Z</label>
+        <input id="spawnZ" class="field-input wide" value="{{ v.spawnZ }}" oninput="onSpawnZ" placeholder="0"
+               tooltip="Coordonnee Z du spawn boss." />
+      </col>
+      <col class="field-group flex-1">
+        <label class="field-label">Dimension</label>
+        <input id="spawnDim" class="field-input wide" value="{{ v.spawnDim }}" oninput="onSpawnDim" placeholder="arcadia_dungeon:dungeon"
+               autocomplete="{{ s.dimensions }}"
+               tooltip="Dimension cible du spawn." />
+      </col>
+    </row>
+
+    <row class="boss-main-row">
+      <col class="field-group flex-1">
+        <label class="field-label">Message spawn</label>
+        <input id="spawnMessage" class="field-input wide" value="{{ v.spawnMessage }}" oninput="onSpawnMessage" placeholder="Le boss arrive"
+               tooltip="Message envoye quand ce boss apparait." />
+      </col>
+      <col class="field-group flex-1">
+        <label class="field-label">Message skip</label>
+        <input id="skipMessage" class="field-input wide" value="{{ v.skipMessage }}" oninput="onSkipMessage" placeholder="Boss absent"
+               tooltip="Message envoye si le boss optionnel ne spawn pas." />
+      </col>
+    </row>
+  </col>
+
+  <col class="boss-tab-body" v-if="tab.combat">
+    <label class="section-title">Equipement</label>
+    <row class="boss-main-row">
+      <col class="field-group equip-field">
+        <label class="field-label">Main</label>
+        <input id="eqMain" class="field-input wide" value="{{ v.eqMain }}" oninput="onEqMain"
+               placeholder="minecraft:iron_sword" autocomplete="{{ s.items }}" tooltip="Item tenu en main principale." />
+      </col>
+      <col class="field-group equip-field">
+        <label class="field-label">Off</label>
+        <input id="eqOff" class="field-input wide" value="{{ v.eqOff }}" oninput="onEqOff"
+               placeholder="minecraft:shield" autocomplete="{{ s.items }}" tooltip="Item tenu en main secondaire." />
+      </col>
+      <col class="field-group equip-field">
+        <label class="field-label">Head</label>
+        <input id="eqHead" class="field-input wide" value="{{ v.eqHead }}" oninput="onEqHead"
+               placeholder="minecraft:iron_helmet" autocomplete="{{ s.items }}" tooltip="Casque equipe au spawn." />
+      </col>
+    </row>
+    <row class="boss-main-row">
+      <col class="field-group equip-field">
+        <label class="field-label">Chest</label>
+        <input id="eqChest" class="field-input wide" value="{{ v.eqChest }}" oninput="onEqChest"
+               placeholder="minecraft:iron_chestplate" autocomplete="{{ s.items }}" tooltip="Plastron equipe au spawn." />
+      </col>
+      <col class="field-group equip-field">
+        <label class="field-label">Legs</label>
+        <input id="eqLegs" class="field-input wide" value="{{ v.eqLegs }}" oninput="onEqLegs"
+               placeholder="minecraft:iron_leggings" autocomplete="{{ s.items }}" tooltip="Jambieres equipees au spawn." />
+      </col>
+      <col class="field-group equip-field">
+        <label class="field-label">Feet</label>
+        <input id="eqFeet" class="field-input wide" value="{{ v.eqFeet }}" oninput="onEqFeet"
+               placeholder="minecraft:iron_boots" autocomplete="{{ s.items }}" tooltip="Bottes equipees au spawn." />
+      </col>
+    </row>
+    <label class="section-title">Attributs</label>
+    <row class="boss-main-row">
+      <col class="value-slider-group boss-slider-main" tooltip="Armure vanilla appliquee via minecraft:generic.armor.">
+        <row class="value-label-row">
+          <label class="field-label flex-1">Armor</label>
+          <label class="value-current">{{ v.bossArmor }}</label>
+        </row>
+        <slider class="value-slider" min="0" max="30" value="{{ v.bossArmor }}" oninput="onBossArmor"></slider>
+      </col>
+      <col class="field-group flex-1">
+        <label class="field-label">Attributs key=value</label>
+        <input id="attrs" class="field-input wide" value="{{ v.attrs }}" oninput="onAttrs"
+               placeholder="minecraft:generic.knockback_resistance=0.5"
+               autocomplete="{{ s.attributes }}"
+               tooltip="Attributs libres en key=value separes par des virgules. Le slider Armor gere deja minecraft:generic.armor." />
+      </col>
+    </row>
+    <row class="boss-main-row">
+      <col class="field-group flex-1">
+        <label class="field-label">Combat key=value</label>
+        <input id="combat" class="field-input wide" value="{{ v.combat }}" oninput="onCombat"
+               placeholder="attackRange=4,dodgeChance=0.2"
+               tooltip="Parametres combat specifiques au mod en key=value." />
+      </col>
     </row>
   </col>
 
@@ -52,30 +194,65 @@
       <button class="btn-add" onclick="addPhase">+ Ajouter phase</button>
     </row>
 
-    <row class="boss-list-head">
-      <label class="row-idx">#</label>
-      <label class="boss-head boss-col-num">HP%</label>
-      <label class="boss-head boss-col-num">Dmg</label>
-      <label class="boss-head boss-col-num">Spd</label>
-      <label class="boss-col-del"></label>
-    </row>
-
-    <row class="list-row boss-edit-row" v-for="p in phase.count">
-      <label class="row-idx">{{ p.phaseIndex }}</label>
-      <col class="field-group boss-col-num">
-        <input id="{{ p.phaseHpId }}" class="field-input wide"
-               value="{{ p.phaseHp }}" oninput="{{ p.phaseHpKey }}" placeholder="50" />
+    <virtual-list id="phaseList" class="hub-vlist" v-for="p in phase.count" row-height="112">
+      <col class="list-row-col boss-phase-row">
+        <row class="boss-edit-row">
+          <label class="row-idx">{{ p.phaseIndex }}</label>
+          <col class="value-slider-group boss-phase-slider" tooltip="Seuil HP restant qui declenche la phase.">
+            <row class="value-label-row">
+              <label class="field-label flex-1">HP%</label>
+              <label class="value-current">{{ p.phaseHp }}</label>
+            </row>
+            <slider class="value-slider" min="1" max="100" value="{{ p.phaseHp }}" oninput="{{ p.phaseHpKey }}"></slider>
+          </col>
+          <col class="value-slider-group boss-phase-slider" tooltip="Multiplicateur de degats applique pendant cette phase.">
+            <row class="value-label-row">
+              <label class="field-label flex-1">Dmg</label>
+              <label class="value-current">{{ p.phaseDmg }}</label>
+            </row>
+            <slider class="value-slider" min="0.5" max="5" value="{{ p.phaseDmg }}" oninput="{{ p.phaseDmgKey }}"></slider>
+          </col>
+          <col class="value-slider-group boss-phase-slider" tooltip="Multiplicateur de vitesse applique pendant cette phase.">
+            <row class="value-label-row">
+              <label class="field-label flex-1">Spd</label>
+              <label class="value-current">{{ p.phaseSpd }}</label>
+            </row>
+            <slider class="value-slider" min="0.5" max="3" value="{{ p.phaseSpd }}" oninput="{{ p.phaseSpdKey }}"></slider>
+          </col>
+          <col class="field-group flex-1">
+            <label class="field-label">Message phase</label>
+            <input id="{{ p.phaseMessageId }}" class="field-input wide"
+                   value="{{ p.phaseMessage }}" oninput="{{ p.phaseMessageKey }}" placeholder="Message phase"
+                   tooltip="Message envoye au declenchement de cette phase." />
+          </col>
+          <button class="btn-del boss-col-del" onclick="{{ p.phaseDelKey }}">X</button>
+        </row>
+        <row class="boss-edit-row">
+          <col class="field-group flex-1">
+            <label class="field-label">Summons</label>
+            <input id="{{ p.phaseSummonsId }}" class="field-input wide"
+                   value="{{ p.phaseSummons }}" oninput="{{ p.phaseSummonsKey }}" placeholder="minecraft:zombie:2"
+                   autocomplete="{{ p.entitySuggestions }}"
+                   tooltip="Mobs invoques au format mob:quantite, separes par des virgules." />
+          </col>
+          <col class="field-group flex-1">
+            <label class="field-label">Effets</label>
+            <input id="{{ p.phaseEffectsId }}" class="field-input wide"
+                   value="{{ p.phaseEffects }}" oninput="{{ p.phaseEffectsKey }}" placeholder="minecraft:slowness:10:0"
+                   autocomplete="{{ p.effectSuggestions }}"
+                   tooltip="Effets joueurs au format effet:duree:amplifier." />
+          </col>
+        </row>
+        <row class="boss-edit-row">
+          <col class="field-group flex-1">
+            <label class="field-label">Commandes</label>
+            <input id="{{ p.phaseCommandsId }}" class="field-input wide"
+                   value="{{ p.phaseCommands }}" oninput="{{ p.phaseCommandsKey }}" placeholder="say Phase;%player%"
+                   tooltip="Commandes executees a la phase, separees par des points-virgules." />
+          </col>
+        </row>
       </col>
-      <col class="field-group boss-col-num">
-        <input id="{{ p.phaseDmgId }}" class="field-input wide"
-               value="{{ p.phaseDmg }}" oninput="{{ p.phaseDmgKey }}" placeholder="1.0" />
-      </col>
-      <col class="field-group boss-col-num">
-        <input id="{{ p.phaseSpdId }}" class="field-input wide"
-               value="{{ p.phaseSpd }}" oninput="{{ p.phaseSpdKey }}" placeholder="1.0" />
-      </col>
-      <button class="btn-del boss-col-del" onclick="{{ p.phaseDelKey }}">X</button>
-    </row>
+    </virtual-list>
   </col>
 
   <col class="boss-tab-body" v-if="tab.drops">
@@ -84,36 +261,34 @@
       <button class="btn-add" onclick="addReward">+ Ajouter drop</button>
     </row>
 
-    <row class="boss-list-head">
-      <label class="row-idx">#</label>
-      <label class="boss-head boss-col-item">Item</label>
-      <label class="boss-head boss-col-small">Min</label>
-      <label class="boss-head boss-col-small">Max</label>
-      <label class="boss-head boss-col-chance">Chance</label>
-      <label class="boss-col-del"></label>
-    </row>
-
-    <row class="list-row boss-edit-row" v-for="r in reward.count">
-      <label class="row-idx">{{ r.rewardIndex }}</label>
-      <col class="field-group boss-col-item">
-        <input id="{{ r.rewardItemId }}" class="field-input wide"
-               value="{{ r.rewardItem }}" oninput="{{ r.rewardItemKey }}"
-               placeholder="minecraft:diamond" />
-      </col>
-      <col class="field-group boss-col-small">
-        <input id="{{ r.rewardMinId }}" class="field-input wide"
-               value="{{ r.rewardMin }}" oninput="{{ r.rewardMinKey }}" placeholder="1" />
-      </col>
-      <col class="field-group boss-col-small">
-        <input id="{{ r.rewardMaxId }}" class="field-input wide"
-               value="{{ r.rewardMax }}" oninput="{{ r.rewardMaxKey }}" placeholder="1" />
-      </col>
-      <col class="field-group boss-col-chance">
-        <input id="{{ r.rewardChanceId }}" class="field-input wide"
-               value="{{ r.rewardChance }}" oninput="{{ r.rewardChanceKey }}" placeholder="1.0" />
-      </col>
-      <button class="btn-del boss-col-del" onclick="{{ r.rewardDelKey }}">X</button>
-    </row>
+    <virtual-list id="rewardList" class="hub-vlist" v-for="r in reward.count" row-height="32">
+      <row class="list-row boss-edit-row">
+        <label class="row-idx">{{ r.rewardIndex }}</label>
+        <col class="field-group boss-col-item">
+          <input id="{{ r.rewardItemId }}" class="field-input wide"
+                 value="{{ r.rewardItem }}" oninput="{{ r.rewardItemKey }}"
+                 autocomplete="{{ r.itemSuggestions }}"
+                 placeholder="minecraft:diamond"
+                 tooltip="Id de l'item drop par ce boss." />
+        </col>
+        <col class="field-group boss-col-small">
+          <input id="{{ r.rewardMinId }}" class="field-input wide"
+                 value="{{ r.rewardMin }}" oninput="{{ r.rewardMinKey }}" placeholder="1"
+                 tooltip="Quantite minimale du drop." />
+        </col>
+        <col class="field-group boss-col-small">
+          <input id="{{ r.rewardMaxId }}" class="field-input wide"
+                 value="{{ r.rewardMax }}" oninput="{{ r.rewardMaxKey }}" placeholder="1"
+                 tooltip="Quantite maximale du drop." />
+        </col>
+        <col class="field-group boss-col-chance">
+          <input id="{{ r.rewardChanceId }}" class="field-input wide"
+                 value="{{ r.rewardChance }}" oninput="{{ r.rewardChanceKey }}" placeholder="1.0"
+                 tooltip="Chance de drop entre 0.0 et 1.0." />
+        </col>
+        <button class="btn-del boss-col-del" onclick="{{ r.rewardDelKey }}">X</button>
+      </row>
+    </virtual-list>
   </col>
 
   <row class="cfg-footer">

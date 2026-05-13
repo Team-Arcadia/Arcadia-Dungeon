@@ -1,10 +1,10 @@
 <col class="cfg-screen">
-  <!-- ── Header ── -->
+  <!-- â”€â”€ Header â”€â”€ -->
   <row class="cfg-header">
     <label class="cfg-title">{{ cfg.title }}</label>
   </row>
 
-  <!-- ── Body ── -->
+  <!-- â”€â”€ Body â”€â”€ -->
   <col class="cfg-body">
 
     <!-- Lives -->
@@ -20,10 +20,10 @@
 
     <!-- Structure -->
     <col class="field-group">
-      <label class="field-label" data-i18n="arcadia.admin.core.structure">Réf. structure</label>
+      <label class="field-label" data-i18n="arcadia.admin.core.structure">RÃ©f. structure</label>
       <input id="structure"
              class="field-input wide"
-             placeholder="arcadia_dungeon:chateau_defaut"
+             placeholder="arcadia:chateau"
              value="{{ v.structure }}"
              oninput="onStructure"
              tooltip-i18n="arcadia.admin.core.tooltip.structure" />
@@ -34,7 +34,8 @@
       <label class="field-label" data-i18n="arcadia.admin.core.dimension">Dimension</label>
       <input id="dimension"
              class="field-input wide"
-             placeholder="minecraft:overworld"
+             placeholder="arcadia_dungeon:dungeon"
+             autocomplete="{{ s.dimensions }}"
              value="{{ v.dimension }}"
              oninput="onDimension"
              tooltip-i18n="arcadia.admin.core.tooltip.dimension" />
@@ -53,15 +54,15 @@
 
   </col>
 
-  <!-- ── Footer ── -->
+  <!-- â”€â”€ Footer â”€â”€ -->
   <row class="cfg-footer">
     <button class="btn-back"
             onclick="back"
-            data-i18n="arcadia.admin.core.back">← Retour</button>
+            data-i18n="arcadia.admin.core.back">â† Retour</button>
     <col class="spacer" />
     <button class="btn-save"
             onclick="save"
-            data-i18n="arcadia.admin.core.save">✔ Sauvegarder</button>
+            data-i18n="arcadia.admin.core.save">âœ” Sauvegarder</button>
   </row>
 
 </col>

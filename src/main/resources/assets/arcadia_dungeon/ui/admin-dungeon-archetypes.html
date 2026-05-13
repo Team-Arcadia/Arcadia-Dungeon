@@ -5,7 +5,7 @@
 
   <col class="cfg-body">
 
-    <virtual-list id="archList" class="hub-vlist" v-for="a in arch.count" row-height="64">
+    <virtual-list id="archList" class="hub-vlist" v-for="a in arch.count" row-height="72">
       <col class="list-row-col">
 
         <row class="sub-row">
@@ -16,19 +16,20 @@
                    placeholder="warrior" />
           </col>
           <col class="field-group flex-2">
-            <label class="field-label" data-i18n="arcadia.admin.arch.name">Clé nom</label>
+            <label class="field-label" data-i18n="arcadia.admin.arch.name">ClÃ© nom</label>
             <input id="{{ a.archNameId }}" class="field-input wide"
                    value="{{ a.archName }}" oninput="{{ a.archNameKey }}"
-                   placeholder="arcadia.archetype.warrior.name" />
+                   placeholder="arcadia.arch.warrior" />
           </col>
-          <button class="btn-del" onclick="{{ a.archDelKey }}">✗</button>
+          <button class="btn-del" onclick="{{ a.archDelKey }}">âœ—</button>
         </row>
 
         <col class="field-group">
-          <label class="field-label" data-i18n="arcadia.admin.arch.items">Items (séparés par virgule)</label>
+          <label class="field-label" data-i18n="arcadia.admin.arch.items">Items (sÃ©parÃ©s par virgule)</label>
           <input id="{{ a.archItemsId }}" class="field-input wide"
                  value="{{ a.archItems }}" oninput="{{ a.archItemsKey }}"
-                 placeholder="minecraft:iron_sword, minecraft:bread" />
+                 autocomplete="{{ a.itemSuggestions }}"
+                 placeholder="iron_sword, bread" />
         </col>
 
       </col>
@@ -36,14 +37,14 @@
 
     <button class="btn-add"
             onclick="addArch"
-            data-i18n="arcadia.admin.arch.add">+ Ajouter archétype</button>
+            data-i18n="arcadia.admin.arch.add">+ Ajouter archÃ©type</button>
 
   </col>
 
   <row class="cfg-footer">
-    <button class="btn-back" onclick="back" data-i18n="arcadia.admin.arch.back">← Retour</button>
+    <button class="btn-back" onclick="back" data-i18n="arcadia.admin.arch.back">â† Retour</button>
     <col class="spacer" />
-    <button class="btn-save" onclick="save" data-i18n="arcadia.admin.arch.save">✔ Sauvegarder</button>
+    <button class="btn-save" onclick="save" data-i18n="arcadia.admin.arch.save">âœ” Sauvegarder</button>
   </row>
 
 </col>

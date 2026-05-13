@@ -22,14 +22,14 @@ import java.util.Map;
 public final class AdminDungeonBossScreen extends com.tesseraui.TesseraScreen {
 
     private static final int MARGIN = 8;
-    private static final int MAX_W  = 420;
+    private static final int MAX_W  = 520;
     private static final int MAX_H  = 300;
 
     private final String dungeonId;
     private final String dungeonName;
 
     private TesseraPanel panel;
-    private final Map<String, com.tesseraui.TesseraInputState> inputStates = new HashMap<>();
+    private final com.tesseraui.TesseraRenderContext renderContext = new com.tesseraui.TesseraRenderContext();
     private boolean panelDirty = true;
 
     public AdminDungeonBossScreen(String dungeonId, String dungeonName) {
@@ -45,6 +45,7 @@ public final class AdminDungeonBossScreen extends com.tesseraui.TesseraScreen {
         if (panelDirty) { rebuildPanel(); panelDirty = false; }
         super.render(g, mx, my, pt);
         if (panel != null) panel.render(g, mx, my);
+        AdminUiFeedback.renderToasts(g, width, height);
     }
 
     @Override public boolean mouseClicked(double mx, double my, int btn) {
@@ -87,8 +88,7 @@ public final class AdminDungeonBossScreen extends com.tesseraui.TesseraScreen {
         handlers.put("back", ArcadiaNavigator::back);
         handlers.put("save", () -> {
             syncBosses(cfg, bosses);
-            PacketDistributor.sendToServer(new SaveDungeonConfigPayload(dungeonId, DungeonEditClient.toJson()));
-            ArcadiaNavigator.back();
+            AdminUiFeedback.saveDungeonConfig(dungeonId);
         });
         handlers.put("addBoss", () -> {
             bosses.add(newBoss(bosses.size()));
@@ -101,8 +101,6 @@ public final class AdminDungeonBossScreen extends com.tesseraui.TesseraScreen {
             JsonObject boss = bosses.get(i).getAsJsonObject();
             modelData.put("b.bossIndex." + i, String.valueOf(i + 1));
             modelData.put("b.bossName." + i, strOr(boss, "id", "boss_" + (i + 1)));
-            modelData.put("b.bossType." + i, strOr(boss, "type", "minecraft:wither_skeleton"));
-            modelData.put("b.bossMeta." + i, bossMeta(boss));
             modelData.put("b.manageKey." + i, "manageBoss." + i);
 
             handlers.put("manageBoss." + i, () ->
@@ -111,7 +109,7 @@ public final class AdminDungeonBossScreen extends com.tesseraui.TesseraScreen {
 
         TesseraModel model = key -> modelData.getOrDefault(key, null);
         TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin-dungeon-boss");
-        panel = TesseraTemplateRenderer.build(template, model, handlers, Map.of(), inputStates, px, py, panelW, panelH);
+        panel = TesseraTemplateRenderer.build(template, model, handlers, Map.of(), renderContext, px, py, panelW, panelH);
     }
 
     private static JsonArray getBosses(JsonObject cfg) {
@@ -150,23 +148,4 @@ public final class AdminDungeonBossScreen extends com.tesseraui.TesseraScreen {
         try { return o.get(k).getAsString(); } catch (Exception e) { return def; }
     }
 
-    private static boolean boolOr(JsonObject o, String k, boolean def) {
-        try { return o.get(k).getAsBoolean(); } catch (Exception e) { return def; }
-    }
-
-    private static int phaseCount(JsonObject boss) {
-        try { return boss.getAsJsonArray("phases").size(); } catch (Exception e) { return 0; }
-    }
-
-    private static int rewardCount(JsonObject boss) {
-        try { return boss.getAsJsonArray("rewards").size(); } catch (Exception e) { return 0; }
-    }
-
-    private static String bossMeta(JsonObject boss) {
-        String hp = strOr(boss, "hp", "100");
-        String optional = boolOr(boss, "optional", false) ? "optionnel" : "fixe";
-        String required = boolOr(boss, "requiredKill", true) ? "kill requis" : "kill libre";
-        return hp + " HP | " + phaseCount(boss) + " phase(s) | "
-            + rewardCount(boss) + " drop(s) | " + optional + " | " + required;
-    }
 }

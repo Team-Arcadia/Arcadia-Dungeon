@@ -90,7 +90,7 @@ public final class AdminDungeonConfigScreen extends com.tesseraui.TesseraScreen 
         handlers.put("close",      ArcadiaNavigator::closeAll);
         handlers.put("core",       () -> ArcadiaNavigator.push(new AdminDungeonCoreScreen(dungeonId, dungeonName)));
         handlers.put("boss",       () -> ArcadiaNavigator.push(new AdminDungeonBossScreen(dungeonId, dungeonName)));
-        handlers.put("rooms",      () -> ArcadiaNavigator.push(new AdminDungeonRoomsScreen(dungeonId, dungeonName)));
+        handlers.put("waves",      () -> ArcadiaNavigator.push(new AdminDungeonWavesScreen(dungeonId, dungeonName)));
         handlers.put("rewards",    () -> ArcadiaNavigator.push(new AdminDungeonRewardsScreen(dungeonId, dungeonName)));
         handlers.put("archetypes", () -> ArcadiaNavigator.push(new AdminDungeonArchetypesScreen(dungeonId, dungeonName)));
         handlers.put("messages",   () -> ArcadiaNavigator.push(new AdminDungeonMessagesScreen(dungeonId, dungeonName)));

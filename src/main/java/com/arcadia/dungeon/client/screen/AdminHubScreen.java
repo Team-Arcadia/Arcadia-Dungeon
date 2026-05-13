@@ -1,7 +1,6 @@
 package com.arcadia.dungeon.client.screen;
 
 import com.tesseraui.TesseraContextMenu;
-import com.tesseraui.TesseraInputState;
 import com.tesseraui.TesseraModel;
 import com.tesseraui.TesseraPanel;
 import com.tesseraui.TesseraTemplate;
@@ -36,7 +35,7 @@ public final class AdminHubScreen extends com.tesseraui.TesseraScreen {
     private static final int MAX_H  = 290;
 
     private TesseraPanel panel;
-    private final Map<String, TesseraInputState> inputStates = new HashMap<>();
+    private final com.tesseraui.TesseraRenderContext renderContext = new com.tesseraui.TesseraRenderContext();
     private List<DungeonListPayload.DungeonSummary> allDungeons = List.of();
     private DungeonListPayload.DungeonSummary clipboard = null;
     private double lastMx, lastMy;
@@ -121,8 +120,6 @@ public final class AdminHubScreen extends com.tesseraui.TesseraScreen {
             DungeonListPayload.DungeonSummary d = filtered.get(i);
             boolean warn = d.schemaVersion() > 1;
             modelData.put("d.name." + i,         d.name());
-            modelData.put("d.id." + i,           d.id());
-            modelData.put("d.schema." + i,       "v" + d.schemaVersion());
             modelData.put("d.status." + i,      warn ? "⚠" : "✓");
             modelData.put("d.statusClass." + i, warn ? "status-warn" : "status-ok");
             modelData.put("d.manageKey." + i,   "manage." + i);
@@ -170,7 +167,7 @@ public final class AdminHubScreen extends com.tesseraui.TesseraScreen {
 
         TesseraModel model = key -> modelData.getOrDefault(key, null);
         TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin-hub");
-        panel = TesseraTemplateRenderer.build(template, model, handlers, inputHandlers, inputStates, px, py, panelW, panelH);
+        panel = TesseraTemplateRenderer.build(template, model, handlers, inputHandlers, renderContext, px, py, panelW, panelH);
     }
 
     private void applyFilter() {

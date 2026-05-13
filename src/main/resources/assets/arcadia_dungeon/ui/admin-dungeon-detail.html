@@ -1,13 +1,13 @@
 <col class="detail-screen">
-  <!-- ── Header ── -->
+  <!-- â”€â”€ Header â”€â”€ -->
   <row class="detail-header">
-    <button class="btn-back" onclick="back" tooltip="Retour à la liste">←</button>
+    <button class="btn-back" onclick="back" tooltip="Retour Ã  la liste">â†</button>
     <label class="detail-title">{{ dungeon.name }}</label>
-    <badge class="schema-badge" tooltip="Version du schéma JSON">{{ dungeon.schema }}</badge>
-    <button class="btn-refresh" onclick="refresh" tooltip="Recharger depuis le serveur">⟳</button>
+    <badge class="schema-badge" tooltip="Version du schÃ©ma JSON">{{ dungeon.schema }}</badge>
+    <button class="btn-refresh" onclick="refresh" tooltip="Recharger depuis le serveur">âŸ³</button>
   </row>
 
-  <!-- ── Tabs (les clés affichent "…" / "—" pendant le chargement) ── -->
+  <!-- â”€â”€ Tabs (les clÃ©s affichent "â€¦" / "â€”" pendant le chargement) â”€â”€ -->
   <tabs class="detail-tabs">
 
     <tab label="Core">
@@ -38,7 +38,7 @@
           <label class="info-val">{{ boss.count }}</label>
         </row>
         <row class="info-row">
-          <label class="info-key" data-i18n="arcadia.admin.detail.boss.type">Entité</label>
+          <label class="info-key" data-i18n="arcadia.admin.detail.boss.type">EntitÃ©</label>
           <label class="info-val mono">{{ boss.type }}</label>
         </row>
         <row class="info-row">
@@ -63,7 +63,7 @@
           <label class="info-val">{{ rooms.waves }}</label>
         </row>
         <label class="tab-note">
-          Les détails par salle se configurent dans le JSON.
+          Les dÃ©tails par salle se configurent dans le JSON.
         </label>
       </col>
     </tab>
@@ -79,7 +79,7 @@
           <label class="info-val">{{ rewards.loot }}</label>
         </row>
         <row class="info-row">
-          <label class="info-key" data-i18n="arcadia.admin.detail.archetypes">Archétypes</label>
+          <label class="info-key" data-i18n="arcadia.admin.detail.archetypes">ArchÃ©types</label>
           <label class="info-val">{{ archetypes }}</label>
         </row>
       </col>
@@ -87,7 +87,7 @@
 
   </tabs>
 
-  <!-- ── Footer ── -->
+  <!-- â”€â”€ Footer â”€â”€ -->
   <row class="detail-footer">
     <label class="footer-id mono">{{ dungeon.id }}</label>
     <button class="btn-close" onclick="close" data-i18n="arcadia.admin.detail.close">Fermer</button>

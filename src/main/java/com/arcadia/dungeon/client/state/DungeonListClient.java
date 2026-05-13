@@ -13,14 +13,20 @@ import java.util.List;
 public final class DungeonListClient {
 
     private static volatile List<DungeonListPayload.DungeonSummary> dungeons = List.of();
+    private static volatile long version = 0L;
 
     private DungeonListClient() {}
 
     public static void update(List<DungeonListPayload.DungeonSummary> list) {
         dungeons = List.copyOf(list);
+        version++;
     }
 
     public static List<DungeonListPayload.DungeonSummary> get() {
         return dungeons;
+    }
+
+    public static long version() {
+        return version;
     }
 }

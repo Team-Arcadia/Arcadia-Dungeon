@@ -3,42 +3,210 @@
     <label class="cfg-title">{{ cfg.title }}</label>
   </row>
 
+  <row class="boss-tab-bar">
+    <button class="boss-tab-btn" onclick="tabBase">{{ tab.baseLabel }}</button>
+    <button class="boss-tab-btn" onclick="tabSpawn">{{ tab.spawnLabel }}</button>
+    <button class="boss-tab-btn" onclick="tabStats">{{ tab.statsLabel }}</button>
+    <button class="boss-tab-btn" onclick="tabAdvanced">{{ tab.advancedLabel }}</button>
+  </row>
+
   <col class="cfg-body">
-
-    <virtual-list id="waveList" class="hub-vlist" v-for="w in waves.count" row-height="68">
-      <col class="list-row-col">
-
-        <row class="sub-row">
-          <label class="row-idx">{{ w.waveLabel }}</label>
-          <col class="field-group w-60">
-            <label class="field-label" data-i18n="arcadia.admin.rooms.wave.delay">Délai (ticks)</label>
-            <input id="{{ w.waveDelayId }}" class="field-input wide"
-                   value="{{ w.waveDelay }}" oninput="{{ w.waveDelayKey }}"
-                   placeholder="20" />
+    <virtual-list id="waveList" class="hub-vlist" v-for="w in waves.count" row-height="124">
+      <col class="list-row-col wave-card-row">
+        <row class="wave-edit-row" v-if="tab.base">
+          <label class="row-idx">{{ w.waveIndex }}</label>
+          <col class="field-group wave-name-main">
+            <label class="field-label">Nom</label>
+            <input id="{{ w.nameId }}" class="field-input wide"
+                   value="{{ w.waveName }}" oninput="{{ w.nameKey }}" placeholder="Vague 1"
+                   tooltip="Nom interne de cette etape de spawn." />
           </col>
-          <button class="btn-del" onclick="{{ w.waveDelKey }}">✗</button>
+          <col class="field-group wave-type-main">
+            <label class="field-label">Mob</label>
+            <input id="{{ w.mobTypeId }}" class="field-input wide"
+                   value="{{ w.mobType }}" oninput="{{ w.mobTypeKey }}" placeholder="minecraft:zombie"
+                   autocomplete="{{ w.entitySuggestions }}"
+                   tooltip="Id d'entite a faire spawn." />
+          </col>
+          <col class="field-group wave-col-count">
+            <label class="field-label">Qte</label>
+            <input id="{{ w.mobCountId }}" class="field-input wide"
+                   value="{{ w.mobCount }}" oninput="{{ w.mobCountKey }}" placeholder="1"
+                   tooltip="Nombre de mobs identiques dans cette etape." />
+          </col>
+          <col class="field-group wave-col-delay">
+            <label class="field-label">Ticks</label>
+            <input id="{{ w.delayId }}" class="field-input wide"
+                   value="{{ w.waveDelay }}" oninput="{{ w.delayKey }}" placeholder="20"
+                   tooltip="Delai avant cette etape, en ticks Minecraft." />
+          </col>
+          <button class="btn-del boss-col-del" onclick="{{ w.delKey }}">X</button>
         </row>
 
-        <col class="field-group">
-          <label class="field-label" data-i18n="arcadia.admin.rooms.wave.mobs">Mobs (type:count, ...)</label>
-          <input id="{{ w.waveMobsId }}" class="field-input wide"
-                 value="{{ w.waveMobs }}" oninput="{{ w.waveMobsKey }}"
-                 placeholder="minecraft:zombie:2, minecraft:skeleton:1" />
-        </col>
+        <row class="wave-edit-row" v-if="tab.base">
+          <col class="field-group wave-col-wide">
+            <label class="field-label">Message</label>
+            <input id="{{ w.messageId }}" class="field-input wide"
+                   value="{{ w.waveMessage }}" oninput="{{ w.messageKey }}"
+                   placeholder="La vague arrive..."
+                   tooltip="Message envoye quand cette vague commence." />
+          </col>
+        </row>
 
+        <row class="wave-edit-row" v-if="tab.spawn">
+          <label class="row-idx">{{ w.waveIndex }}</label>
+          <col class="field-group wave-col-pos">
+            <label class="field-label">X</label>
+            <input id="{{ w.spawnXId }}" class="field-input wide"
+                   value="{{ w.spawnX }}" oninput="{{ w.spawnXKey }}" placeholder="0"
+                   tooltip="Coordonnee X du spawn de cette vague." />
+          </col>
+          <col class="field-group wave-col-pos">
+            <label class="field-label">Y</label>
+            <input id="{{ w.spawnYId }}" class="field-input wide"
+                   value="{{ w.spawnY }}" oninput="{{ w.spawnYKey }}" placeholder="64"
+                   tooltip="Coordonnee Y du spawn de cette vague." />
+          </col>
+          <col class="field-group wave-col-pos">
+            <label class="field-label">Z</label>
+            <input id="{{ w.spawnZId }}" class="field-input wide"
+                   value="{{ w.spawnZ }}" oninput="{{ w.spawnZKey }}" placeholder="0"
+                   tooltip="Coordonnee Z du spawn de cette vague." />
+          </col>
+          <col class="field-group wave-col-dim">
+            <label class="field-label">Dimension</label>
+            <input id="{{ w.spawnDimId }}" class="field-input wide"
+                   value="{{ w.spawnDim }}" oninput="{{ w.spawnDimKey }}" placeholder="arcadia_dungeon:dungeon"
+                   autocomplete="{{ w.dimensionSuggestions }}"
+                   tooltip="Dimension cible de ce spawn." />
+          </col>
+          <button class="btn-add wave-col-action" onclick="{{ w.captureKey }}"
+                  tooltip="Capture la position actuelle du joueur">Pos</button>
+        </row>
+
+        <row class="wave-edit-row" v-if="tab.spawn">
+          <row class="wave-glow-check-row" tooltip="Active le glowing des mobs de cette vague">
+            <checkbox class="boss-check" checked="{{ w.waveGlowChecked }}" oninput="{{ w.glowKey }}"></checkbox>
+            <label class="boss-check-label">Glow</label>
+          </row>
+          <col class="field-group wave-col-delay">
+            <label class="field-label">Glow s</label>
+            <input id="{{ w.glowDelayId }}" class="field-input wide"
+                   value="{{ w.waveGlowDelay }}" oninput="{{ w.glowDelayKey }}" placeholder="60"
+                   tooltip="Secondes avant de rendre les mobs visibles avec glowing." />
+          </col>
+          <col class="spacer" />
+          <button class="btn-del boss-col-del" onclick="{{ w.delKey }}">X</button>
+        </row>
+
+        <row class="wave-edit-row" v-if="tab.stats">
+          <label class="row-idx">{{ w.waveIndex }}</label>
+          <col class="value-slider-group wave-stat-slider" tooltip="Vie max appliquee a chaque mob.">
+            <row class="value-label-row">
+              <label class="field-label flex-1">HP</label>
+              <label class="value-current">{{ w.mobHp }}</label>
+            </row>
+            <slider class="value-slider" min="1" max="200" value="{{ w.mobHp }}" oninput="{{ w.mobHpKey }}"></slider>
+          </col>
+          <col class="value-slider-group wave-stat-slider" tooltip="Degats d'attaque de base du mob.">
+            <row class="value-label-row">
+              <label class="field-label flex-1">Dmg</label>
+              <label class="value-current">{{ w.mobDmg }}</label>
+            </row>
+            <slider class="value-slider" min="0" max="50" value="{{ w.mobDmg }}" oninput="{{ w.mobDmgKey }}"></slider>
+          </col>
+          <col class="value-slider-group wave-stat-slider" tooltip="Vitesse de mouvement. 0 garde la valeur vanilla.">
+            <row class="value-label-row">
+              <label class="field-label flex-1">Spd</label>
+              <label class="value-current">{{ w.mobSpd }}</label>
+            </row>
+            <slider class="value-slider" min="0" max="1" value="{{ w.mobSpd }}" oninput="{{ w.mobSpdKey }}"></slider>
+          </col>
+          <col class="value-slider-group wave-stat-slider" tooltip="Armure vanilla appliquee via minecraft:generic.armor.">
+            <row class="value-label-row">
+              <label class="field-label flex-1">Armor</label>
+              <label class="value-current">{{ w.mobArmor }}</label>
+            </row>
+            <slider class="value-slider" min="0" max="30" value="{{ w.mobArmor }}" oninput="{{ w.armorKey }}"></slider>
+          </col>
+          <col class="field-group wave-type-main">
+            <label class="field-label">Nom custom</label>
+            <input id="{{ w.mobNameId }}" class="field-input wide"
+                   value="{{ w.mobName }}" oninput="{{ w.mobNameKey }}" placeholder="Elite"
+                   tooltip="Nom affiche au-dessus du mob. Laisse vide pour garder le nom vanilla." />
+          </col>
+          <button class="btn-del boss-col-del" onclick="{{ w.delKey }}">X</button>
+        </row>
+
+        <row class="wave-edit-row" v-if="tab.stats">
+          <col class="field-group equip-field">
+            <label class="field-label">Main</label>
+            <input id="{{ w.eqMainId }}" class="field-input wide" value="{{ w.eqMain }}" oninput="{{ w.eqMainKey }}"
+                   placeholder="minecraft:iron_sword" autocomplete="{{ w.itemSuggestions }}" tooltip="Item tenu en main principale." />
+          </col>
+          <col class="field-group equip-field">
+            <label class="field-label">Off</label>
+            <input id="{{ w.eqOffId }}" class="field-input wide" value="{{ w.eqOff }}" oninput="{{ w.eqOffKey }}"
+                   placeholder="minecraft:shield" autocomplete="{{ w.itemSuggestions }}" tooltip="Item tenu en main secondaire." />
+          </col>
+          <col class="field-group equip-field">
+            <label class="field-label">Head</label>
+            <input id="{{ w.eqHeadId }}" class="field-input wide" value="{{ w.eqHead }}" oninput="{{ w.eqHeadKey }}"
+                   placeholder="minecraft:iron_helmet" autocomplete="{{ w.itemSuggestions }}" tooltip="Casque equipe au spawn." />
+          </col>
+        </row>
+
+        <row class="wave-edit-row" v-if="tab.stats">
+          <col class="field-group equip-field">
+            <label class="field-label">Chest</label>
+            <input id="{{ w.eqChestId }}" class="field-input wide" value="{{ w.eqChest }}" oninput="{{ w.eqChestKey }}"
+                   placeholder="minecraft:iron_chestplate" autocomplete="{{ w.itemSuggestions }}" tooltip="Plastron equipe au spawn." />
+          </col>
+          <col class="field-group equip-field">
+            <label class="field-label">Legs</label>
+            <input id="{{ w.eqLegsId }}" class="field-input wide" value="{{ w.eqLegs }}" oninput="{{ w.eqLegsKey }}"
+                   placeholder="minecraft:iron_leggings" autocomplete="{{ w.itemSuggestions }}" tooltip="Jambieres equipees au spawn." />
+          </col>
+          <col class="field-group equip-field">
+            <label class="field-label">Feet</label>
+            <input id="{{ w.eqFeetId }}" class="field-input wide" value="{{ w.eqFeet }}" oninput="{{ w.eqFeetKey }}"
+                   placeholder="minecraft:iron_boots" autocomplete="{{ w.itemSuggestions }}" tooltip="Bottes equipees au spawn." />
+          </col>
+        </row>
+
+        <row class="wave-edit-row" v-if="tab.advanced">
+          <label class="row-idx">{{ w.waveIndex }}</label>
+          <col class="field-group wave-col-wide">
+            <label class="field-label">Attributs</label>
+            <input id="{{ w.attrsId }}" class="field-input wide"
+                   value="{{ w.attrs }}" oninput="{{ w.attrsKey }}"
+                   placeholder="minecraft:generic.knockback_resistance=0.5"
+                   autocomplete="{{ w.attributeSuggestions }}"
+                   tooltip="Attributs libres en key=value. Le slider Armor gere deja minecraft:generic.armor." />
+          </col>
+          <button class="btn-del boss-col-del" onclick="{{ w.delKey }}">X</button>
+        </row>
+
+        <row class="wave-edit-row" v-if="tab.advanced">
+          <col class="field-group wave-col-wide">
+            <label class="field-label">Combat</label>
+            <input id="{{ w.combatId }}" class="field-input wide"
+                   value="{{ w.combat }}" oninput="{{ w.combatKey }}"
+                   placeholder="attackRange=4,dodgeChance=0.2"
+                   tooltip="Parametres combat specifiques au mod en key=value." />
+          </col>
+        </row>
       </col>
     </virtual-list>
 
     <button class="btn-add"
             onclick="addWave"
-            data-i18n="arcadia.admin.rooms.add.wave">+ Ajouter vague</button>
-
+            data-i18n="arcadia.admin.rooms.add.wave">+ Ajouter spawn</button>
   </col>
 
   <row class="cfg-footer">
-    <button class="btn-back" onclick="back" data-i18n="arcadia.admin.rooms.back">← Retour</button>
+    <button class="btn-back" onclick="back" data-i18n="arcadia.admin.rooms.back">Retour</button>
     <col class="spacer" />
-    <button class="btn-save" onclick="save" data-i18n="arcadia.admin.rooms.save">✔ Sauvegarder</button>
+    <button class="btn-save" onclick="save" data-i18n="arcadia.admin.rooms.save">Sauvegarder</button>
   </row>
-
 </col>

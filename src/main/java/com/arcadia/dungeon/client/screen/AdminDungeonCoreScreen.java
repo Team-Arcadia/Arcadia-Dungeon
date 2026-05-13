@@ -34,7 +34,7 @@ public final class AdminDungeonCoreScreen extends com.tesseraui.TesseraScreen {
     private final String dungeonName;
 
     private TesseraPanel panel;
-    private final Map<String, com.tesseraui.TesseraInputState> inputStates = new HashMap<>();
+    private final com.tesseraui.TesseraRenderContext renderContext = new com.tesseraui.TesseraRenderContext();
     private boolean panelDirty = true;
 
     public AdminDungeonCoreScreen(String dungeonId, String dungeonName) {
@@ -54,6 +54,7 @@ public final class AdminDungeonCoreScreen extends com.tesseraui.TesseraScreen {
         if (panelDirty) { rebuildPanel(); panelDirty = false; }
         super.render(g, mx, my, pt);
         if (panel != null) panel.render(g, mx, my);
+        AdminUiFeedback.renderToasts(g, width, height);
     }
 
     @Override
@@ -94,8 +95,9 @@ public final class AdminDungeonCoreScreen extends com.tesseraui.TesseraScreen {
         modelData.put("cfg.title", I18n.get("arcadia.admin.core.title", dungeonName));
         modelData.put("v.lives",      str(cfg, "lives", "3"));
         modelData.put("v.structure",  str(cfg, "structureRef", ""));
-        modelData.put("v.dimension",  str(cfg, "dimension", ""));
+        modelData.put("v.dimension",  str(cfg, "dimension", AdminUiSuggestions.DEFAULT_DIMENSION));
         modelData.put("v.placementY", str(cfg, "placementY", ""));
+        modelData.put("s.dimensions", AdminUiSuggestions.DIMENSIONS);
 
         Map<String, Runnable> handlers = new HashMap<>();
         handlers.put("back", ArcadiaNavigator::back);
@@ -109,12 +111,11 @@ public final class AdminDungeonCoreScreen extends com.tesseraui.TesseraScreen {
 
         TesseraModel model = key -> modelData.getOrDefault(key, null);
         TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin-dungeon-core");
-        panel = TesseraTemplateRenderer.build(template, model, handlers, inputHandlers, inputStates, px, py, panelW, panelH);
+        panel = TesseraTemplateRenderer.build(template, model, handlers, inputHandlers, renderContext, px, py, panelW, panelH);
     }
 
     private void doSave() {
-        PacketDistributor.sendToServer(new SaveDungeonConfigPayload(dungeonId, DungeonEditClient.toJson()));
-        ArcadiaNavigator.back();
+        AdminUiFeedback.saveDungeonConfig(dungeonId);
     }
 
     // ── JSON helpers ──────────────────────────────────────────────────────

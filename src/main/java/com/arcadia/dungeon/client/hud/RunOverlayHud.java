@@ -41,7 +41,7 @@ public final class RunOverlayHud implements LayeredDraw.Layer {
 
         int lives = state.livesRemaining();
         String livesStr = "♥ " + lives;
-        String roomStr = "Salle " + (state.currentRoomIndex() + 1) + "/" + state.totalRooms();
+        String roomStr = "Vague " + (state.currentWaveIndex() + 1);
 
         // Danger pulsing : 1 vie restante
         int chronoColor;

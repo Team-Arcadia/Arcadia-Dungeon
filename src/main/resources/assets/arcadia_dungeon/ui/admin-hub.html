@@ -20,12 +20,11 @@
 
   <!-- ── Dungeon list ── -->
   <col class="hub-list" oncontextmenu="ctxList">
-    <virtual-list class="hub-vlist" v-for="d in dungeon.filtered" row-height="28">
+    <virtual-list class="hub-vlist" v-for="d in dungeon.filtered" row-height="22">
       <row class="dungeon-row" oncontextmenu="{{ d.ctxKey }}">
         <label class="status-dot {{ d.statusClass }}">■</label>
         <col class="row-info">
           <label class="row-name">{{ d.name }}</label>
-          <label class="row-meta">{{ d.id }} · {{ d.schema }}</label>
         </col>
         <button class="btn-manage"
                 onclick="{{ d.manageKey }}"

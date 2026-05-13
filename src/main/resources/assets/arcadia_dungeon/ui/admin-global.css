@@ -107,21 +107,29 @@
   color: var(--copper);
   font-size: 7;
   font-weight: 700;
+  height: 12px;
+  min-height: 12px;
   padding-bottom: 2px;
   border-bottom: 1;
   border-color: var(--border-mid);
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .field-group {
-  gap: 2px;
+  gap: 1px;
   min-width: 0;
+  min-height: 28px;
+  flex-shrink: 0;
 }
 
 .field-label {
   color: var(--text-mid);
   font-size: 6;
+  height: 8px;
+  min-height: 8px;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .field-input {
@@ -133,6 +141,8 @@
   color: var(--text-bright);
   font-size: 7;
   padding: 2px 5px;
+  min-width: 0;
+  overflow: hidden;
   transition: border-color 150ms ease-out;
 }
 
@@ -144,6 +154,35 @@
 .create-screen .field-input {
   width: 100%;
   box-sizing: border-box;
+}
+
+.value-slider-group {
+  gap: 2px;
+  min-width: 0;
+  min-height: 28px;
+  flex-shrink: 0;
+}
+
+.value-label-row {
+  align-items: center;
+  gap: 3px;
+  height: 9px;
+  min-height: 9px;
+}
+
+.value-current {
+  color: var(--copper);
+  font-size: 6;
+  height: 8px;
+  min-width: 18px;
+  text-align: right;
+  overflow: hidden;
+}
+
+.value-slider {
+  width: 100%;
+  height: 10px;
+  min-height: 10px;
 }
 
 .field-hint,
@@ -333,6 +372,7 @@
 
 .cfg-footer {
   justify-content: flex-start;
+  min-height: 24px;
 }
 
 .cfg-screen .btn-back {
@@ -356,7 +396,7 @@
   border-color: var(--copper);
   border-radius: 2px;
   padding: 2px 10px;
-  width: 92px;
+  width: 104px;
   font-size: 7;
   font-weight: 700;
   overflow: hidden;
@@ -428,7 +468,7 @@
 
 .boss-tab-body {
   padding: 8px 10px;
-  gap: 7px;
+  gap: 8px;
   flex: 1;
   min-width: 0;
   overflow: auto;
@@ -471,9 +511,11 @@
 .boss-option-row,
 .boss-list-head,
 .boss-edit-row {
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
   min-width: 0;
+  min-height: 32px;
+  flex-shrink: 0;
 }
 
 .boss-option-row {
@@ -490,8 +532,33 @@
   width: 100%;
 }
 
-.boss-toggle {
-  width: 82px;
+.boss-check-row {
+  align-items: center;
+  gap: 3px;
+  width: 70px;
+  min-width: 70px;
+  height: 18px;
+  min-height: 18px;
+  flex-shrink: 0;
+}
+
+.boss-check-inline {
+  margin-top: 10px;
+}
+
+.boss-check {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+}
+
+.boss-check-label {
+  flex: 1;
+  min-width: 0;
+  height: 10px;
+  color: var(--text);
+  font-size: 6;
+  overflow: hidden;
 }
 
 .boss-list-head {
@@ -505,6 +572,21 @@
 }
 
 .boss-col-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.boss-slider-main {
+  width: 96px;
+  min-width: 96px;
+}
+
+.boss-phase-slider {
+  width: 62px;
+  min-width: 62px;
+}
+
+.equip-field {
   flex: 1;
   min-width: 0;
 }
@@ -532,6 +614,166 @@
 
 .boss-edit-row {
   padding-right: 2px;
+}
+
+.boss-phase-row {
+  gap: 5px;
+  padding: 5px 6px;
+  border: 1;
+  border-color: var(--border-idle);
+  background: var(--bg-row);
+}
+
+.boss-phase-row:hover {
+  border-color: var(--copper-dim);
+  background: var(--surface-1);
+}
+
+.wave-head,
+.wave-edit-row,
+.wave-title-row {
+  align-items: flex-start;
+  gap: 5px;
+  min-width: 0;
+  min-height: 32px;
+  flex-shrink: 0;
+}
+
+.wave-head {
+  padding: 0 3px;
+}
+
+.wave-col-delay {
+  width: 48px;
+  min-width: 48px;
+  flex-shrink: 0;
+}
+
+.wave-col-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.wave-col-type {
+  flex: 1.4;
+  min-width: 0;
+}
+
+.wave-name-main {
+  flex: 0.9;
+  min-width: 0;
+}
+
+.wave-type-main {
+  flex: 1.25;
+  min-width: 0;
+}
+
+.wave-col-count,
+.wave-col-pos {
+  width: 46px;
+  min-width: 46px;
+  flex-shrink: 0;
+}
+
+.wave-col-stat {
+  width: 54px;
+  min-width: 54px;
+  flex-shrink: 0;
+}
+
+.wave-stat-slider {
+  width: 66px;
+  min-width: 66px;
+}
+
+.wave-col-dim {
+  flex: 1;
+  min-width: 0;
+}
+
+.wave-col-action {
+  width: 42px;
+  min-width: 42px;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.wave-glow-check-row {
+  align-items: center;
+  gap: 3px;
+  width: 46px;
+  min-width: 46px;
+  height: 18px;
+  min-height: 18px;
+  margin-top: 10px;
+  flex-shrink: 0;
+}
+
+.wave-card-row {
+  gap: 3px;
+  padding: 5px 6px;
+  border: 1;
+  border-color: var(--border-idle);
+  background: var(--bg-row);
+}
+
+.wave-section-label {
+  color: var(--copper);
+  font-size: 6;
+  padding-top: 1px;
+  overflow: hidden;
+}
+
+.wave-col-wide {
+  flex: 1;
+  min-width: 0;
+}
+
+.wave-col-half {
+  flex: 1;
+  min-width: 0;
+}
+
+.boss-row-card {
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 5px 6px;
+  border: 1;
+  border-color: var(--border-idle);
+  background: var(--bg-row);
+}
+
+.boss-row-card:hover {
+  border-color: var(--copper-dim);
+  background: var(--surface-1);
+}
+
+.boss-row-name {
+  color: var(--text-bright);
+  font-size: 7;
+  font-weight: 700;
+  overflow: hidden;
+}
+
+.boss-row-flags {
+  width: 116px;
+  min-width: 116px;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.boss-row-chip {
+  color: var(--copper);
+  font-size: 6;
+  overflow: hidden;
+}
+
+.boss-manage-btn {
+  width: 54px;
+  min-width: 54px;
+  flex-shrink: 0;
 }
 
 /* Hub */
@@ -623,12 +865,6 @@
 .row-name {
   color: var(--text-bright);
   font-size: 7;
-  overflow: hidden;
-}
-
-.row-meta {
-  color: var(--text-muted);
-  font-size: 6;
   overflow: hidden;
 }
 

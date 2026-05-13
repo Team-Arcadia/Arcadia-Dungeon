@@ -7,7 +7,7 @@
 
     <!-- Currency -->
     <col class="field-group">
-      <label class="field-label" data-i18n="arcadia.admin.rewards.currency">Currency gagnée</label>
+      <label class="field-label" data-i18n="arcadia.admin.rewards.currency">Currency gagnÃ©e</label>
       <input id="currency"
              class="field-input"
              value="{{ v.currency }}"
@@ -24,6 +24,7 @@
         <col class="field-group flex-2">
           <input id="{{ l.lootItemId }}" class="field-input wide"
                  value="{{ l.lootItem }}" oninput="{{ l.lootItemKey }}"
+                 autocomplete="{{ l.itemSuggestions }}"
                  placeholder="minecraft:diamond" />
         </col>
         <col class="field-group w-36">
@@ -36,7 +37,7 @@
                  value="{{ l.lootMax }}" oninput="{{ l.lootMaxKey }}"
                  placeholder="3" />
         </col>
-        <button class="btn-del" onclick="{{ l.lootDelKey }}">✗</button>
+        <button class="btn-del" onclick="{{ l.lootDelKey }}">âœ—</button>
       </row>
     </virtual-list>
 
@@ -47,9 +48,9 @@
   </col>
 
   <row class="cfg-footer">
-    <button class="btn-back" onclick="back" data-i18n="arcadia.admin.rewards.back">← Retour</button>
+    <button class="btn-back" onclick="back" data-i18n="arcadia.admin.rewards.back">â† Retour</button>
     <col class="spacer" />
-    <button class="btn-save" onclick="save" data-i18n="arcadia.admin.rewards.save">✔ Sauvegarder</button>
+    <button class="btn-save" onclick="save" data-i18n="arcadia.admin.rewards.save">âœ” Sauvegarder</button>
   </row>
 
 </col>

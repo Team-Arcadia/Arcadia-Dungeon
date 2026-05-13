@@ -30,7 +30,7 @@ public final class AdminDungeonRewardsScreen extends com.tesseraui.TesseraScreen
     private final String dungeonName;
 
     private TesseraPanel panel;
-    private final Map<String, com.tesseraui.TesseraInputState> inputStates = new HashMap<>();
+    private final com.tesseraui.TesseraRenderContext renderContext = new com.tesseraui.TesseraRenderContext();
     private boolean panelDirty = true;
 
     public AdminDungeonRewardsScreen(String dungeonId, String dungeonName) {
@@ -46,6 +46,7 @@ public final class AdminDungeonRewardsScreen extends com.tesseraui.TesseraScreen
         if (panelDirty) { rebuildPanel(); panelDirty = false; }
         super.render(g, mx, my, pt);
         if (panel != null) panel.render(g, mx, my);
+        AdminUiFeedback.renderToasts(g, width, height);
     }
 
     @Override public boolean mouseClicked(double mx, double my, int btn) {
@@ -84,14 +85,14 @@ public final class AdminDungeonRewardsScreen extends com.tesseraui.TesseraScreen
         modelData.put("cfg.title",   I18n.get("arcadia.admin.rewards.title", dungeonName));
         modelData.put("v.currency",  longOr(rewards, "currency", 0));
         modelData.put("loot.count",  String.valueOf(loot.size()));
+        modelData.put("s.items", AdminUiSuggestions.ITEMS);
 
         Map<String, Runnable> handlers = new HashMap<>();
         Map<String, Consumer<String>> inputHandlers = new HashMap<>();
 
         handlers.put("back", ArcadiaNavigator::back);
         handlers.put("save", () -> {
-            PacketDistributor.sendToServer(new SaveDungeonConfigPayload(dungeonId, DungeonEditClient.toJson()));
-            ArcadiaNavigator.back();
+            AdminUiFeedback.saveDungeonConfig(dungeonId);
         });
         handlers.put("addLoot", () -> {
             JsonObject entry = new JsonObject();
@@ -100,6 +101,7 @@ public final class AdminDungeonRewardsScreen extends com.tesseraui.TesseraScreen
             entry.addProperty("max", 1);
             loot.add(entry);
             rewards.add("loot", loot);
+            renderContext.clearInputsWithPrefix("loot");
             panelDirty = true;
         });
 
@@ -116,6 +118,7 @@ public final class AdminDungeonRewardsScreen extends com.tesseraui.TesseraScreen
             modelData.put("l.lootItem."   + i, strOr(entry, "item", ""));
             modelData.put("l.lootMin."    + i, intOr(entry, "min", 1));
             modelData.put("l.lootMax."    + i, intOr(entry, "max", 1));
+            modelData.put("l.itemSuggestions." + i, AdminUiSuggestions.ITEMS);
             modelData.put("l.lootItemId." + i, "lootItem_"  + i);
             modelData.put("l.lootMinId."  + i, "lootMin_"   + i);
             modelData.put("l.lootMaxId."  + i, "lootMax_"   + i);
@@ -128,13 +131,18 @@ public final class AdminDungeonRewardsScreen extends com.tesseraui.TesseraScreen
             inputHandlers.put("onLootMin."  + i, v -> { try { entry.addProperty("min", Integer.parseInt(v.trim())); } catch (Exception ignored) {} });
             inputHandlers.put("onLootMax."  + i, v -> { try { entry.addProperty("max", Integer.parseInt(v.trim())); } catch (Exception ignored) {} });
             handlers.put("delLoot." + i, () -> {
-                if (idx < loot.size()) { loot.remove(idx); rewards.add("loot", loot); panelDirty = true; }
+                if (idx < loot.size()) {
+                    loot.remove(idx);
+                    rewards.add("loot", loot);
+                    renderContext.clearInputsWithPrefix("loot");
+                    panelDirty = true;
+                }
             });
         }
 
         TesseraModel model = key -> modelData.getOrDefault(key, null);
         TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin-dungeon-rewards");
-        panel = TesseraTemplateRenderer.build(template, model, handlers, inputHandlers, inputStates, px, py, panelW, panelH);
+        panel = TesseraTemplateRenderer.build(template, model, handlers, inputHandlers, renderContext, px, py, panelW, panelH);
     }
 
     // ── JSON helpers ──────────────────────────────────────────────────────

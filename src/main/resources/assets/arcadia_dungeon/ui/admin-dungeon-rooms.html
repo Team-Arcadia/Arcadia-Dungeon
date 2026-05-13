@@ -5,23 +5,19 @@
 
   <col class="cfg-body">
 
-    <virtual-list id="roomList" class="hub-vlist" v-for="r in rooms.count" row-height="72">
+    <virtual-list id="roomList" class="hub-vlist" v-for="r in rooms.count" row-height="48">
       <col class="list-row-col">
 
         <row class="sub-row">
-          <label class="row-idx">{{ r.roomLabel }}</label>
-          <col class="field-group flex-1">
+          <label class="field-label flex-1">{{ r.roomLabel }}</label>
+          <col class="field-group flex-2">
             <label class="field-label" data-i18n="arcadia.admin.rooms.template">Template ref</label>
             <input id="{{ r.roomTemplateId }}" class="field-input wide"
                    value="{{ r.roomTemplate }}" oninput="{{ r.roomTemplateKey }}"
-                   placeholder="arcadia_dungeon:rooms/entry_basic" />
+                   placeholder="rooms/entry_basic" />
           </col>
-          <button class="btn-del" onclick="{{ r.roomDelKey }}">✗</button>
+          <button class="btn-del" onclick="{{ r.roomDelKey }}">âœ—</button>
         </row>
-
-        <label class="cfg-note">{{ r.waveCount }}</label>
-
-        <button class="btn-add" onclick="{{ r.roomEditKey }}">✎ Gérer les vagues</button>
 
       </col>
     </virtual-list>
@@ -33,9 +29,9 @@
   </col>
 
   <row class="cfg-footer">
-    <button class="btn-back" onclick="back" data-i18n="arcadia.admin.rooms.back">← Retour</button>
+    <button class="btn-back" onclick="back" data-i18n="arcadia.admin.rooms.back">â† Retour</button>
     <col class="spacer" />
-    <button class="btn-save" onclick="save" data-i18n="arcadia.admin.rooms.save">✔ Sauvegarder</button>
+    <button class="btn-save" onclick="save" data-i18n="arcadia.admin.rooms.save">âœ” Sauvegarder</button>
   </row>
 
 </col>

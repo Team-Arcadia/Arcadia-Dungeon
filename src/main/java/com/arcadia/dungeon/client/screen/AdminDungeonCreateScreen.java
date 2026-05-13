@@ -1,6 +1,5 @@
 package com.arcadia.dungeon.client.screen;
 
-import com.tesseraui.TesseraInputState;
 import com.tesseraui.TesseraModel;
 import com.tesseraui.TesseraPanel;
 import com.tesseraui.TesseraTemplate;
@@ -31,7 +30,7 @@ public final class AdminDungeonCreateScreen extends com.tesseraui.TesseraScreen 
     private static final int MAX_H  = 220;
 
     private TesseraPanel panel;
-    private final Map<String, TesseraInputState> inputStates = new HashMap<>();
+    private final com.tesseraui.TesseraRenderContext renderContext = new com.tesseraui.TesseraRenderContext();
 
     // Champs du formulaire
     private String fId       = "";
@@ -117,7 +116,7 @@ public final class AdminDungeonCreateScreen extends com.tesseraui.TesseraScreen 
 
         TesseraModel model = key -> modelData.getOrDefault(key, null);
         TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin-dungeon-create");
-        panel = TesseraTemplateRenderer.build(template, model, handlers, inputHandlers, inputStates, px, py, panelW, panelH);
+        panel = TesseraTemplateRenderer.build(template, model, handlers, inputHandlers, renderContext, px, py, panelW, panelH);
     }
 
     private void attemptCreate() {
