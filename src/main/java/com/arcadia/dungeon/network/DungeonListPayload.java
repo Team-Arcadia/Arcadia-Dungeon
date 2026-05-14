@@ -16,7 +16,7 @@ import java.util.List;
  * Chaque entrée porte l'id, le nameKey (affiché direct), la version de schéma
  * et les archétypes disponibles.
  */
-public record DungeonListPayload(List<DungeonSummary> dungeons) implements CustomPacketPayload {
+public record DungeonListPayload(List<DungeonSummary> dungeons, List<ClassSummary> globalClasses) implements CustomPacketPayload {
 
     public static final Type<DungeonListPayload> TYPE = new Type<>(
         ResourceLocation.fromNamespaceAndPath(ArcadiaDungeon.MODID, "dungeon_list")
@@ -27,8 +27,19 @@ public record DungeonListPayload(List<DungeonSummary> dungeons) implements Custo
 
     public record ArchetypeSummary(String id, String nameKey) {}
 
+    public record ClassSummary(String id, String nameKey, List<String> items) {}
+
     public static final StreamCodec<FriendlyByteBuf, DungeonListPayload> CODEC = StreamCodec.of(
         (buf, p) -> {
+            buf.writeInt(p.globalClasses().size());
+            for (ClassSummary c : p.globalClasses()) {
+                buf.writeUtf(c.id());
+                buf.writeUtf(c.nameKey());
+                buf.writeInt(c.items().size());
+                for (String item : c.items()) {
+                    buf.writeUtf(item);
+                }
+            }
             buf.writeInt(p.dungeons().size());
             for (DungeonSummary d : p.dungeons()) {
                 buf.writeUtf(d.id());
@@ -42,6 +53,22 @@ public record DungeonListPayload(List<DungeonSummary> dungeons) implements Custo
             }
         },
         buf -> {
+            int classCount = buf.readInt();
+            if (classCount < 0 || classCount > 64)
+                throw new io.netty.handler.codec.DecoderException("classCount hors limites: " + classCount);
+            List<ClassSummary> classes = new ArrayList<>(classCount);
+            for (int i = 0; i < classCount; i++) {
+                String id = buf.readUtf();
+                String nameKey = buf.readUtf();
+                int itemCount = buf.readInt();
+                if (itemCount < 0 || itemCount > 16)
+                    throw new io.netty.handler.codec.DecoderException("itemCount hors limites: " + itemCount);
+                List<String> items = new ArrayList<>(itemCount);
+                for (int j = 0; j < itemCount; j++) {
+                    items.add(buf.readUtf());
+                }
+                classes.add(new ClassSummary(id, nameKey, items));
+            }
             int count = buf.readInt();
             if (count < 0 || count > 256)
                 throw new io.netty.handler.codec.DecoderException("count hors limites: " + count);
@@ -59,7 +86,7 @@ public record DungeonListPayload(List<DungeonSummary> dungeons) implements Custo
                 }
                 dungeons.add(new DungeonSummary(id, name, schemaVersion, archetypes));
             }
-            return new DungeonListPayload(dungeons);
+            return new DungeonListPayload(dungeons, classes);
         }
     );
 

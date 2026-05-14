@@ -1,0 +1,300 @@
+<col class="cfg-screen">
+  <row class="cfg-header">
+    <label class="cfg-title">{{ cfg.title }}</label>
+  </row>
+
+  <row class="boss-tab-bar">
+    <button class="boss-tab-btn" onclick="tabIdentity">{{ tab.identityLabel }}</button>
+    <button class="boss-tab-btn" onclick="tabSpawn">{{ tab.spawnLabel }}</button>
+    <button class="boss-tab-btn" onclick="tabCombat">{{ tab.combatLabel }}</button>
+    <button class="boss-tab-btn" onclick="tabPhases">{{ tab.phasesLabel }}</button>
+    <button class="boss-tab-btn" onclick="tabDrops">{{ tab.dropsLabel }}</button>
+  </row>
+
+  <col class="boss-tab-body" v-if="tab.identity">
+    <label class="section-title" data-i18n="arcadia.admin.common.identity">Identite</label>
+    <row class="boss-main-row">
+      <col class="field-group flex-1">
+        <label class="field-label" data-i18n="arcadia.admin.common.id">Id</label>
+        <input id="bossId" class="field-input wide"
+               value="{{ v.bossId }}" oninput="onBossId" placeholder="{{ t:arcadia.admin.placeholder.boss_id }}"
+               tooltip-i18n="arcadia.admin.boss.tooltip.id" />
+      </col>
+      <col class="field-group flex-1">
+        <label class="field-label" data-i18n="arcadia.admin.common.name">Nom</label>
+        <input id="bossName" class="field-input wide"
+               value="{{ v.bossName }}" oninput="onBossName" placeholder="{{ t:arcadia.admin.placeholder.boss_name }}"
+               tooltip-i18n="arcadia.admin.boss.tooltip.name" />
+      </col>
+    </row>
+    <col class="field-group boss-entity-field">
+      <label class="field-label" data-i18n="arcadia.admin.common.entity">Entite</label>
+      <input id="bossType" class="field-input wide"
+             value="{{ v.bossType }}" oninput="onBossType" placeholder="{{ t:arcadia.admin.placeholder.boss_type }}"
+             autocomplete="{{ s.entities }}"
+             tooltip-i18n="arcadia.admin.boss.tooltip.entity" />
+    </col>
+    <row class="boss-main-row">
+      <col class="value-slider-group boss-slider-main" tooltip-i18n="arcadia.admin.boss.tooltip.hp">
+        <row class="value-label-row">
+          <label class="field-label flex-1" data-i18n="arcadia.admin.common.hp">HP</label>
+          <label class="value-current">{{ v.bossHp }}</label>
+        </row>
+        <slider class="value-slider" min="1" max="1000" value="{{ v.bossHp }}" oninput="onBossHp"></slider>
+      </col>
+      <col class="value-slider-group boss-slider-main" tooltip-i18n="arcadia.admin.boss.tooltip.damage">
+        <row class="value-label-row">
+          <label class="field-label flex-1" data-i18n="arcadia.admin.common.damage.short">Dmg</label>
+          <label class="value-current">{{ v.bossDamage }}</label>
+        </row>
+        <slider class="value-slider" min="0" max="100" value="{{ v.bossDamage }}" oninput="onBossDamage"></slider>
+      </col>
+      <row class="boss-check-row boss-check-inline" tooltip-i18n="arcadia.admin.boss.tooltip.bossbar">
+        <checkbox class="boss-check" checked="{{ v.showBossBarChecked }}" oninput="onBossBar"></checkbox>
+        <label class="boss-check-label" data-i18n="arcadia.admin.boss.bossbar">Barre</label>
+      </row>
+    </row>
+  </col>
+
+  <col class="boss-tab-body" v-if="tab.spawn">
+    <label class="section-title" data-i18n="arcadia.admin.boss.spawn.rules">Regles de spawn</label>
+    <row class="boss-main-row">
+      <col class="value-slider-group boss-slider-main" tooltip-i18n="arcadia.admin.boss.tooltip.chance">
+        <row class="value-label-row">
+          <label class="field-label flex-1" data-i18n="arcadia.admin.boss.chance">Chance</label>
+          <label class="value-current">{{ v.bossChance }}</label>
+        </row>
+        <slider class="value-slider" min="0" max="1" value="{{ v.bossChance }}" oninput="onBossChance"></slider>
+      </col>
+      <row class="boss-check-row boss-check-inline" tooltip-i18n="arcadia.admin.boss.tooltip.optional">
+        <checkbox class="boss-check" checked="{{ v.bossOptionalChecked }}" oninput="onBossOptional"></checkbox>
+        <label class="boss-check-label" data-i18n="arcadia.admin.boss.optional">Optionnel</label>
+      </row>
+      <row class="boss-check-row boss-check-inline" tooltip-i18n="arcadia.admin.boss.tooltip.required">
+        <checkbox class="boss-check" checked="{{ v.bossRequiredChecked }}" oninput="onBossRequired"></checkbox>
+        <label class="boss-check-label" data-i18n="arcadia.admin.boss.kill_required.short">Kill req.</label>
+      </row>
+      <row class="boss-check-row boss-check-inline" tooltip-i18n="arcadia.admin.boss.tooltip.spawn_start">
+        <checkbox class="boss-check" checked="{{ v.spawnAtStartChecked }}" oninput="onSpawnAtStart"></checkbox>
+        <label class="boss-check-label" data-i18n="arcadia.admin.boss.spawn_start">Spawn debut</label>
+      </row>
+      <col class="field-group boss-col-small">
+        <label class="field-label" data-i18n="arcadia.admin.boss.after">Apres</label>
+        <input id="spawnAfterWave" class="field-input wide"
+               value="{{ v.spawnAfterWave }}" oninput="onSpawnAfterWave" placeholder="{{ t:arcadia.admin.placeholder.zero }}"
+               tooltip-i18n="arcadia.admin.boss.tooltip.after_wave" />
+      </col>
+    </row>
+
+    <label class="section-title" data-i18n="arcadia.admin.common.position">Position</label>
+    <row class="boss-main-row">
+      <col class="field-group boss-col-small">
+        <label class="field-label" data-i18n="arcadia.admin.common.x">X</label>
+        <input id="spawnX" class="field-input wide" value="{{ v.spawnX }}" oninput="onSpawnX" placeholder="{{ t:arcadia.admin.placeholder.zero }}"
+               tooltip-i18n="arcadia.admin.boss.tooltip.spawn_x" />
+      </col>
+      <col class="field-group boss-col-small">
+        <label class="field-label" data-i18n="arcadia.admin.common.y">Y</label>
+        <input id="spawnY" class="field-input wide" value="{{ v.spawnY }}" oninput="onSpawnY" placeholder="{{ t:arcadia.admin.placeholder.y }}"
+               tooltip-i18n="arcadia.admin.boss.tooltip.spawn_y" />
+      </col>
+      <col class="field-group boss-col-small">
+        <label class="field-label" data-i18n="arcadia.admin.common.z">Z</label>
+        <input id="spawnZ" class="field-input wide" value="{{ v.spawnZ }}" oninput="onSpawnZ" placeholder="{{ t:arcadia.admin.placeholder.zero }}"
+               tooltip-i18n="arcadia.admin.boss.tooltip.spawn_z" />
+      </col>
+      <col class="field-group flex-1">
+        <label class="field-label" data-i18n="arcadia.admin.common.dimension">Dimension</label>
+        <input id="spawnDim" class="field-input wide" value="{{ v.spawnDim }}" oninput="onSpawnDim" placeholder="{{ t:arcadia.admin.placeholder.dimension }}"
+               autocomplete="{{ s.dimensions }}"
+               tooltip-i18n="arcadia.admin.boss.tooltip.spawn_dim" />
+      </col>
+    </row>
+
+    <row class="boss-main-row">
+      <col class="field-group flex-1">
+        <label class="field-label" data-i18n="arcadia.admin.boss.message.spawn">Message spawn</label>
+        <input id="spawnMessage" class="field-input wide" value="{{ v.spawnMessage }}" oninput="onSpawnMessage" placeholder="{{ t:arcadia.admin.placeholder.boss_spawn_message }}"
+               tooltip-i18n="arcadia.admin.boss.tooltip.spawn_message" />
+      </col>
+      <col class="field-group flex-1">
+        <label class="field-label" data-i18n="arcadia.admin.boss.message.skip">Message skip</label>
+        <input id="skipMessage" class="field-input wide" value="{{ v.skipMessage }}" oninput="onSkipMessage" placeholder="{{ t:arcadia.admin.placeholder.boss_skip_message }}"
+               tooltip-i18n="arcadia.admin.boss.tooltip.skip_message" />
+      </col>
+    </row>
+  </col>
+
+  <col class="boss-tab-body" v-if="tab.combat">
+    <label class="section-title" data-i18n="arcadia.admin.common.equipment">Equipement</label>
+    <row class="boss-main-row">
+      <col class="field-group equip-field">
+        <label class="field-label" data-i18n="arcadia.admin.common.slot.main">Main</label>
+        <input id="eqMain" class="field-input wide" value="{{ v.eqMain }}" oninput="onEqMain"
+               placeholder="{{ t:arcadia.admin.placeholder.item.main }}" autocomplete="{{ s.items }}" tooltip-i18n="arcadia.admin.tooltip.equipment.main" />
+      </col>
+      <col class="field-group equip-field">
+        <label class="field-label" data-i18n="arcadia.admin.common.slot.off">Off</label>
+        <input id="eqOff" class="field-input wide" value="{{ v.eqOff }}" oninput="onEqOff"
+               placeholder="{{ t:arcadia.admin.placeholder.item.off }}" autocomplete="{{ s.items }}" tooltip-i18n="arcadia.admin.tooltip.equipment.off" />
+      </col>
+      <col class="field-group equip-field">
+        <label class="field-label" data-i18n="arcadia.admin.common.slot.head">Head</label>
+        <input id="eqHead" class="field-input wide" value="{{ v.eqHead }}" oninput="onEqHead"
+               placeholder="{{ t:arcadia.admin.placeholder.item.head }}" autocomplete="{{ s.items }}" tooltip-i18n="arcadia.admin.tooltip.equipment.head" />
+      </col>
+    </row>
+    <row class="boss-main-row">
+      <col class="field-group equip-field">
+        <label class="field-label" data-i18n="arcadia.admin.common.slot.chest">Chest</label>
+        <input id="eqChest" class="field-input wide" value="{{ v.eqChest }}" oninput="onEqChest"
+               placeholder="{{ t:arcadia.admin.placeholder.item.chest }}" autocomplete="{{ s.items }}" tooltip-i18n="arcadia.admin.tooltip.equipment.chest" />
+      </col>
+      <col class="field-group equip-field">
+        <label class="field-label" data-i18n="arcadia.admin.common.slot.legs">Legs</label>
+        <input id="eqLegs" class="field-input wide" value="{{ v.eqLegs }}" oninput="onEqLegs"
+               placeholder="{{ t:arcadia.admin.placeholder.item.legs }}" autocomplete="{{ s.items }}" tooltip-i18n="arcadia.admin.tooltip.equipment.legs" />
+      </col>
+      <col class="field-group equip-field">
+        <label class="field-label" data-i18n="arcadia.admin.common.slot.feet">Feet</label>
+        <input id="eqFeet" class="field-input wide" value="{{ v.eqFeet }}" oninput="onEqFeet"
+               placeholder="{{ t:arcadia.admin.placeholder.item.feet }}" autocomplete="{{ s.items }}" tooltip-i18n="arcadia.admin.tooltip.equipment.feet" />
+      </col>
+    </row>
+    <label class="section-title" data-i18n="arcadia.admin.common.attributes">Attributs</label>
+    <row class="boss-main-row">
+      <col class="value-slider-group boss-slider-main" tooltip-i18n="arcadia.admin.tooltip.armor">
+        <row class="value-label-row">
+          <label class="field-label flex-1" data-i18n="arcadia.admin.common.armor">Armor</label>
+          <label class="value-current">{{ v.bossArmor }}</label>
+        </row>
+        <slider class="value-slider" min="0" max="30" value="{{ v.bossArmor }}" oninput="onBossArmor"></slider>
+      </col>
+      <col class="field-group flex-1">
+        <label class="field-label" data-i18n="arcadia.admin.common.attributes.kv">Attributs key=value</label>
+        <input id="attrs" class="field-input wide" value="{{ v.attrs }}" oninput="onAttrs"
+               placeholder="{{ t:arcadia.admin.placeholder.attributes }}"
+               autocomplete="{{ s.attributes }}"
+               tooltip-i18n="arcadia.admin.tooltip.attributes" />
+      </col>
+    </row>
+    <row class="boss-main-row">
+      <col class="field-group flex-1">
+        <label class="field-label" data-i18n="arcadia.admin.common.combat.kv">Combat key=value</label>
+        <input id="combat" class="field-input wide" value="{{ v.combat }}" oninput="onCombat"
+               placeholder="{{ t:arcadia.admin.placeholder.combat }}"
+               tooltip-i18n="arcadia.admin.tooltip.combat" />
+      </col>
+    </row>
+  </col>
+
+  <col class="boss-tab-body" v-if="tab.phases">
+    <row class="boss-tab-toolbar">
+      <label class="section-title flex-1" data-i18n="arcadia.admin.boss.phases">Phases</label>
+      <button class="btn-add" onclick="addPhase" data-i18n="arcadia.admin.boss.add.phase">+ Ajouter phase</button>
+    </row>
+
+    <virtual-list id="phaseList" class="hub-vlist" v-for="p in phase.count" row-height="112">
+      <col class="list-row-col boss-phase-row">
+        <row class="boss-edit-row">
+          <label class="row-idx">{{ p.phaseIndex }}</label>
+          <col class="value-slider-group boss-phase-slider" tooltip-i18n="arcadia.admin.boss.tooltip.phase_hp">
+            <row class="value-label-row">
+              <label class="field-label flex-1" data-i18n="arcadia.admin.boss.phase.hp_percent">HP%</label>
+              <label class="value-current">{{ p.phaseHp }}</label>
+            </row>
+            <slider class="value-slider" min="1" max="100" value="{{ p.phaseHp }}" oninput="{{ p.phaseHpKey }}"></slider>
+          </col>
+          <col class="value-slider-group boss-phase-slider" tooltip-i18n="arcadia.admin.boss.tooltip.phase_damage">
+            <row class="value-label-row">
+              <label class="field-label flex-1" data-i18n="arcadia.admin.common.damage.short">Dmg</label>
+              <label class="value-current">{{ p.phaseDmg }}</label>
+            </row>
+            <slider class="value-slider" min="0.5" max="5" value="{{ p.phaseDmg }}" oninput="{{ p.phaseDmgKey }}"></slider>
+          </col>
+          <col class="value-slider-group boss-phase-slider" tooltip-i18n="arcadia.admin.boss.tooltip.phase_speed">
+            <row class="value-label-row">
+              <label class="field-label flex-1" data-i18n="arcadia.admin.common.speed.short">Spd</label>
+              <label class="value-current">{{ p.phaseSpd }}</label>
+            </row>
+            <slider class="value-slider" min="0.5" max="3" value="{{ p.phaseSpd }}" oninput="{{ p.phaseSpdKey }}"></slider>
+          </col>
+          <col class="field-group flex-1">
+            <label class="field-label" data-i18n="arcadia.admin.boss.message.phase">Message phase</label>
+            <input id="{{ p.phaseMessageId }}" class="field-input wide"
+                   value="{{ p.phaseMessage }}" oninput="{{ p.phaseMessageKey }}" placeholder="{{ t:arcadia.admin.placeholder.phase_message }}"
+                   tooltip-i18n="arcadia.admin.boss.tooltip.phase_message" />
+          </col>
+          <button class="btn-del boss-col-del" onclick="{{ p.phaseDelKey }}" data-i18n="arcadia.admin.common.delete.short">X</button>
+        </row>
+        <row class="boss-edit-row">
+          <col class="field-group flex-1">
+            <label class="field-label" data-i18n="arcadia.admin.boss.summons">Summons</label>
+            <input id="{{ p.phaseSummonsId }}" class="field-input wide"
+                   value="{{ p.phaseSummons }}" oninput="{{ p.phaseSummonsKey }}" placeholder="{{ t:arcadia.admin.placeholder.phase_summons }}"
+                   autocomplete="{{ p.entitySuggestions }}"
+                   tooltip-i18n="arcadia.admin.boss.tooltip.summons" />
+          </col>
+          <col class="field-group flex-1">
+            <label class="field-label" data-i18n="arcadia.admin.boss.effects">Effets</label>
+            <input id="{{ p.phaseEffectsId }}" class="field-input wide"
+                   value="{{ p.phaseEffects }}" oninput="{{ p.phaseEffectsKey }}" placeholder="{{ t:arcadia.admin.placeholder.phase_effects }}"
+                   autocomplete="{{ p.effectSuggestions }}"
+                   tooltip-i18n="arcadia.admin.boss.tooltip.effects" />
+          </col>
+        </row>
+        <row class="boss-edit-row">
+          <col class="field-group flex-1">
+            <label class="field-label" data-i18n="arcadia.admin.boss.commands">Commandes</label>
+            <input id="{{ p.phaseCommandsId }}" class="field-input wide"
+                   value="{{ p.phaseCommands }}" oninput="{{ p.phaseCommandsKey }}" placeholder="{{ t:arcadia.admin.placeholder.phase_commands }}"
+                   tooltip-i18n="arcadia.admin.boss.tooltip.commands" />
+          </col>
+        </row>
+      </col>
+    </virtual-list>
+  </col>
+
+  <col class="boss-tab-body" v-if="tab.drops">
+    <row class="boss-tab-toolbar">
+      <label class="section-title flex-1" data-i18n="arcadia.admin.boss.drops">Drops boss</label>
+      <button class="btn-add" onclick="addReward" data-i18n="arcadia.admin.boss.add.drop">+ Ajouter drop</button>
+    </row>
+
+    <virtual-list id="rewardList" class="hub-vlist" v-for="r in reward.count" row-height="32">
+      <row class="list-row boss-edit-row">
+        <label class="row-idx">{{ r.rewardIndex }}</label>
+        <col class="field-group boss-col-item">
+          <input id="{{ r.rewardItemId }}" class="field-input wide"
+                 value="{{ r.rewardItem }}" oninput="{{ r.rewardItemKey }}"
+                 autocomplete="{{ r.itemSuggestions }}"
+                 placeholder="{{ t:arcadia.admin.placeholder.reward_item }}"
+                 tooltip-i18n="arcadia.admin.boss.tooltip.drop_item" />
+        </col>
+        <col class="field-group boss-col-small">
+          <input id="{{ r.rewardMinId }}" class="field-input wide"
+                 value="{{ r.rewardMin }}" oninput="{{ r.rewardMinKey }}" placeholder="{{ t:arcadia.admin.placeholder.one }}"
+                 tooltip-i18n="arcadia.admin.boss.tooltip.drop_min" />
+        </col>
+        <col class="field-group boss-col-small">
+          <input id="{{ r.rewardMaxId }}" class="field-input wide"
+                 value="{{ r.rewardMax }}" oninput="{{ r.rewardMaxKey }}" placeholder="{{ t:arcadia.admin.placeholder.one }}"
+                 tooltip-i18n="arcadia.admin.boss.tooltip.drop_max" />
+        </col>
+        <col class="field-group boss-col-chance">
+          <input id="{{ r.rewardChanceId }}" class="field-input wide"
+                 value="{{ r.rewardChance }}" oninput="{{ r.rewardChanceKey }}" placeholder="{{ t:arcadia.admin.placeholder.one_decimal }}"
+                 tooltip-i18n="arcadia.admin.boss.tooltip.drop_chance" />
+        </col>
+        <button class="btn-del boss-col-del" onclick="{{ r.rewardDelKey }}" data-i18n="arcadia.admin.common.delete.short">X</button>
+      </row>
+    </virtual-list>
+  </col>
+
+  <row class="cfg-footer">
+    <button class="btn-back" onclick="back" data-i18n="arcadia.admin.boss.back">Retour</button>
+    <button class="btn-danger" onclick="deleteBoss" data-i18n="arcadia.admin.common.delete">Supprimer</button>
+    <col class="spacer" />
+    <button class="btn-save" onclick="save" data-i18n="arcadia.admin.boss.save">Sauver</button>
+  </row>
+</col>

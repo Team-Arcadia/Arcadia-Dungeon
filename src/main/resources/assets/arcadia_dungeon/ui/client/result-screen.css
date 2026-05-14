@@ -1,0 +1,198 @@
+.result-screen {
+  background: #15100B;
+  border: 2;
+  border-color: #D89255;
+  border-radius: 4px;
+  gap: 0;
+}
+
+.result-victory {
+  border-color: #4A7A2A;
+}
+
+.result-defeat {
+  border-color: #7A2A1A;
+}
+
+.result-header {
+  background: #201812;
+  border-bottom: 1;
+  border-color: #5A3A1C;
+  padding: 7px 10px;
+  align-items: center;
+  gap: 8px;
+}
+
+.result-victory .result-header {
+  background: #17220F;
+  border-color: #4A7A2A;
+}
+
+.result-defeat .result-header {
+  background: #24120F;
+  border-color: #7A2A1A;
+}
+
+.result-title-block {
+  flex: 1;
+  min-width: 0;
+  gap: 1px;
+}
+
+.result-kicker {
+  color: #7A6A55;
+  font-size: 6;
+  overflow: hidden;
+}
+
+.result-title {
+  color: #F0B27A;
+  font-size: 10;
+  font-weight: 700;
+  overflow: hidden;
+}
+
+.title-victory {
+  color: #8FB96B;
+}
+
+.title-defeat {
+  color: #C9533D;
+}
+
+.result-badge {
+  color: #F3E7D3;
+  background: #120D08;
+  border: 1;
+  border-color: #5A3A1C;
+  font-size: 7;
+  padding: 2px 6px;
+  width: 52px;
+  text-align: center;
+}
+
+.result-stats {
+  padding: 7px 10px;
+  gap: 6px;
+  border-bottom: 1;
+  border-color: #2A1E12;
+}
+
+.stat-tile {
+  flex: 1;
+  min-width: 0;
+  background: #1B140F;
+  border: 1;
+  border-color: #3A2818;
+  padding: 5px 6px;
+  gap: 2px;
+}
+
+.stat-key {
+  color: #7A6A55;
+  font-size: 6;
+  overflow: hidden;
+}
+
+.stat-value {
+  color: #F3E7D3;
+  font-size: 8;
+  font-weight: 700;
+  overflow: hidden;
+}
+
+.copper {
+  color: #F0B27A;
+}
+
+.value-good {
+  color: #8FB96B;
+}
+
+.result-content {
+  flex: 1;
+  padding: 7px 10px;
+  gap: 5px;
+}
+
+.pb-line {
+  color: #7A6A55;
+  font-size: 7;
+  min-height: 10px;
+  overflow: hidden;
+}
+
+.pb-hint-new {
+  color: #8FB96B;
+  font-weight: 700;
+}
+
+.loot-list {
+  flex: 1;
+  gap: 3px;
+  overflow: hidden;
+}
+
+.loot-row {
+  align-items: center;
+  gap: 5px;
+  background: #1B140F;
+  border: 1;
+  border-color: #2A1E12;
+  padding: 3px 5px;
+}
+
+.loot-dot {
+  color: #D89255;
+  width: 12px;
+  font-size: 7;
+  text-align: center;
+}
+
+.loot-name {
+  color: #C2AD8E;
+  font-size: 7;
+  flex: 1;
+  overflow: hidden;
+}
+
+.result-footer {
+  background: #201812;
+  border-top: 1;
+  border-color: #5A3A1C;
+  padding: 5px 10px;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.primary-btn,
+.secondary-btn {
+  border: 1;
+  font-size: 7;
+  padding: 3px 12px;
+  overflow: hidden;
+}
+
+.primary-btn {
+  background: #D89255;
+  color: #15100B;
+  border-color: #F0B27A;
+}
+
+.primary-btn:hover {
+  background: #F0B27A;
+  color: #15100B;
+  border-color: #F3E7D3;
+}
+
+.secondary-btn {
+  background: #2A2019;
+  color: #C2AD8E;
+  border-color: #A0642C;
+}
+
+.secondary-btn:hover {
+  background: #3A2718;
+  color: #F3E7D3;
+  border-color: #F0B27A;
+}

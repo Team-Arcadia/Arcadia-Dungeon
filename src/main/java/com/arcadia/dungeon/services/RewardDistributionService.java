@@ -100,6 +100,7 @@ public final class RewardDistributionService {
             // S6.3 — ouvrir ResultScreen côté client
             player.connection.send(new OpenResultScreenPayload(
                 result.name(), elapsedSeconds, currency, newPb, bestTime, 0, run.dungeonId(), lootLines));
+            com.arcadia.dungeon.network.ServerPayloadHandler.sendPlayerProgress(player);
         }
 
         ArcadiaDungeon.LOGGER.info(

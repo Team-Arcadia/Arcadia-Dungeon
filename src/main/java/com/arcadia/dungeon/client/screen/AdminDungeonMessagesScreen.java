@@ -34,7 +34,7 @@ public final class AdminDungeonMessagesScreen extends com.tesseraui.TesseraScree
     private boolean panelDirty = true;
 
     public AdminDungeonMessagesScreen(String dungeonId, String dungeonName) {
-        super(Component.literal("Messages — " + dungeonName));
+        super(Component.translatable("arcadia.admin.msg.title", dungeonName));
         this.dungeonId   = dungeonId;
         this.dungeonName = dungeonName;
     }
@@ -95,7 +95,7 @@ public final class AdminDungeonMessagesScreen extends com.tesseraui.TesseraScree
         inputHandlers.put("onFail",    v -> setNullable(cfg, "failMessage",    v));
 
         TesseraModel model = key -> modelData.getOrDefault(key, null);
-        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin-dungeon-messages");
+        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin/admin-dungeon-messages");
         panel = TesseraTemplateRenderer.build(template, model, handlers, inputHandlers, renderContext, px, py, panelW, panelH);
     }
 

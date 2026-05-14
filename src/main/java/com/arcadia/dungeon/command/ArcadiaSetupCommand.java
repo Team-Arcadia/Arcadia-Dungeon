@@ -5,9 +5,10 @@ import com.arcadia.dungeon.domain.config.DungeonConfig;
 import com.arcadia.dungeon.persistence.PlacementRegistry;
 import com.arcadia.dungeon.services.StructurePlacer;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.commands.arguments.ResourceLocationArgument;
+import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -46,19 +47,24 @@ public final class ArcadiaSetupCommand {
         dispatcher.register(Commands.literal("arcadia")
             .requires(src -> src.hasPermission(2))
             .then(Commands.literal("setup")
-                .then(Commands.argument("dungeonId", ResourceLocationArgument.id())
+                .then(Commands.argument("dungeonId", StringArgumentType.word())
+                    .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
+                        ArcadiaDungeon.dungeonRegistry().dungeons().keySet(), builder))
                     .executes(ctx -> execute(
                         ctx.getSource(),
-                        ResourceLocationArgument.getId(ctx, "dungeonId").toString()))))
+                        StringArgumentType.getString(ctx, "dungeonId")))))
             .then(Commands.literal("setspawn")
-                .then(Commands.argument("dungeonId", ResourceLocationArgument.id())
+                .then(Commands.argument("dungeonId", StringArgumentType.word())
+                    .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
+                        ArcadiaDungeon.dungeonRegistry().dungeons().keySet(), builder))
                     .executes(ctx -> setSpawn(
                         ctx.getSource(),
-                        ResourceLocationArgument.getId(ctx, "dungeonId").toString())))));
+                        StringArgumentType.getString(ctx, "dungeonId"))))));
     }
 
     private int execute(CommandSourceStack src, String dungeonId) {
-        DungeonConfig config = ArcadiaDungeon.dungeonRegistry().get(dungeonId).orElse(null);
+        String resolvedId = resolveDungeonId(dungeonId);
+        DungeonConfig config = ArcadiaDungeon.dungeonRegistry().get(resolvedId).orElse(null);
         if (config == null) {
             src.sendFailure(Component.literal("[Arcadia] Donjon inconnu : " + dungeonId));
             return 0;
@@ -96,7 +102,7 @@ public final class ArcadiaSetupCommand {
             final String finalDim = dimensionId;
             src.sendSuccess(() -> Component.literal(
                 "[Arcadia] Structure placée dans " + finalDim + ". Spawn temporaire au centre : " + formatPos(finalSpawn) +
-                " — utilise /arcadia setspawn " + dungeonId + " pour le préciser."), true);
+                " — utilise /arcadia setspawn " + resolvedId + " pour le préciser."), true);
         } else {
             // Mode B — donjon déjà présent, on enregistre juste le spawn
             spawnPos = playerPos;
@@ -105,7 +111,7 @@ public final class ArcadiaSetupCommand {
                 "[Arcadia] Spawn enregistré dans " + finalDim + " à : " + formatPos(spawnPos)), true);
         }
 
-        placementRegistry.setSpawn(dungeonId, spawnPos, dimensionId);
+        placementRegistry.setSpawn(resolvedId, spawnPos, dimensionId);
 
         // Téléporte l'admin au spawn dans la bonne dimension pour confirmation visuelle
         if (src.getPlayer() instanceof ServerPlayer player) {
@@ -114,7 +120,7 @@ public final class ArcadiaSetupCommand {
         }
 
         ArcadiaDungeon.LOGGER.info("[Arcadia][SETUP] event=setup_done dungeonId={} dim={} spawn={}",
-            dungeonId, dimensionId, formatPos(spawnPos));
+            resolvedId, dimensionId, formatPos(spawnPos));
         return 1;
     }
 
@@ -123,24 +129,35 @@ public final class ArcadiaSetupCommand {
      * Peut être appelé après {@code /arcadia setup} pour corriger le spawn.
      */
     private int setSpawn(CommandSourceStack src, String dungeonId) {
-        if (ArcadiaDungeon.dungeonRegistry().get(dungeonId).isEmpty()) {
+        String resolvedId = resolveDungeonId(dungeonId);
+        if (ArcadiaDungeon.dungeonRegistry().get(resolvedId).isEmpty()) {
             src.sendFailure(Component.literal("[Arcadia] Donjon inconnu : " + dungeonId));
             return 0;
         }
 
         Vec3 pos = src.getPosition();
         String dimensionId = src.getLevel().dimension().location().toString();
-        placementRegistry.setSpawn(dungeonId, pos, dimensionId);
+        placementRegistry.setSpawn(resolvedId, pos, dimensionId);
         src.sendSuccess(() -> Component.literal(
-            "[Arcadia] Spawn du donjon « " + dungeonId + " » mis à jour : " + formatPos(pos) +
+            "[Arcadia] Spawn du donjon « " + resolvedId + " » mis à jour : " + formatPos(pos) +
             " (dim: " + dimensionId + ") — les joueurs apparaîtront ici au démarrage de la run."), true);
 
         ArcadiaDungeon.LOGGER.info("[Arcadia][SETUP] event=setspawn dungeonId={} dim={} pos={}",
-            dungeonId, dimensionId, formatPos(pos));
+            resolvedId, dimensionId, formatPos(pos));
         return 1;
     }
 
     /** Retourne le {@link ServerLevel} configuré dans {@code config.dimension()}, ou la dimension courante si null. */
+    private static String resolveDungeonId(String input) {
+        String id = input != null ? input.trim() : "";
+        if (ArcadiaDungeon.dungeonRegistry().get(id).isPresent()) return id;
+        if (!id.contains(":")) {
+            String namespaced = ArcadiaDungeon.MODID + ":" + id;
+            if (ArcadiaDungeon.dungeonRegistry().get(namespaced).isPresent()) return namespaced;
+        }
+        return id;
+    }
+
     private static ServerLevel resolveLevel(CommandSourceStack src, DungeonConfig config) {
         String dim = config.dimension();
         if (dim == null || dim.isBlank()) return src.getLevel();

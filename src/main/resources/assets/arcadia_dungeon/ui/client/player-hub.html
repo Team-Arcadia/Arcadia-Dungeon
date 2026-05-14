@@ -1,0 +1,222 @@
+<col class="player-shell">
+  <row class="player-header">
+    <col class="brand-block">
+      <label class="brand-kicker" data-i18n="arcadia.player.brand">ARCADIA DUNGEON</label>
+    </col>
+    <row class="player-summary">
+      <badge class="currency-chip">{{ player.currencyLabel }}</badge>
+      <button class="header-btn" onclick="refresh" tooltip-i18n="arcadia.player.tooltip.sync" data-i18n="arcadia.player.sync">Sync</button>
+    </row>
+  </row>
+
+  <row class="nav-row">
+    <button class="nav-btn" onclick="tabDungeons">{{ tab.dungeonsLabel }}</button>
+    <button class="nav-btn" onclick="tabLoadout">{{ tab.loadoutLabel }}</button>
+    <button class="nav-btn" onclick="tabShop">{{ tab.shopLabel }}</button>
+    <button class="nav-btn" onclick="tabProfile">{{ tab.profileLabel }}</button>
+    <button class="nav-btn" onclick="tabOptions">{{ tab.optionsLabel }}</button>
+  </row>
+
+  <col class="content-row">
+    <col class="tab-panel">
+      <col class="tab-content" v-if="tab.dungeons">
+        <row class="section-head">
+          <col class="section-title-block">
+            <label class="section-title" data-i18n="arcadia.player.dungeons.title">Donjons disponibles</label>
+            <label class="section-subtitle">{{ hub.status }}</label>
+          </col>
+        </row>
+
+        <col class="empty-panel" v-if="hub.empty">
+          <label class="empty-title" data-i18n="arcadia.player.empty.sync.title">Synchronisation</label>
+          <p class="empty-text" data-i18n="arcadia.player.empty.sync.text">Aucun donjon recu pour le moment. Utilise Sync si le serveur vient de reload.</p>
+        </col>
+
+        <virtual-list id="playerDungeonList" class="dungeon-vlist" v-for="d in dungeon.count" row-height="50">
+          <row class="{{ d.rowClass }}" onclick="{{ d.select }}">
+            <label class="dungeon-index">{{ d.index }}</label>
+            <col class="dungeon-main">
+              <row class="dungeon-title-line">
+                <label class="dungeon-name">{{ d.name }}</label>
+              </row>
+              <label class="dungeon-meta">{{ d.meta }}</label>
+            </col>
+            <button class="card-action" onclick="{{ d.play }}" data-i18n="arcadia.player.action.play">Jouer</button>
+          </row>
+        </virtual-list>
+      </col>
+
+      <col class="tab-content" v-if="tab.loadout">
+        <row class="section-head">
+          <col class="section-title-block">
+            <label class="section-title" data-i18n="arcadia.player.loadout.title">Loadout global</label>
+            <label class="section-subtitle" data-i18n="arcadia.player.loadout.subtitle">Classes gratuites globales.</label>
+          </col>
+        </row>
+
+        <row class="loadout-workspace">
+          <col class="class-panel">
+            <label class="card-kicker" data-i18n="arcadia.player.loadout.classes">Classes gratuites</label>
+            <col class="class-list">
+              <row class="{{ c.rowClass }}" onclick="{{ c.onclick }}" v-for="c in class.count">
+                <col class="class-main">
+                  <label class="class-name">{{ c.name }}</label>
+                  <label class="class-meta">{{ c.role }}</label>
+                </col>
+              </row>
+            </col>
+          </col>
+
+          <col class="build-panel">
+            <col class="loadout-card main-loadout">
+              <label class="card-kicker" data-i18n="arcadia.player.loadout.active">Classe active</label>
+              <label class="loadout-title">{{ loadout.name }}</label>
+              <row class="chip-row">
+                <badge class="info-chip loadout-chip-role">{{ loadout.role }}</badge>
+                <badge class="power-chip loadout-chip-power">{{ loadout.powerLabel }}</badge>
+                <badge class="info-chip loadout-chip-points">{{ loadout.pointsLabel }}</badge>
+              </row>
+            </col>
+
+            <row class="slot-row">
+              <row class="slot-card">
+                <item-slot class="loadout-item" size="20" item="{{ loadout.item.main }}"/>
+                <col class="slot-copy">
+                  <label class="slot-label" data-i18n="arcadia.player.slot.main">Main</label>
+                  <label class="slot-value">{{ loadout.slot.main }}</label>
+                </col>
+              </row>
+              <row class="slot-card">
+                <item-slot class="loadout-item" size="20" item="{{ loadout.item.off }}"/>
+                <col class="slot-copy">
+                  <label class="slot-label" data-i18n="arcadia.player.slot.off">Off</label>
+                  <label class="slot-value">{{ loadout.slot.off }}</label>
+                </col>
+              </row>
+              <row class="slot-card">
+                <item-slot class="loadout-item" size="20" item="{{ loadout.item.utility }}"/>
+                <col class="slot-copy">
+                  <label class="slot-label" data-i18n="arcadia.player.slot.utility">Utilitaire</label>
+                  <label class="slot-value">{{ loadout.slot.utility }}</label>
+                </col>
+              </row>
+            </row>
+
+          </col>
+        </row>
+      </col>
+
+      <col class="tab-content" v-if="tab.shop">
+        <row class="section-head">
+          <col class="section-title-block">
+            <label class="section-title" data-i18n="arcadia.player.shop.title">Boutique Arcadia</label>
+            <label class="section-subtitle" data-i18n="arcadia.player.shop.subtitle">Relances et confort de run.</label>
+          </col>
+        </row>
+
+        <col class="shop-list">
+          <row class="shop-row" v-for="s in shop.count">
+            <col class="shop-main">
+              <row class="dungeon-title-line">
+                <label class="shop-name">{{ s.name }}</label>
+                <badge class="state-warn">{{ s.state }}</badge>
+              </row>
+              <p class="shop-desc">{{ s.desc }}</p>
+            </col>
+            <col class="shop-buy">
+              <label class="shop-cost">{{ s.cost }}</label>
+              <button class="card-action" onclick="{{ s.onclick }}" data-i18n="arcadia.player.shop.buy">Acheter</button>
+            </col>
+          </row>
+        </col>
+      </col>
+
+      <col class="tab-content" v-if="tab.profile">
+        <row class="profile-top">
+          <col class="profile-card">
+            <label class="card-kicker" data-i18n="arcadia.player.profile.title">Profil</label>
+            <label class="profile-name">{{ player.name }}</label>
+            <row class="chip-row">
+              <badge class="info-chip">{{ player.rank }}</badge>
+              <badge class="power-chip">{{ player.levelLabel }}</badge>
+              <badge class="info-chip">{{ player.badge }}</badge>
+            </row>
+          </col>
+          <col class="profile-stat">
+            <label class="profile-stat-value">{{ player.runs }}</label>
+            <label class="profile-stat-label" data-i18n="arcadia.player.profile.runs">runs</label>
+          </col>
+          <col class="profile-stat">
+            <label class="profile-stat-value">{{ player.best }}</label>
+            <label class="profile-stat-label" data-i18n="arcadia.player.profile.pb">PB</label>
+          </col>
+        </row>
+
+        <row class="section-head compact-head">
+          <col class="section-title-block">
+            <label class="section-title" data-i18n="arcadia.player.profile.badges">Titres</label>
+            <label class="section-subtitle" data-i18n="arcadia.player.profile.badges.subtitle">Objectifs de progression joueur.</label>
+          </col>
+        </row>
+
+        <col class="badge-list">
+          <row class="{{ b.rowClass }}" v-for="b in badge.count">
+            <col class="badge-copy">
+              <label class="badge-name">{{ b.name }}</label>
+              <label class="badge-desc">{{ b.desc }}</label>
+            </col>
+            <badge class="{{ b.stateClass }}">{{ b.state }}</badge>
+          </row>
+        </col>
+      </col>
+
+      <col class="tab-content" v-if="tab.options">
+        <row class="section-head">
+          <col class="section-title-block">
+            <label class="section-title" data-i18n="arcadia.player.options.title">Options client</label>
+            <label class="section-subtitle" data-i18n="arcadia.player.options.subtitle">Preferences locales.</label>
+          </col>
+        </row>
+
+        <col class="options-list">
+          <row class="option-row" tooltip-i18n="arcadia.player.options.hud.tooltip">
+            <checkbox id="optHud" class="option-check" checked="{{ opt.hud }}" oninput="toggleHud"></checkbox>
+            <col class="option-copy">
+              <label class="option-name" data-i18n="arcadia.player.options.hud.name">HUD de run</label>
+              <label class="option-desc" data-i18n="arcadia.player.options.hud.desc">Timer, vies et objectif courant.</label>
+            </col>
+            <label class="option-state">{{ opt.hudState }}</label>
+          </row>
+          <row class="option-row" tooltip-i18n="arcadia.player.options.feed.tooltip">
+            <checkbox id="optFeed" class="option-check" checked="{{ opt.feed }}" oninput="toggleFeed"></checkbox>
+            <col class="option-copy">
+              <label class="option-name" data-i18n="arcadia.player.options.feed.name">Feed activite</label>
+              <label class="option-desc" data-i18n="arcadia.player.options.feed.desc">Runs lancees, PB et recompenses.</label>
+            </col>
+            <label class="option-state">{{ opt.feedState }}</label>
+          </row>
+          <row class="option-row" tooltip-i18n="arcadia.player.options.toasts.tooltip">
+            <checkbox id="optToasts" class="option-check" checked="{{ opt.toasts }}" oninput="toggleToasts"></checkbox>
+            <col class="option-copy">
+              <label class="option-name" data-i18n="arcadia.player.options.toasts.name">Toasts</label>
+              <label class="option-desc" data-i18n="arcadia.player.options.toasts.desc">Feedback court en bas de l'ecran.</label>
+            </col>
+            <label class="option-state">{{ opt.toastsState }}</label>
+          </row>
+          <row class="option-row" tooltip-i18n="arcadia.player.options.watch.tooltip">
+            <checkbox id="optSpectator" class="option-check" checked="{{ opt.spectator }}" oninput="toggleSpectator"></checkbox>
+            <col class="option-copy">
+              <label class="option-name" data-i18n="arcadia.player.options.watch.name">Watch overlay</label>
+              <label class="option-desc" data-i18n="arcadia.player.options.watch.desc">Suivi d'une run publique.</label>
+            </col>
+            <label class="option-state">{{ opt.spectatorState }}</label>
+          </row>
+        </col>
+      </col>
+    </col>
+  </col>
+
+  <row class="footer-row">
+    <button class="footer-btn" onclick="close" data-i18n="arcadia.player.close">Fermer</button>
+  </row>
+</col>

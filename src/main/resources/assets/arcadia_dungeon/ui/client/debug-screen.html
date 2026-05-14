@@ -1,0 +1,36 @@
+<col class="debug-screen">
+  <row class="debug-header">
+    <label class="debug-title" data-i18n="arcadia.client.debug.title">Debug - Run State</label>
+  </row>
+
+  <col class="debug-content">
+    <row class="debug-row">
+      <label class="debug-key" data-i18n="arcadia.client.debug.run_id">Run ID</label>
+      <label class="debug-value">{{ run.id }}</label>
+    </row>
+    <row class="debug-row">
+      <label class="debug-key" data-i18n="arcadia.client.debug.phase">Phase</label>
+      <label class="debug-value">{{ run.phase }}</label>
+    </row>
+    <row class="debug-row">
+      <label class="debug-key" data-i18n="arcadia.client.debug.room">Salle</label>
+      <label class="debug-value">{{ run.room }}</label>
+    </row>
+    <row class="debug-row">
+      <label class="debug-key" data-i18n="arcadia.client.debug.wave">Wave</label>
+      <label class="debug-value">{{ run.wave }}</label>
+    </row>
+    <row class="debug-row">
+      <label class="debug-key" data-i18n="arcadia.client.debug.lives">Vies</label>
+      <label class="debug-value">{{ run.lives }}</label>
+    </row>
+    <row class="debug-row">
+      <label class="debug-key" data-i18n="arcadia.client.debug.time">Temps</label>
+      <label class="debug-value">{{ run.elapsed }}</label>
+    </row>
+  </col>
+
+  <row class="debug-footer">
+    <button class="debug-btn" onclick="close" data-i18n="arcadia.client.close">Fermer</button>
+  </row>
+</col>

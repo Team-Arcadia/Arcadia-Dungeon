@@ -1,0 +1,68 @@
+<col class="cfg-screen">
+  <!-- â”€â”€ Header â”€â”€ -->
+  <row class="cfg-header">
+    <label class="cfg-title">{{ cfg.title }}</label>
+  </row>
+
+  <!-- â”€â”€ Body â”€â”€ -->
+  <col class="cfg-body">
+
+    <!-- Lives -->
+    <col class="field-group">
+      <label class="field-label" data-i18n="arcadia.admin.core.lives">Vies</label>
+      <input id="lives"
+             class="field-input"
+             placeholder="{{ t:arcadia.admin.placeholder.lives }}"
+             value="{{ v.lives }}"
+             oninput="onLives"
+             tooltip-i18n="arcadia.admin.core.tooltip.lives" />
+    </col>
+
+    <!-- Structure -->
+    <col class="field-group">
+      <label class="field-label" data-i18n="arcadia.admin.core.structure">RÃ©f. structure</label>
+      <input id="structure"
+             class="field-input wide"
+             placeholder="{{ t:arcadia.admin.placeholder.structure }}"
+             value="{{ v.structure }}"
+             oninput="onStructure"
+             tooltip-i18n="arcadia.admin.core.tooltip.structure" />
+    </col>
+
+    <!-- Dimension -->
+    <col class="field-group">
+      <label class="field-label" data-i18n="arcadia.admin.core.dimension">Dimension</label>
+      <input id="dimension"
+             class="field-input wide"
+             placeholder="{{ t:arcadia.admin.placeholder.dimension }}"
+             autocomplete="{{ s.dimensions }}"
+             value="{{ v.dimension }}"
+             oninput="onDimension"
+             tooltip-i18n="arcadia.admin.core.tooltip.dimension" />
+    </col>
+
+    <!-- Placement Y -->
+    <col class="field-group">
+      <label class="field-label" data-i18n="arcadia.admin.core.placementy">Y placement</label>
+      <input id="placementy"
+             class="field-input"
+             placeholder="{{ t:arcadia.admin.placeholder.y }}"
+             value="{{ v.placementY }}"
+             oninput="onPlacementY"
+             tooltip-i18n="arcadia.admin.core.tooltip.placementy" />
+    </col>
+
+  </col>
+
+  <!-- â”€â”€ Footer â”€â”€ -->
+  <row class="cfg-footer">
+    <button class="btn-back"
+            onclick="back"
+            data-i18n="arcadia.admin.core.back">â† Retour</button>
+    <col class="spacer" />
+    <button class="btn-save"
+            onclick="save"
+            data-i18n="arcadia.admin.core.save">âœ” Sauvegarder</button>
+  </row>
+
+</col>

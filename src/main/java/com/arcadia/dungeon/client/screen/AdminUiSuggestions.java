@@ -19,6 +19,10 @@ final class AdminUiSuggestions {
         "minecraft:the_end"
     );
 
+    static final String STRUCTURES = String.join(",",
+        "arcadia_dungeon:chateau_defaut"
+    );
+
     static final String ENTITIES = String.join(",",
         "minecraft:zombie",
         "minecraft:skeleton",

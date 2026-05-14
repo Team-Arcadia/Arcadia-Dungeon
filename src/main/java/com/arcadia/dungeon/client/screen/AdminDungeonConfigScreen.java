@@ -34,7 +34,7 @@ public final class AdminDungeonConfigScreen extends com.tesseraui.TesseraScreen 
     private boolean panelDirty = true;
 
     public AdminDungeonConfigScreen(String dungeonId, String dungeonName) {
-        super(Component.literal("Config — " + dungeonName));
+        super(Component.translatable("arcadia.admin.config.title", dungeonName));
         this.dungeonId   = dungeonId;
         this.dungeonName = dungeonName;
     }
@@ -92,14 +92,12 @@ public final class AdminDungeonConfigScreen extends com.tesseraui.TesseraScreen 
         handlers.put("boss",       () -> ArcadiaNavigator.push(new AdminDungeonBossScreen(dungeonId, dungeonName)));
         handlers.put("waves",      () -> ArcadiaNavigator.push(new AdminDungeonWavesScreen(dungeonId, dungeonName)));
         handlers.put("rewards",    () -> ArcadiaNavigator.push(new AdminDungeonRewardsScreen(dungeonId, dungeonName)));
-        handlers.put("archetypes", () -> ArcadiaNavigator.push(new AdminDungeonArchetypesScreen(dungeonId, dungeonName)));
         handlers.put("messages",   () -> ArcadiaNavigator.push(new AdminDungeonMessagesScreen(dungeonId, dungeonName)));
         handlers.put("zone",       () -> ArcadiaNavigator.push(new AdminDungeonZoneScreen(dungeonId, dungeonName)));
-        handlers.put("debug",      () -> ArcadiaNavigator.push(new AdminDungeonDebugScreen(dungeonId, dungeonName)));
         handlers.put("arcadia",    () -> ArcadiaNavigator.push(new AdminDungeonArcadiaScreen(dungeonId, dungeonName)));
 
         TesseraModel model = key -> modelData.getOrDefault(key, null);
-        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin-dungeon-config");
+        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin/admin-dungeon-config");
         panel = TesseraTemplateRenderer.build(template, model, handlers,
             new HashMap<>(), new HashMap<>(), px, py, panelW, panelH);
     }

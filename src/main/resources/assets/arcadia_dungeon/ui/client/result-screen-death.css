@@ -1,0 +1,98 @@
+.death-screen {
+  background: #15100B;
+  border: 2;
+  border-color: #8B2020;
+  border-radius: 4px;
+  gap: 0;
+}
+
+.death-header {
+  background: #24120F;
+  border-bottom: 1;
+  border-color: #8B2020;
+  padding: 7px 10px;
+  align-items: center;
+  gap: 8px;
+}
+
+.death-title-block {
+  flex: 1;
+  min-width: 0;
+  gap: 1px;
+}
+
+.death-kicker {
+  color: #7A6A55;
+  font-size: 6;
+  overflow: hidden;
+}
+
+.death-title {
+  color: #C9533D;
+  font-size: 10;
+  font-weight: 700;
+  overflow: hidden;
+}
+
+.death-badge {
+  color: #F3E7D3;
+  background: #120D08;
+  border: 1;
+  border-color: #8B2020;
+  font-size: 8;
+  font-weight: 700;
+  width: 44px;
+  padding: 2px 6px;
+  text-align: center;
+}
+
+.death-content {
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 16px 12px;
+}
+
+.death-label {
+  color: #C2AD8E;
+  font-size: 7;
+  text-align: center;
+}
+
+.death-countdown {
+  color: #C9533D;
+  font-size: 14;
+  font-weight: 700;
+  text-align: center;
+}
+
+.death-note {
+  color: #7A6A55;
+  font-size: 6;
+  text-align: center;
+}
+
+.death-footer {
+  background: #201812;
+  border-top: 1;
+  border-color: #5A3A1C;
+  padding: 5px 10px;
+  justify-content: center;
+}
+
+.danger-btn {
+  background: #2A1210;
+  color: #C9533D;
+  border: 1;
+  border-color: #8B2020;
+  font-size: 7;
+  padding: 3px 14px;
+  overflow: hidden;
+}
+
+.danger-btn:hover {
+  background: #3A1712;
+  color: #F3E7D3;
+  border-color: #C9533D;
+}

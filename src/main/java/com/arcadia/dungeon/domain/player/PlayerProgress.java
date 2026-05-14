@@ -43,6 +43,14 @@ public final class PlayerProgress {
         }
     }
 
+    public void restoreDungeonProgress(String dungeonId, int completions, long bestTimeSeconds, long lastCompletionMs) {
+        if (dungeonId == null || dungeonId.isBlank()) return;
+        DungeonProgress dp = dungeons.computeIfAbsent(dungeonId, k -> new DungeonProgress());
+        dp.completions = Math.max(0, completions);
+        dp.bestTimeSeconds = Math.max(0L, bestTimeSeconds);
+        dp.lastCompletionMs = Math.max(0L, lastCompletionMs);
+    }
+
     /**
      * Progression du joueur sur un donjon spécifique.
      */

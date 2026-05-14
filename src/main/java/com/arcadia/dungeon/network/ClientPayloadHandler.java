@@ -7,9 +7,9 @@ import com.arcadia.dungeon.client.screen.ArcadiaNavigator;
 import com.arcadia.dungeon.client.screen.DebugRunScreen;
 import com.arcadia.dungeon.client.screen.ResultScreen;
 import com.arcadia.dungeon.client.state.ActiveRunsClient;
-import com.arcadia.dungeon.client.state.DungeonDetailClient;
 import com.arcadia.dungeon.client.state.DungeonEditClient;
 import com.arcadia.dungeon.client.state.DungeonListClient;
+import com.arcadia.dungeon.client.state.PlayerProgressClient;
 import com.arcadia.dungeon.client.state.RunStateClient;
 import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -59,11 +59,11 @@ public final class ClientPayloadHandler {
     }
 
     public static void handleDungeonList(DungeonListPayload payload, IPayloadContext context) {
-        context.enqueueWork(() -> DungeonListClient.update(payload.dungeons()));
+        context.enqueueWork(() -> DungeonListClient.update(payload.dungeons(), payload.globalClasses()));
     }
 
-    public static void handleDungeonDetail(DungeonDetailPayload payload, IPayloadContext context) {
-        context.enqueueWork(() -> DungeonDetailClient.update(payload));
+    public static void handlePlayerProgress(PlayerProgressPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> PlayerProgressClient.update(payload));
     }
 
     public static void handleMonitorData(MonitorDataPayload payload, IPayloadContext context) {

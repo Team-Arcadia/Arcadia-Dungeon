@@ -7,9 +7,11 @@ import com.arcadia.dungeon.domain.run.Run;
 import com.arcadia.dungeon.domain.run.RunId;
 import com.arcadia.dungeon.domain.run.RunResult;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -23,6 +25,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import java.util.Map;
@@ -53,6 +56,7 @@ public final class RoomProgressionService {
     private final Map<UUID, RunId> mobToRun = new ConcurrentHashMap<>();
     /** Position de spawn mémorisée au démarrage de la run (position joueur MVP). */
     private final Map<RunId, Vec3> spawnPositions = new ConcurrentHashMap<>();
+    private final Map<RunId, ResourceKey<Level>> pendingTimedWaves = new ConcurrentHashMap<>();
 
     private final Random random = new Random();
 
@@ -127,6 +131,19 @@ public final class RoomProgressionService {
     }
 
     @SubscribeEvent
+    public void onServerTick(ServerTickEvent.Post event) {
+        if (pendingTimedWaves.isEmpty()) return;
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        if (server == null) return;
+
+        pendingTimedWaves.forEach((runId, levelKey) ->
+            runLifecycleService.findById(runId).ifPresent(run -> {
+                ServerLevel level = server.getLevel(levelKey);
+                if (level != null) triggerCurrentWave(run, level);
+            }));
+    }
+
+    @SubscribeEvent
     public void onMobDeath(LivingDeathEvent event) {
         UUID entityId = event.getEntity().getUUID();
         RunId runId = mobToRun.remove(entityId);
@@ -163,6 +180,12 @@ public final class RoomProgressionService {
         }
 
         DungeonConfig.Wave wave = waves.get(run.currentWaveIndex());
+        if (wave.ticksTrigger() && elapsedTicks(run) < Math.max(0, wave.delayTicks())) {
+            pendingTimedWaves.put(run.id(), level.dimension());
+            return;
+        }
+        pendingTimedWaves.remove(run.id());
+
         Vec3 spawnPos = spawnPositions.getOrDefault(run.id(), Vec3.ZERO);
         Set<UUID> mobs = ConcurrentHashMap.newKeySet();
         broadcastWaveMessage(run, level, wave.startMessage());
@@ -179,12 +202,12 @@ public final class RoomProgressionService {
                 ArcadiaDungeon.LOGGER.warn("[Arcadia][ROOM] unknown mob type: {}", mobSpawn.mobType());
                 continue;
             }
-            Vec3 mobSpawnPos = configuredSpawnOrDefault(mobSpawn, spawnPos);
             ServerLevel spawnLevel = configuredLevelOrDefault(level, mobSpawn);
             for (int i = 0; i < mobSpawn.count(); i++) {
-                double scatter = mobSpawn.spawnPoint() == null ? 6.0 : 1.0;
-                double ox = (random.nextDouble() - 0.5) * scatter;
-                double oz = (random.nextDouble() - 0.5) * scatter;
+                Vec3 mobSpawnPos = configuredSpawnOrDefault(mobSpawn, spawnPos, random);
+                double scatter = hasSpawnArea(mobSpawn) || mobSpawn.spawnPoint() == null ? 0.0 : 1.0;
+                double ox = scatter <= 0.0 ? 0.0 : (random.nextDouble() - 0.5) * scatter;
+                double oz = scatter <= 0.0 ? 0.0 : (random.nextDouble() - 0.5) * scatter;
                 Entity entity = entityType.create(spawnLevel);
                 if (entity == null) continue;
                 entity.addTag(DungeonZoneProtectionService.MANAGED_ENTITY_TAG);
@@ -250,17 +273,37 @@ public final class RoomProgressionService {
     }
 
     private void cleanupWaveTracking(RunId runId) {
+        pendingTimedWaves.remove(runId);
         Set<UUID> mobs = livingMobs.remove(runId);
         if (mobs == null) return;
         mobs.forEach(mobToRun::remove);
         discardEntities(mobs);
     }
 
+    private static long elapsedTicks(Run run) {
+        return Math.max(0L, (System.currentTimeMillis() - run.startTimestampMs()) / 50L);
+    }
+
     private static List<DungeonConfig.Wave> wavesFor(DungeonConfig config, int roomIndex) {
         return roomIndex == 0 ? config.configuredWaves() : List.of();
     }
 
-    private static Vec3 configuredSpawnOrDefault(DungeonConfig.MobSpawn mobSpawn, Vec3 fallback) {
+    private static Vec3 configuredSpawnOrDefault(DungeonConfig.MobSpawn mobSpawn, Vec3 fallback, Random random) {
+        if (hasSpawnArea(mobSpawn)) {
+            DungeonConfig.AreaPos a = mobSpawn.areaPos1();
+            DungeonConfig.AreaPos b = mobSpawn.areaPos2();
+            int minX = Math.min(a.x(), b.x());
+            int maxX = Math.max(a.x(), b.x());
+            int minY = Math.min(a.y(), b.y());
+            int maxY = Math.max(a.y(), b.y());
+            int minZ = Math.min(a.z(), b.z());
+            int maxZ = Math.max(a.z(), b.z());
+            return new Vec3(
+                randomBetween(random, minX, maxX) + 0.5,
+                randomBetween(random, minY, maxY),
+                randomBetween(random, minZ, maxZ) + 0.5
+            );
+        }
         DungeonConfig.SpawnPoint spawnPoint = mobSpawn.spawnPoint();
         if (spawnPoint == null) return fallback;
         return new Vec3(spawnPoint.x(), spawnPoint.y(), spawnPoint.z());
@@ -268,14 +311,27 @@ public final class RoomProgressionService {
 
     private static ServerLevel configuredLevelOrDefault(ServerLevel fallback, DungeonConfig.MobSpawn mobSpawn) {
         DungeonConfig.SpawnPoint spawnPoint = mobSpawn.spawnPoint();
-        if (spawnPoint == null || spawnPoint.dimension() == null || spawnPoint.dimension().isBlank()) {
+        String dimension = spawnPoint != null ? spawnPoint.dimension() : null;
+        if ((dimension == null || dimension.isBlank()) && hasSpawnArea(mobSpawn)) {
+            dimension = mobSpawn.areaPos1().dimension();
+        }
+        if (dimension == null || dimension.isBlank()) {
             return fallback;
         }
-        ResourceLocation dim = ResourceLocation.tryParse(spawnPoint.dimension());
+        ResourceLocation dim = ResourceLocation.tryParse(dimension);
         if (dim == null) return fallback;
         ServerLevel configured = fallback.getServer().getLevel(
             net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, dim));
         return configured != null ? configured : fallback;
+    }
+
+    private static boolean hasSpawnArea(DungeonConfig.MobSpawn mobSpawn) {
+        return mobSpawn.areaPos1() != null && mobSpawn.areaPos2() != null;
+    }
+
+    private static int randomBetween(Random random, int min, int max) {
+        if (max <= min) return min;
+        return min + random.nextInt(max - min + 1);
     }
 
     private static void applyMobConfig(Mob mob, DungeonConfig.MobSpawn mobSpawn) {

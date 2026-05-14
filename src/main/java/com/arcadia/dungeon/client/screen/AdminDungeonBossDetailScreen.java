@@ -9,6 +9,7 @@ import com.tesseraui.TesseraPanel;
 import com.tesseraui.TesseraTemplate;
 import com.tesseraui.TesseraTemplateRenderer;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -36,7 +37,7 @@ public final class AdminDungeonBossDetailScreen extends com.tesseraui.TesseraScr
     private String activeTab = "identity";
 
     public AdminDungeonBossDetailScreen(String dungeonId, String dungeonName, int bossIndex) {
-        super(Component.literal("Boss - " + dungeonName + " / " + (bossIndex + 1)));
+        super(Component.translatable("arcadia.admin.boss.detail.screen.title", dungeonName, bossIndex + 1));
         this.dungeonId = dungeonId;
         this.dungeonName = dungeonName;
         this.bossIndex = Math.max(0, bossIndex);
@@ -88,7 +89,8 @@ public final class AdminDungeonBossDetailScreen extends com.tesseraui.TesseraScr
         syncBosses(cfg, bosses);
 
         Map<String, String> modelData = new HashMap<>();
-        modelData.put("cfg.title", "Boss - " + dungeonName + " / " + strOr(boss, "id", "boss_" + (bossIndex + 1)));
+        modelData.put("cfg.title", I18n.get("arcadia.admin.boss.detail.title", dungeonName,
+            strOr(boss, "id", "boss_" + (bossIndex + 1))));
         modelData.put("v.bossId", strOr(boss, "id", "boss_" + (bossIndex + 1)));
         modelData.put("v.bossName", strOr(boss, "customName", ""));
         modelData.put("v.bossType", strOr(boss, "type", "minecraft:wither_skeleton"));
@@ -125,11 +127,11 @@ public final class AdminDungeonBossDetailScreen extends com.tesseraui.TesseraScr
         modelData.put("tab.combat", String.valueOf("combat".equals(activeTab)));
         modelData.put("tab.phases", String.valueOf("phases".equals(activeTab)));
         modelData.put("tab.drops", String.valueOf("drops".equals(activeTab)));
-        modelData.put("tab.identityLabel", "identity".equals(activeTab) ? "> Identite" : "Identite");
-        modelData.put("tab.spawnLabel", "spawn".equals(activeTab) ? "> Spawn" : "Spawn");
-        modelData.put("tab.combatLabel", "combat".equals(activeTab) ? "> Combat" : "Combat");
-        modelData.put("tab.phasesLabel", "phases".equals(activeTab) ? "> Phases" : "Phases");
-        modelData.put("tab.dropsLabel", "drops".equals(activeTab) ? "> Drops" : "Drops");
+        modelData.put("tab.identityLabel", tabLabel("identity", I18n.get("arcadia.admin.common.identity")));
+        modelData.put("tab.spawnLabel", tabLabel("spawn", I18n.get("arcadia.admin.common.spawn")));
+        modelData.put("tab.combatLabel", tabLabel("combat", I18n.get("arcadia.admin.common.combat")));
+        modelData.put("tab.phasesLabel", tabLabel("phases", I18n.get("arcadia.admin.boss.phases")));
+        modelData.put("tab.dropsLabel", tabLabel("drops", I18n.get("arcadia.admin.boss.drops")));
         modelData.put("s.entities", AdminUiSuggestions.ENTITIES);
         modelData.put("s.items", AdminUiSuggestions.ITEMS);
         modelData.put("s.dimensions", AdminUiSuggestions.DIMENSIONS);
@@ -223,7 +225,7 @@ public final class AdminDungeonBossDetailScreen extends com.tesseraui.TesseraScr
         fillRewardRows(modelData, inputHandlers, handlers, rewards, boss);
 
         TesseraModel model = key -> modelData.getOrDefault(key, null);
-        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin-dungeon-boss-detail");
+        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin/admin-dungeon-boss-detail");
         panel = TesseraTemplateRenderer.build(template, model, handlers, inputHandlers, renderContext, px, py, panelW, panelH);
     }
 
@@ -328,6 +330,10 @@ public final class AdminDungeonBossDetailScreen extends com.tesseraui.TesseraScr
     private void switchTab(String tab) {
         activeTab = tab;
         panelDirty = true;
+    }
+
+    private String tabLabel(String tab, String label) {
+        return tab.equals(activeTab) ? "> " + label : label;
     }
 
     private void clearDynamicInputStates() {

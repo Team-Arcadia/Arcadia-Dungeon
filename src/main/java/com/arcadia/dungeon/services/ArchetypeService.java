@@ -4,6 +4,7 @@ import com.arcadia.dungeon.ArcadiaDungeon;
 import com.arcadia.dungeon.domain.config.DungeonConfig;
 import com.arcadia.dungeon.domain.run.Run;
 import com.arcadia.dungeon.persistence.DungeonRegistry;
+import com.arcadia.dungeon.persistence.GlobalClassRegistry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.resources.ResourceLocation;
@@ -11,6 +12,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,10 +29,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class ArchetypeService {
 
     private final DungeonRegistry dungeonRegistry;
+    private final GlobalClassRegistry globalClassRegistry;
     private final Map<UUID, ListTag> inventoryBackups = new ConcurrentHashMap<>();
 
-    public ArchetypeService(DungeonRegistry dungeonRegistry) {
+    public ArchetypeService(DungeonRegistry dungeonRegistry, GlobalClassRegistry globalClassRegistry) {
         this.dungeonRegistry = dungeonRegistry;
+        this.globalClassRegistry = globalClassRegistry;
     }
 
     /**
@@ -72,29 +76,48 @@ public final class ArchetypeService {
 
     private void giveKit(ServerPlayer player, String dungeonId, String archetypeId) {
         DungeonConfig config = dungeonRegistry.get(dungeonId).orElse(null);
-        if (config == null || config.archetypes() == null) return;
+        List<String> items = resolveKit(config, archetypeId);
+        for (String itemId : items) {
+            ResourceLocation rl = ResourceLocation.tryParse(itemId);
+            if (rl == null) {
+                ArcadiaDungeon.LOGGER.warn("[Arcadia][ARCHETYPE] item invalide: {}", itemId);
+                continue;
+            }
+            var item = BuiltInRegistries.ITEM.getOptional(rl).orElse(null);
+            if (item == null) {
+                ArcadiaDungeon.LOGGER.warn("[Arcadia][ARCHETYPE] item inconnu: {}", itemId);
+                continue;
+            }
+            ItemStack stack = new ItemStack(item, 1);
+            if (!player.getInventory().add(stack)) {
+                player.drop(stack, false);
+            }
+        }
+    }
 
-        config.archetypes().stream()
+    private List<String> resolveKit(DungeonConfig config, String archetypeId) {
+        List<String> localKit = resolveLocalKit(config, archetypeId);
+        if (!localKit.isEmpty()) {
+            return localKit;
+        }
+        for (DungeonConfig dungeon : dungeonRegistry.dungeons().values()) {
+            List<String> kit = resolveLocalKit(dungeon, archetypeId);
+            if (!kit.isEmpty()) {
+                return kit;
+            }
+        }
+        return globalClassRegistry.itemsFor(archetypeId);
+    }
+
+    private static List<String> resolveLocalKit(DungeonConfig config, String archetypeId) {
+        if (config == null || config.archetypes() == null) {
+            return List.of();
+        }
+        return config.archetypes().stream()
             .filter(a -> a.id().equals(archetypeId))
             .findFirst()
-            .ifPresent(archetype -> {
-                for (String itemId : archetype.items()) {
-                    ResourceLocation rl = ResourceLocation.tryParse(itemId);
-                    if (rl == null) {
-                        ArcadiaDungeon.LOGGER.warn("[Arcadia][ARCHETYPE] item invalide: {}", itemId);
-                        continue;
-                    }
-                    var item = BuiltInRegistries.ITEM.getOptional(rl).orElse(null);
-                    if (item == null) {
-                        ArcadiaDungeon.LOGGER.warn("[Arcadia][ARCHETYPE] item inconnu: {}", itemId);
-                        continue;
-                    }
-                    ItemStack stack = new ItemStack(item, 1);
-                    if (!player.getInventory().add(stack)) {
-                        player.drop(stack, false);
-                    }
-                }
-            });
+            .map(DungeonConfig.ArchetypeDefinition::items)
+            .orElse(List.of());
     }
 
     private void restoreInventory(UUID playerId, MinecraftServer server) {

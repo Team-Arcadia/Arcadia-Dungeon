@@ -1,0 +1,596 @@
+.player-shell {
+  background: #1A1208;
+  border: 2;
+  border-color: #D89255;
+  border-radius: 4px;
+  gap: 0;
+}
+
+.player-header {
+  background: #26190D;
+  border-bottom: 1;
+  border-color: #5A3518;
+  padding: 4px 8px;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-block {
+  flex: 1;
+  min-width: 0;
+}
+
+.brand-kicker {
+  color: #8FB96B;
+  font-size: 6;
+  overflow: hidden;
+}
+
+.player-summary {
+  align-items: center;
+  gap: 4px;
+}
+
+.currency-chip {
+  color: #F2B85C;
+  background: #120E0A;
+  border: 1;
+  border-color: #5A3518;
+  font-size: 6;
+  padding: 1px 5px;
+}
+
+.header-btn,
+.footer-btn,
+.nav-btn,
+.small-action,
+.card-action {
+  border: 1;
+  border-color: #5A3518;
+  background: #261A12;
+  color: #D9C2A1;
+  font-size: 7;
+  overflow: hidden;
+}
+
+.header-btn {
+  width: 44px;
+  padding: 2px 4px;
+}
+
+.header-btn:hover,
+.footer-btn:hover,
+.nav-btn:hover,
+.small-action:hover,
+.card-action:hover {
+  background: #3A2414;
+  border-color: #D89255;
+  color: #F3E7D3;
+}
+
+.nav-row {
+  background: #18110C;
+  border-bottom: 1;
+  border-color: #2B1C11;
+  padding: 3px 7px;
+  gap: 4px;
+}
+
+.nav-btn {
+  flex: 1;
+  min-width: 0;
+  height: 16px;
+  padding: 2px 4px;
+}
+
+.content-row {
+  flex: 1;
+  min-height: 0;
+  padding: 5px 6px;
+}
+
+.section-title {
+  color: #F2B85C;
+  font-size: 8;
+  font-weight: 700;
+  overflow: hidden;
+}
+
+.loadout-card,
+.profile-card {
+  background: #1C130D;
+  border: 1;
+  border-color: #3E2916;
+  padding: 6px;
+  gap: 4px;
+}
+
+.dungeon-title-line {
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.dungeon-name,
+.shop-name,
+.loadout-title,
+.profile-name {
+  color: #F3E7D3;
+  font-size: 7;
+  font-weight: 700;
+  flex: 1;
+  overflow: hidden;
+}
+
+.dungeon-meta,
+.section-subtitle,
+.card-copy,
+.shop-desc,
+.option-desc,
+.badge-desc {
+  color: #8A765E;
+  font-size: 6;
+  overflow: hidden;
+}
+
+.section-subtitle,
+.card-copy,
+.shop-desc {
+  white-space: normal;
+}
+
+.chip-row {
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  min-height: 12px;
+}
+
+.info-chip,
+.state-ready,
+.state-warn,
+.power-chip {
+  font-size: 6;
+  border: 1;
+  padding: 1px 4px;
+  background: #120E0A;
+  overflow: hidden;
+  min-width: 34px;
+  text-align: center;
+}
+
+.info-chip {
+  color: #D9C2A1;
+  border-color: #3E2916;
+}
+
+.state-ready {
+  color: #8FB96B;
+  border-color: #4A742A;
+}
+
+.state-warn {
+  color: #F2B85C;
+  border-color: #A0642C;
+}
+
+.power-chip {
+  color: #8BC2D9;
+  border-color: #31576A;
+}
+
+.loadout-chip-role {
+  width: 34px;
+  min-width: 34px;
+}
+
+.loadout-chip-power {
+  width: 48px;
+  min-width: 48px;
+}
+
+.loadout-chip-points {
+  width: 34px;
+  min-width: 34px;
+}
+
+.card-kicker,
+.slot-label {
+  color: #A0642C;
+  font-size: 5;
+  font-weight: 700;
+  overflow: hidden;
+}
+
+.tab-panel {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+}
+
+.tab-content {
+  flex: 1;
+  min-height: 0;
+  gap: 5px;
+}
+
+.section-head {
+  align-items: center;
+  gap: 6px;
+  min-height: 22px;
+}
+
+.section-title-block {
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+.small-action {
+  width: 50px;
+  height: 18px;
+}
+
+.dungeon-vlist {
+  flex: 1;
+  min-height: 0;
+  border: 1;
+  border-color: #2B1C11;
+  background: #0F0B08;
+}
+
+.dungeon-row {
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 4px 6px;
+  background: #17100B;
+  border-bottom: 1;
+  border-color: #261A12;
+}
+
+.dungeon-row:hover {
+  background: #21160F;
+}
+
+.dungeon-row.selected {
+  background: #21160D;
+  border-color: #A0642C;
+}
+
+.dungeon-index {
+  width: 18px;
+  color: #D89255;
+  font-size: 8;
+  font-weight: 700;
+  text-align: center;
+}
+
+.dungeon-main,
+.shop-main,
+.option-copy {
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+.card-action {
+  width: 48px;
+  height: 18px;
+}
+
+.empty-panel,
+.empty-state {
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.empty-title {
+  color: #F2B85C;
+  font-size: 9;
+  font-weight: 700;
+}
+
+.empty-text {
+  color: #8A765E;
+  font-size: 7;
+  text-align: center;
+  white-space: normal;
+}
+
+.loadout-workspace {
+  gap: 7px;
+  height: 178px;
+  min-height: 178px;
+  align-items: stretch;
+}
+
+.class-panel {
+  width: 210px;
+  min-width: 210px;
+  background: #17100B;
+  border: 1;
+  border-color: #3E2916;
+  padding: 5px;
+  gap: 4px;
+}
+
+.class-list {
+  flex: 1;
+  min-height: 0;
+  background: #0F0B08;
+  border: 1;
+  border-color: #2B1C11;
+  gap: 0;
+}
+
+.class-row {
+  height: 34px;
+  min-height: 34px;
+  padding: 5px 7px;
+  background: #17100B;
+  border-bottom: 1;
+  border-color: #2B1C11;
+}
+
+.class-row:hover {
+  background: #21160F;
+}
+
+.class-row.selected {
+  background: #241A10;
+  border-color: #A0642C;
+}
+
+.class-main {
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+.class-name {
+  color: #F3E7D3;
+  font-size: 7;
+  font-weight: 700;
+  overflow: hidden;
+}
+
+.class-meta {
+  color: #8A765E;
+  font-size: 6;
+  overflow: hidden;
+}
+
+.build-panel {
+  flex: 1;
+  min-width: 0;
+  gap: 5px;
+}
+
+.main-loadout {
+  height: 48px;
+  min-height: 48px;
+}
+
+.slot-row {
+  gap: 5px;
+}
+
+.slot-card {
+  flex: 1;
+  min-width: 0;
+  background: #17100B;
+  border: 1;
+  border-color: #3E2916;
+  padding: 4px;
+  gap: 4px;
+  align-items: center;
+  min-height: 42px;
+  height: 42px;
+}
+
+.slot-copy {
+  flex: 1;
+  min-width: 0;
+  gap: 1px;
+}
+
+.loadout-item {
+  width: 22px;
+  height: 22px;
+  background: #120E0A;
+  border-color: #5A3518;
+}
+
+.loadout-item:hover {
+  background: #1C120B;
+}
+
+.slot-value {
+  color: #F3E7D3;
+  font-size: 7;
+  overflow: hidden;
+}
+
+.shop-list,
+.options-list,
+.badge-list {
+  flex: 1;
+  min-height: 0;
+  gap: 5px;
+}
+
+.shop-row {
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  background: #17100B;
+  border: 1;
+  border-color: #3E2916;
+  padding: 5px;
+}
+
+.shop-buy {
+  width: 70px;
+  min-width: 70px;
+  gap: 4px;
+}
+
+.shop-cost {
+  color: #F2B85C;
+  font-size: 6;
+  text-align: center;
+  overflow: hidden;
+}
+
+.profile-top {
+  gap: 6px;
+  align-items: stretch;
+  min-height: 58px;
+}
+
+.profile-card {
+  flex: 1;
+  min-width: 0;
+  min-height: 56px;
+}
+
+.profile-stat {
+  width: 70px;
+  min-width: 70px;
+  height: 56px;
+  min-height: 56px;
+  background: #17100B;
+  border: 1;
+  border-color: #3E2916;
+  padding: 6px 4px;
+  gap: 2px;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-stat-value {
+  color: #F3E7D3;
+  font-size: 9;
+  font-weight: 700;
+  text-align: center;
+  overflow: hidden;
+}
+
+.profile-stat-label {
+  color: #8A765E;
+  font-size: 6;
+  text-align: center;
+}
+
+.compact-head {
+  min-height: 22px;
+}
+
+.badge-row {
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  background: #17100B;
+  border: 1;
+  border-color: #2B1C11;
+  padding: 5px 6px;
+}
+
+.badge-row.unlocked {
+  background: #172012;
+  border-color: #4A742A;
+}
+
+.badge-row.locked {
+  opacity: 0.78;
+}
+
+.badge-copy {
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+.badge-name {
+  color: #D9C2A1;
+  font-size: 7;
+  font-weight: 700;
+  overflow: hidden;
+}
+
+.badge-state-unlocked,
+.badge-state-locked,
+.badge-state-soon {
+  width: 62px;
+  min-width: 62px;
+  font-size: 6;
+  border: 1;
+  padding: 1px 4px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.badge-state-unlocked {
+  color: #8FB96B;
+  background: #101A0D;
+  border-color: #4A742A;
+}
+
+.badge-state-locked {
+  color: #8A765E;
+  background: #120E0A;
+  border-color: #3E2916;
+}
+
+.badge-state-soon {
+  color: #F2B85C;
+  background: #1B1208;
+  border-color: #A0642C;
+}
+
+.option-row {
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  background: #17100B;
+  border: 1;
+  border-color: #3E2916;
+  padding: 5px 7px;
+}
+
+.option-check {
+  width: 14px;
+  height: 14px;
+}
+
+.option-name {
+  color: #F3E7D3;
+  font-size: 8;
+  font-weight: 700;
+  overflow: hidden;
+}
+
+.option-state {
+  color: #8FB96B;
+  font-size: 7;
+  width: 28px;
+  text-align: right;
+  overflow: hidden;
+}
+
+.footer-row {
+  background: #201711;
+  border-top: 1;
+  border-color: #5A3518;
+  padding: 3px 8px;
+  justify-content: flex-end;
+}
+
+.footer-btn {
+  width: 62px;
+  height: 17px;
+}

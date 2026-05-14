@@ -1,0 +1,56 @@
+<col class="admin-hub">
+  <row class="hub-header">
+    <label class="hub-title" data-i18n="arcadia.admin.hub.title">Admin - Donjons</label>
+    <label class="hub-stat">{{ dungeon.count }}</label>
+  </row>
+
+  <row class="hub-toolbar">
+    <input id="search"
+           class="search-field"
+           placeholder="{{ t:arcadia.admin.placeholder.filter }}"
+           oninput="filter"
+           tooltip-i18n="arcadia.admin.hub.tooltip.filter" />
+    <button class="btn-create"
+            onclick="create"
+            tooltip-i18n="arcadia.admin.hub.tooltip.create"
+            data-i18n="arcadia.admin.hub.create">+ Creer</button>
+    <button class="btn-classes"
+            onclick="classes"
+            tooltip-i18n="arcadia.admin.hub.tooltip.classes"
+            data-i18n="arcadia.admin.hub.classes">Classes</button>
+    <button class="btn-debug"
+            onclick="debug"
+            tooltip-i18n="arcadia.admin.hub.tooltip.debug"
+            data-i18n="arcadia.admin.hub.debug">Debug</button>
+  </row>
+
+  <col class="hub-list" oncontextmenu="ctxList">
+    <virtual-list class="hub-vlist" v-for="d in dungeon.filtered" row-height="22">
+      <row class="dungeon-row" oncontextmenu="{{ d.ctxKey }}">
+        <label class="status-dot {{ d.statusClass }}">■</label>
+        <col class="row-info">
+          <label class="row-name">{{ d.name }}</label>
+        </col>
+        <button class="btn-manage"
+                onclick="{{ d.manageKey }}"
+                tooltip-i18n="arcadia.admin.hub.tooltip.manage"
+                data-i18n="arcadia.admin.common.manage">Gerer</button>
+      </row>
+    </virtual-list>
+    <label class="empty-hint" v-if="filter.hint">{{ filter.hint }}</label>
+  </col>
+
+  <row class="hub-footer">
+    <button class="btn-reload"
+            onclick="reload"
+            tooltip-i18n="arcadia.admin.hub.tooltip.reload"
+            data-i18n="arcadia.admin.hub.reload">Recharger</button>
+    <button class="btn-monitor"
+            onclick="monitor"
+            tooltip-i18n="arcadia.admin.hub.tooltip.monitor"
+            data-i18n="arcadia.admin.hub.monitor">Monitor</button>
+    <button class="btn-close"
+            onclick="close"
+            data-i18n="arcadia.admin.hub.close">Fermer</button>
+  </row>
+</col>

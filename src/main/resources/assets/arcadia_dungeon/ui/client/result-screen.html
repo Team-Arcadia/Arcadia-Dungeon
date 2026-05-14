@@ -1,0 +1,39 @@
+<col class="result-screen {{ result.class }}">
+  <row class="result-header">
+    <col class="result-title-block">
+      <label class="result-kicker" data-i18n="arcadia.client.result.kicker">RAPPORT DE RUN</label>
+      <label class="result-title {{ result.title-class }}">{{ result.title }}</label>
+    </col>
+    <label class="result-badge">{{ run.elapsed }}</label>
+  </row>
+
+  <row class="result-stats">
+    <col class="stat-tile">
+      <label class="stat-key" data-i18n="arcadia.client.result.time">Temps</label>
+      <label class="stat-value">{{ run.elapsed }}</label>
+    </col>
+    <col class="stat-tile">
+      <label class="stat-key" data-i18n="arcadia.client.result.record">Record</label>
+      <label class="stat-value {{ pb.class }}">{{ run.pb }}</label>
+    </col>
+    <col class="stat-tile">
+      <label class="stat-key" data-i18n="arcadia.client.result.gains">Gains</label>
+      <label class="stat-value copper">{{ reward.currency }}</label>
+    </col>
+  </row>
+
+  <col class="result-content">
+    <label class="pb-line {{ pb.hint-class }}">{{ pb.hint }}</label>
+    <col class="loot-list">
+      <row class="loot-row" v-for="item in loot">
+        <label class="loot-dot">+</label>
+        <label class="loot-name">{{ item.name }}</label>
+      </row>
+    </col>
+  </col>
+
+  <row class="result-footer">
+    <button class="secondary-btn" onclick="hub" data-i18n="arcadia.client.result.hub">Retour au hub</button>
+    <button class="primary-btn" onclick="rejouer" data-i18n="arcadia.client.result.replay">Rejouer</button>
+  </row>
+</col>

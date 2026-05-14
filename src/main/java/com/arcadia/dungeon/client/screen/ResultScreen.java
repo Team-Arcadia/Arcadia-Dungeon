@@ -8,6 +8,7 @@ import com.arcadia.dungeon.network.AbandonRunPayload;
 import com.tesseraui.TesseraScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -26,8 +27,8 @@ import java.util.Map;
  */
 public final class ResultScreen extends TesseraScreen {
 
-    private static final int PANEL_W = 300;
-    private static final int PANEL_H = 220;
+    private static final int PANEL_W = 360;
+    private static final int PANEL_H = 252;
 
     private final String result;
     private final long elapsedSeconds;
@@ -48,7 +49,7 @@ public final class ResultScreen extends TesseraScreen {
     public ResultScreen(String result, long elapsedSeconds, long currencyEarned,
                         boolean newPb, long bestTimeSeconds, int respawnSeconds,
                         String dungeonId, List<String> lootLines) {
-        super(Component.literal("Résultat"));
+        super(Component.translatable("arcadia.client.result.screen.title"));
         this.result = result;
         this.elapsedSeconds = elapsedSeconds;
         this.currencyEarned = currencyEarned;
@@ -69,14 +70,7 @@ public final class ResultScreen extends TesseraScreen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics g, int mx, int my, float partialTick) {
-        g.fill(0, 0, width, height, 0x88000000);
-    }
-
-    @Override
     public void render(GuiGraphics g, int mx, int my, float partialTick) {
-        renderBackground(g, mx, my, partialTick);
-
         if ("DEATH".equals(result)) {
             long remaining = Math.max(0, (respawnDeadlineMs - System.currentTimeMillis() + 999) / 1000L);
             if (remaining == 0) { onClose(); return; }
@@ -92,8 +86,9 @@ public final class ResultScreen extends TesseraScreen {
             panelDirty = false;
         }
 
-        if (panel != null) panel.render(g, mx, my);
         super.render(g, mx, my, partialTick);
+        if (panel != null) panel.render(g, mx, my);
+        renderTesseraOverlays(g, mx, my);
     }
 
     @Override
@@ -123,7 +118,7 @@ public final class ResultScreen extends TesseraScreen {
         if ("DEATH".equals(result)) {
             long remaining = Math.max(1, (respawnDeadlineMs - System.currentTimeMillis() + 999) / 1000L);
             model = TesseraModel.of(Map.of("t", remaining + "s"));
-            templateId = "arcadia_dungeon:ui/result-screen-death";
+            templateId = "arcadia_dungeon:ui/client/result-screen-death";
             actions = Map.of("quit", () -> {
                 PacketDistributor.sendToServer(new AbandonRunPayload());
                 Minecraft.getInstance().setScreen(null);
@@ -132,11 +127,12 @@ public final class ResultScreen extends TesseraScreen {
             boolean isVictory = "VICTORY".equals(result);
             String resultClass   = isVictory ? "result-victory" : "result-defeat";
             String titleClass    = isVictory ? "title-victory"  : "title-defeat";
-            String titleText     = isVictory ? "✦ VICTOIRE"     : "✗ DÉFAITE";
+            String titleText     = I18n.get(isVictory ? "arcadia.client.result.victory" : "arcadia.client.result.defeat");
 
             String elapsedStr = formatTime(elapsedSeconds);
-            String bestStr    = bestTimeSeconds > 0 ? formatTime(bestTimeSeconds) : "—";
-            String pbHint     = newPb ? "★ Nouveau record !" : (bestTimeSeconds > 0 ? "Record : " + bestStr : "—");
+            String bestStr    = bestTimeSeconds > 0 ? formatTime(bestTimeSeconds) : "--";
+            String pbHint     = newPb ? I18n.get("arcadia.client.result.new_record") :
+                (bestTimeSeconds > 0 ? I18n.get("arcadia.client.result.record_value", bestStr) : "--");
             String pbHintClass = newPb ? "pb-hint-new" : "";
             String pbClass    = newPb ? "value-good" : "";
 
@@ -155,7 +151,7 @@ public final class ResultScreen extends TesseraScreen {
                 modelData.put("item.name." + i, lootLines.get(i));
             }
             model = TesseraModel.of(modelData);
-            templateId = "arcadia_dungeon:ui/result-screen";
+            templateId = "arcadia_dungeon:ui/client/result-screen";
             actions = Map.of(
                 "hub",     () -> Minecraft.getInstance().setScreen(new PlayerHubScreen()),
                 "rejouer", () -> Minecraft.getInstance().setScreen(new PlayerHubScreen())

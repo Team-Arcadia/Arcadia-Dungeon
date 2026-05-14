@@ -11,21 +11,15 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
 /**
- * Charge tous les configs JSON donjons depuis {@code config/arcadia/dungeon/}.
+ * Loads dungeon JSON configs from {@code config/arcadia/dungeon/}.
  *
- * <p>Story S1.2.
- *
- * <p><b>Validation best-effort MVP</b> : champs obligatoires checked, types non
- * tous validés. Schema validator strict en v1.1 (cf. architecture-v1.md §14
- * dette technique).
- *
- * <p>I/O sur Virtual Thread Java 21 (cf. architecture-v1.md §8) — pas SGT.
+ * <p>Development schema validation is intentionally strict: configs must be
+ * rewritten when the JSON format changes.
  */
 public final class DungeonConfigLoader {
 
@@ -38,15 +32,11 @@ public final class DungeonConfigLoader {
         this(FMLPaths.CONFIGDIR.get().resolve("arcadia").resolve("dungeon"));
     }
 
-    /** Constructeur pour tests (path custom). */
+    /** Test constructor with a custom config path. */
     public DungeonConfigLoader(Path configDir) {
         this.configDir = configDir;
     }
 
-    /**
-     * Charge tous les `*.json` du dossier config et retourne la map des configs valides.
-     * Les configs invalides sont loggés et skippés (les autres restent chargées).
-     */
     public Map<String, DungeonConfig> loadAll() {
         loaded.clear();
         if (!Files.exists(configDir)) {
@@ -66,10 +56,6 @@ public final class DungeonConfigLoader {
         return Map.copyOf(loaded);
     }
 
-    /**
-     * Recharge un donjon spécifique par id. Utilisé par {@code /arcadia reload <id>}.
-     * Retourne le nouveau config si succès, empty si invalide ou absent.
-     */
     public Optional<DungeonConfig> reload(String dungeonId) {
         Path file = findFileByConfigId(dungeonId)
             .orElse(configDir.resolve(sanitizeFileName(dungeonId) + ".json"));
@@ -83,19 +69,10 @@ public final class DungeonConfigLoader {
         return cfg;
     }
 
-    /**
-     * Reload all (utilisé par /arcadia reload sans argument).
-     */
     public Map<String, DungeonConfig> reloadAll() {
         return loadAll();
     }
 
-    /**
-     * Sérialise {@code cfg} en JSON et l'écrit dans {@code configDir/<id>.json}.
-     * Crée le dossier si absent. Le fichier est écrasé si existant.
-     *
-     * @param cfg config à persister — doit être valide (non null, id non blank)
-     */
     public void save(DungeonConfig cfg) {
         if (cfg == null || cfg.id() == null || cfg.id().isBlank()) {
             ArcadiaDungeon.LOGGER.error("[Arcadia][CONFIG] save_rejected reason=null_or_blank_id");
@@ -114,11 +91,6 @@ public final class DungeonConfigLoader {
         }
     }
 
-    /**
-     * Supprime le fichier JSON du donjon {@code id} du disque et de la map in-memory.
-     *
-     * @return {@code true} si le fichier existait et a été supprimé, {@code false} sinon
-     */
     public boolean delete(String id) {
         if (id == null || id.isBlank()) return false;
         Path file = findFileByConfigId(id)
@@ -136,14 +108,9 @@ public final class DungeonConfigLoader {
         }
     }
 
-    /** Donjons chargés à un instant donné (read-only). */
     public Map<String, DungeonConfig> loaded() {
         return Map.copyOf(loaded);
     }
-
-    // ============================================================
-    // Internals
-    // ============================================================
 
     private Optional<DungeonConfig> tryLoadOne(Path file) {
         String fileName = file.getFileName().toString();
@@ -178,7 +145,7 @@ public final class DungeonConfigLoader {
                         return Optional.of(file);
                     }
                 } catch (JsonSyntaxException | IOException ignored) {
-                    // Invalid files are reported by loadAll(); lookup should stay best-effort.
+                    // Invalid files are reported by loadAll(); lookup just skips unreadable files.
                 }
             }
         } catch (IOException e) {
@@ -187,29 +154,18 @@ public final class DungeonConfigLoader {
         return Optional.empty();
     }
 
-    /**
-     * Validation best-effort des champs obligatoires.
-     * Retourne null si OK, message d'erreur sinon.
-     *
-     * <p>TODO[DEBT] : remplacer par schema validator strict en v1.1.
-     * Raison MVP : Gson + checks manuels suffisent pour validation basique.
-     * Sortie : v1.1 quand on aura une suite de donjons configurés et que les
-     * erreurs JSON deviennent fréquentes.
-     */
     private String validate(DungeonConfig cfg, String fileName) {
         if (cfg == null) return "config null after parse";
-        if (cfg.schemaVersion() == 0) return "missing or zero schemaVersion (must be " + DungeonConfig.CURRENT_SCHEMA_VERSION + ")";
-        if (cfg.schemaVersion() > DungeonConfig.CURRENT_SCHEMA_VERSION) {
-            ArcadiaDungeon.LOGGER.warn("[Arcadia][CONFIG] schema_version_future file={} schemaVersion={} current={} attempt=best-effort",
-                fileName, cfg.schemaVersion(), DungeonConfig.CURRENT_SCHEMA_VERSION);
-            // Best-effort : on essaie de charger quand même
+        if (cfg.schemaVersion() != DungeonConfig.CURRENT_SCHEMA_VERSION) {
+            return "schemaVersion must be " + DungeonConfig.CURRENT_SCHEMA_VERSION + " (got " + cfg.schemaVersion() + ")";
         }
         if (cfg.id() == null || cfg.id().isBlank()) return "missing id";
         if (cfg.nameKey() == null || cfg.nameKey().isBlank()) return "missing nameKey";
         if (cfg.lives() <= 0) {
-            ArcadiaDungeon.LOGGER.warn("[Arcadia][CONFIG] dungeonId={} lives={} invalide — doit être > 0, ignoré", cfg.id(), cfg.lives());
+            ArcadiaDungeon.LOGGER.warn("[Arcadia][CONFIG] dungeonId={} lives={} invalid - must be > 0, skipped", cfg.id(), cfg.lives());
             return "lives must be > 0 (got " + cfg.lives() + ")";
         }
+
         var configuredBosses = cfg.configuredBosses();
         if (configuredBosses.isEmpty()) return "bosses must contain >= 1 entry";
         int bossIndex = 0;
@@ -218,6 +174,30 @@ public final class DungeonConfigLoader {
             if (boss.hp() <= 0) return "bosses[" + bossIndex + "].hp must be > 0";
             bossIndex++;
         }
+
+        if (cfg.waves() == null) return "missing top-level waves array";
+        int waveIndex = 0;
+        for (DungeonConfig.Wave wave : cfg.waves()) {
+            if (wave == null) return "waves[" + waveIndex + "] null";
+            String triggerMode = wave.triggerMode();
+            if (!"ordered".equals(triggerMode) && !"ticks".equals(triggerMode)) {
+                return "waves[" + waveIndex + "].triggerMode must be ordered or ticks";
+            }
+            if (wave.delayTicks() < 0) return "waves[" + waveIndex + "].delayTicks must be >= 0";
+            if (wave.mobs() == null || wave.mobs().isEmpty()) {
+                return "waves[" + waveIndex + "].mobs must contain >= 1 entry";
+            }
+            int mobIndex = 0;
+            for (DungeonConfig.MobSpawn mob : wave.mobs()) {
+                if (mob.mobType() == null || mob.mobType().isBlank()) {
+                    return "waves[" + waveIndex + "].mobs[" + mobIndex + "].mobType missing";
+                }
+                if (mob.count() <= 0) return "waves[" + waveIndex + "].mobs[" + mobIndex + "].count must be > 0";
+                mobIndex++;
+            }
+            waveIndex++;
+        }
+
         if (cfg.rewards() == null) return "missing rewards";
         return null;
     }

@@ -34,7 +34,7 @@ public final class AdminDungeonRewardsScreen extends com.tesseraui.TesseraScreen
     private boolean panelDirty = true;
 
     public AdminDungeonRewardsScreen(String dungeonId, String dungeonName) {
-        super(Component.literal("Rewards — " + dungeonName));
+        super(Component.translatable("arcadia.admin.rewards.title", dungeonName));
         this.dungeonId   = dungeonId;
         this.dungeonName = dungeonName;
     }
@@ -141,7 +141,7 @@ public final class AdminDungeonRewardsScreen extends com.tesseraui.TesseraScreen
         }
 
         TesseraModel model = key -> modelData.getOrDefault(key, null);
-        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin-dungeon-rewards");
+        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin/admin-dungeon-rewards");
         panel = TesseraTemplateRenderer.build(template, model, handlers, inputHandlers, renderContext, px, py, panelW, panelH);
     }
 

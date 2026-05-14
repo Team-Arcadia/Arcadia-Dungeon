@@ -95,9 +95,7 @@ public final class PlayerProgressService {
                     p.addCurrency(data.currency);
                     if (data.dungeons != null) {
                         data.dungeons.forEach((dungeonId, dp) -> {
-                            if (dp.bestTimeSeconds > 0) {
-                                p.recordRunCompletion(dungeonId, dp.bestTimeSeconds);
-                            }
+                            p.restoreDungeonProgress(dungeonId, dp.completions, dp.bestTimeSeconds, dp.lastCompletionMs);
                         });
                     }
                     progressMap.put(id, p);

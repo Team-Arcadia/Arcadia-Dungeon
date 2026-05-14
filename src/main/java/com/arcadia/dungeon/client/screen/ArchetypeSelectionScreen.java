@@ -8,6 +8,7 @@ import com.arcadia.dungeon.network.DungeonListPayload;
 import com.tesseraui.TesseraScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 
 import java.util.HashMap;
@@ -22,8 +23,8 @@ import java.util.Map;
  */
 public final class ArchetypeSelectionScreen extends TesseraScreen {
 
-    private static final int PANEL_W = 360;
-    private static final int PANEL_H = 220;
+    private static final int PANEL_W = 430;
+    private static final int PANEL_H = 260;
 
     private final String dungeonId;
     private final String dungeonName;
@@ -33,7 +34,7 @@ public final class ArchetypeSelectionScreen extends TesseraScreen {
 
     public ArchetypeSelectionScreen(String dungeonId, String dungeonName,
                                     List<DungeonListPayload.ArchetypeSummary> archetypes) {
-        super(Component.literal("Archétype — " + dungeonName));
+        super(Component.translatable("arcadia.client.arch.screen.title", dungeonName));
         this.dungeonId = dungeonId;
         this.dungeonName = dungeonName;
         this.archetypes = archetypes;
@@ -46,15 +47,10 @@ public final class ArchetypeSelectionScreen extends TesseraScreen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics g, int mx, int my, float partialTick) {
-        g.fill(0, 0, width, height, 0x88000000);
-    }
-
-    @Override
     public void render(GuiGraphics g, int mx, int my, float partialTick) {
-        renderBackground(g, mx, my, partialTick);
-        if (panel != null) panel.render(g, mx, my);
         super.render(g, mx, my, partialTick);
+        if (panel != null) panel.render(g, mx, my);
+        renderTesseraOverlays(g, mx, my);
     }
 
     @Override
@@ -87,6 +83,8 @@ public final class ArchetypeSelectionScreen extends TesseraScreen {
 
         modelData.put("dungeon.name",     displayName);
         modelData.put("archetype.count",  String.valueOf(archetypes.size()));
+        modelData.put("archetype.empty",  String.valueOf(archetypes.isEmpty()));
+        modelData.put("archetype.total",  I18n.get("arcadia.client.arch.count", archetypes.size()));
 
         for (int i = 0; i < archetypes.size(); i++) {
             DungeonListPayload.ArchetypeSummary a = archetypes.get(i);
@@ -97,13 +95,15 @@ public final class ArchetypeSelectionScreen extends TesseraScreen {
             modelData.put("a.id." + i,      a.id());
             modelData.put("a.onclick." + i,  handlerKey);
             modelData.put("a.icon." + i,     archetypeIcon(a.id()));
-            modelData.put("a.sub." + i,      ""); // Sous-titre non disponible dans le payload
+            modelData.put("a.role." + i,     archetypeRole(a.id()));
+            modelData.put("a.detail." + i,   archetypeDetail(a.id()));
+            modelData.put("a.index." + i,    String.valueOf(i + 1));
             handlers.put(handlerKey, () -> onSelectArchetype(a, displayArchName));
         }
         handlers.put("back", () -> Minecraft.getInstance().setScreen(new PlayerHubScreen()));
 
         TesseraModel model = key -> modelData.getOrDefault(key, null);
-        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/archetype-selection");
+        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/client/archetype-selection");
         panel = TesseraTemplateRenderer.build(template, model, handlers, px, py, PANEL_W, PANEL_H);
     }
 
@@ -111,10 +111,28 @@ public final class ArchetypeSelectionScreen extends TesseraScreen {
     private static String archetypeIcon(String id) {
         if (id == null) return "?";
         String lower = id.toLowerCase();
-        if (lower.contains("warrior") || lower.contains("guerrier")) return "⚔";
-        if (lower.contains("mage")    || lower.contains("mago"))     return "✦";
-        if (lower.contains("archer")  || lower.contains("rogue"))    return "➶";
+        if (lower.contains("warrior") || lower.contains("guerrier")) return "W";
+        if (lower.contains("mage")    || lower.contains("mago"))     return "M";
+        if (lower.contains("archer")  || lower.contains("rogue"))    return "R";
         return "?";
+    }
+
+    private static String archetypeRole(String id) {
+        if (id == null) return I18n.get("arcadia.client.arch.role.custom");
+        String lower = id.toLowerCase();
+        if (lower.contains("warrior") || lower.contains("guerrier")) return I18n.get("arcadia.client.arch.role.frontline");
+        if (lower.contains("mage") || lower.contains("mago")) return I18n.get("arcadia.client.arch.role.burst");
+        if (lower.contains("archer") || lower.contains("rogue")) return I18n.get("arcadia.client.arch.role.distance");
+        return I18n.get("arcadia.client.arch.role.custom");
+    }
+
+    private static String archetypeDetail(String id) {
+        if (id == null) return I18n.get("arcadia.client.arch.detail.default");
+        String lower = id.toLowerCase();
+        if (lower.contains("warrior") || lower.contains("guerrier")) return I18n.get("arcadia.client.arch.detail.warrior");
+        if (lower.contains("mage") || lower.contains("mago")) return I18n.get("arcadia.client.arch.detail.mage");
+        if (lower.contains("archer") || lower.contains("rogue")) return I18n.get("arcadia.client.arch.detail.archer");
+        return I18n.get("arcadia.client.arch.detail.default");
     }
 
     private void onSelectArchetype(DungeonListPayload.ArchetypeSummary archetype, String displayName) {

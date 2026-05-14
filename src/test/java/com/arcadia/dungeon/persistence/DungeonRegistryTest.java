@@ -32,9 +32,9 @@ class DungeonRegistryTest {
         Map<String, DungeonConfig> dungeons = registry.dungeons();
         assertEquals(1, dungeons.size());
         DungeonConfig cfg = dungeons.values().iterator().next();
-        assertEquals(1, cfg.schemaVersion());
+        assertEquals(DungeonConfig.CURRENT_SCHEMA_VERSION, cfg.schemaVersion());
         assertFalse(cfg.configuredBosses().isEmpty());
-        assertEquals(3, cfg.archetypes().size());
+        assertTrue(cfg.archetypes().isEmpty());
     }
 
     @Test
@@ -65,12 +65,15 @@ class DungeonRegistryTest {
         Files.createDirectories(configDir);
         Files.writeString(configDir.resolve("custom.json"), """
             {
-              "schemaVersion": 1,
+              "schemaVersion": 2,
               "id": "test:custom",
               "nameKey": "Custom Dungeon",
               "currency": { "nameKey": "Coins", "iconPath": "minecraft:textures/items/coin.png" },
               "lives": 5,
-              "rooms": [{ "id": "r1", "templateRef": "test:room1", "waves": [] }],
+              "rooms": [],
+              "waves": [
+                { "name": "Wave 1", "triggerMode": "ordered", "delayTicks": 0, "mobs": [{ "mobType": "minecraft:zombie", "count": 1 }] }
+              ],
               "bosses": [{ "id": "boss_1", "type": "minecraft:zombie", "hp": 100, "phases": [], "optional": false, "spawnChance": 1.0, "requiredKill": true, "rewards": [] }],
               "rewards": { "currency": 10, "loot": [] },
               "archetypes": []
@@ -98,12 +101,15 @@ class DungeonRegistryTest {
         Files.createDirectories(configDir);
         Files.writeString(configDir.resolve("noboss.json"), """
             {
-              "schemaVersion": 1,
+              "schemaVersion": 2,
               "id": "test:noboss",
               "nameKey": "No Boss",
               "currency": { "nameKey": "Coins", "iconPath": "x:y" },
               "lives": 3,
-              "rooms": [{ "id": "r1", "templateRef": "test:r", "waves": [] }],
+              "rooms": [],
+              "waves": [
+                { "name": "Wave 1", "triggerMode": "ordered", "delayTicks": 0, "mobs": [{ "mobType": "minecraft:zombie", "count": 1 }] }
+              ],
               "rewards": { "currency": 0, "loot": [] },
               "archetypes": []
             }

@@ -1,0 +1,47 @@
+<col class="lobby-screen">
+  <row class="lobby-header">
+    <col class="lobby-title-block">
+      <label class="lobby-kicker" data-i18n="arcadia.client.lobby.kicker">LOBBY SOLO</label>
+      <label class="lobby-title">{{ dungeon.name }}</label>
+    </col>
+    <label class="lobby-state" data-i18n="arcadia.client.ready">Pret</label>
+  </row>
+
+  <row class="lobby-progress">
+    <label class="step done" data-i18n="arcadia.client.lobby.step.dungeon">1 Donjon</label>
+    <label class="step done" data-i18n="arcadia.client.lobby.step.class">2 Classe</label>
+    <label class="step active" data-i18n="arcadia.client.lobby.step.launch">3 Lancement</label>
+  </row>
+
+  <col class="lobby-content">
+    <row class="player-card">
+      <label class="player-mark">1</label>
+      <col class="player-main">
+        <label class="player-name">{{ player.name }}</label>
+        <label class="player-sub" data-i18n="arcadia.client.lobby.leader">Leader de la run</label>
+      </col>
+      <label class="ready-badge" data-i18n="arcadia.client.ready">Pret</label>
+    </row>
+
+    <row class="player-card empty-slot">
+      <label class="player-mark">2</label>
+      <col class="player-main">
+        <label class="player-name muted" data-i18n="arcadia.client.lobby.slot_closed">(slot ferme)</label>
+        <label class="player-sub" data-i18n="arcadia.client.lobby.mvp_solo">MVP solo</label>
+      </col>
+    </row>
+
+    <row class="loadout-card">
+      <col class="loadout-main">
+        <label class="loadout-label" data-i18n="arcadia.client.lobby.selected_class">Classe selectionnee</label>
+        <label class="loadout-name">{{ archetype.name }}</label>
+      </col>
+      <label class="loadout-status">{{ launch.status }}</label>
+    </row>
+  </col>
+
+  <row class="lobby-footer">
+    <button class="secondary-btn" onclick="close" data-i18n="arcadia.client.cancel">Annuler</button>
+    <button class="primary-btn" onclick="launch" data-i18n="arcadia.client.launch">Lancer</button>
+  </row>
+</col>

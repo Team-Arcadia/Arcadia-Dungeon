@@ -38,12 +38,15 @@ class RunLifecycleServiceTest {
         Files.createDirectories(configDir);
         Files.writeString(configDir.resolve("test.json"), """
             {
-              "schemaVersion": 1,
+              "schemaVersion": 2,
               "id": "test:dungeon",
               "nameKey": "Test Dungeon",
               "currency": { "nameKey": "Coins", "iconPath": "x:y" },
               "lives": 3,
-              "rooms": [{ "id": "r1", "templateRef": "arcadia:crypt_entry", "waves": [] }],
+              "rooms": [],
+              "waves": [
+                { "name": "Wave 1", "triggerMode": "ordered", "delayTicks": 0, "mobs": [{ "mobType": "minecraft:zombie", "count": 1 }] }
+              ],
               "bosses": [{ "id": "boss_1", "type": "minecraft:zombie", "hp": 100, "phases": [], "optional": false, "spawnChance": 1.0, "requiredKill": true, "rewards": [] }],
               "rewards": { "currency": 10, "loot": [] },
               "archetypes": []

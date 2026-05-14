@@ -1,0 +1,24 @@
+<col class="cfg-screen">
+  <row class="cfg-header">
+    <label class="cfg-title">{{ cfg.title }}</label>
+  </row>
+
+  <col class="cfg-body">
+    <label class="section-title" data-i18n="arcadia.admin.debug.global_runs">Runs actives globales</label>
+
+    <label class="cfg-note" v-if="debug.empty" data-i18n="arcadia.admin.debug.none">Aucune run active.</label>
+    <label class="cfg-note" v-show="debug.summary">{{ debug.summary }}</label>
+
+    <col class="danger-zone">
+      <label class="danger-title" data-i18n="arcadia.admin.debug.danger">Danger zone</label>
+      <button class="btn-danger"
+              onclick="killAll"
+              tooltip-i18n="arcadia.admin.debug.kill_all.tooltip"
+              data-i18n="arcadia.admin.debug.kill_all">Terminer toutes les runs</button>
+    </col>
+  </col>
+
+  <row class="cfg-footer">
+    <button class="btn-back" onclick="back" data-i18n="arcadia.admin.common.back">Retour</button>
+  </row>
+</col>

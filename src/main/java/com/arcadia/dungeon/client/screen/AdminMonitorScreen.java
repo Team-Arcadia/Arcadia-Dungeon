@@ -39,7 +39,7 @@ public final class AdminMonitorScreen extends com.tesseraui.TesseraScreen {
     private long lastRefreshMs = 0L;
 
     public AdminMonitorScreen() {
-        super(Component.literal("Admin — Monitor"));
+        super(Component.translatable("arcadia.admin.monitor.title"));
     }
 
     @Override
@@ -146,7 +146,7 @@ public final class AdminMonitorScreen extends com.tesseraui.TesseraScreen {
         }
 
         TesseraModel model = key -> modelData.getOrDefault(key, null);
-        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin-monitor");
+        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin/admin-monitor");
         panel = TesseraTemplateRenderer.build(template, model, handlers, new HashMap<>(), px, py, panelW, panelH);
     }
 

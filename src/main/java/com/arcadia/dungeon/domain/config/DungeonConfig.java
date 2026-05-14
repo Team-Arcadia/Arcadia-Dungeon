@@ -29,6 +29,9 @@ public record DungeonConfig(
     Integer placementY,   // nullable - forced Y for NBT placement (ex: 64). Null = current admin Y
     AreaPos areaPos1,     // nullable - coin 1 de la zone globale du donjon
     AreaPos areaPos2,     // nullable - coin 2 de la zone globale du donjon
+    String generationMode, // nullable - "template" or "custom"
+    AreaPos generatedOrigin, // nullable - last generated NBT origin
+    GeneratedSize generatedSize, // nullable - last generated NBT size
     // Post-MVP configurable fields
     String startMessage,   // nullable - chat message broadcast when the run starts
     String victoryMessage, // nullable - victory chat message
@@ -37,8 +40,8 @@ public record DungeonConfig(
     Double xpMultiplier    // nullable - Arcadia XP multiplier for this dungeon (1.0 = normal)
 ) {
 
-    /** Schema version supported by the MVP. */
-    public static final int CURRENT_SCHEMA_VERSION = 1;
+    /** Schema version supported by the current development config format. */
+    public static final int CURRENT_SCHEMA_VERSION = 2;
 
     public List<BossDefinition> configuredBosses() {
         return bosses != null ? bosses : List.of();
@@ -63,8 +66,21 @@ public record DungeonConfig(
 
     public DungeonConfig withArea(AreaPos pos1, AreaPos pos2) {
         return new DungeonConfig(schemaVersion, id, nameKey, currency, lives, rooms, waves, bosses, rewards,
-            archetypes, structureRef, dimension, placementY, pos1, pos2, startMessage, victoryMessage,
+            archetypes, structureRef, dimension, placementY, pos1, pos2, generationMode, generatedOrigin,
+            generatedSize, startMessage, victoryMessage,
             failMessage, requiredLevel, xpMultiplier);
+    }
+
+    public DungeonConfig withGeneration(String structureRef,
+                                        String dimension,
+                                        Integer placementY,
+                                        AreaPos areaPos1,
+                                        AreaPos areaPos2,
+                                        AreaPos generatedOrigin,
+                                        GeneratedSize generatedSize) {
+        return new DungeonConfig(schemaVersion, id, nameKey, currency, lives, rooms, waves, bosses, rewards,
+            archetypes, structureRef, dimension, placementY, areaPos1, areaPos2, "template", generatedOrigin,
+            generatedSize, startMessage, victoryMessage, failMessage, requiredLevel, xpMultiplier);
     }
 
     public static boolean isInsideArea(AreaPos areaPos1, AreaPos areaPos2, String dimension,
@@ -99,27 +115,30 @@ public record DungeonConfig(
     /** Coin de zone cuboide dans une dimension. */
     public record AreaPos(String dimension, int x, int y, int z) {}
 
+    /** Taille d'une structure generee. */
+    public record GeneratedSize(int x, int y, int z) {}
+
     /**
-     * Reference to a room template for this dungeon.
-     * Permet d'override les waves par donjon sans dupliquer le template.
+     * Reserved room metadata for this dungeon.
+     * Runtime wave order is configured by the top-level {@link DungeonConfig#waves()} list.
      *
      * @param id          identifiant de la salle dans le donjon (unique au donjon)
      * @param templateRef ref vers un RoomTemplate (ex: "arcadia_dungeon:rooms/entry_basic")
-     * @param waves       room-specific mob waves
      */
-    public record RoomRef(String id, String templateRef, List<Wave> waves) {}
+    public record RoomRef(String id, String templateRef) {}
 
     /** Wave de mobs dans l'ordre global de spawn du donjon. */
     public record Wave(
         String name,
         List<MobSpawn> mobs,
+        String triggerMode,
         int delayTicks,
         String startMessage,
         Boolean glowingAfterDelay,
         Integer glowingDelaySeconds
     ) {
-        public Wave(List<MobSpawn> mobs, int delayTicks) {
-            this(null, mobs, delayTicks, null, true, 60);
+        public boolean ticksTrigger() {
+            return "ticks".equalsIgnoreCase(triggerMode);
         }
     }
 
@@ -132,6 +151,8 @@ public record DungeonConfig(
         String mobType,
         int count,
         SpawnPoint spawnPoint,
+        AreaPos areaPos1,
+        AreaPos areaPos2,
         String customName,
         Double health,
         Double damage,
@@ -141,7 +162,7 @@ public record DungeonConfig(
         CombatTuning combat
     ) {
         public MobSpawn(String mobType, int count, SpawnPoint spawnPoint) {
-            this(mobType, count, spawnPoint, null, null, null, null, null, null, null);
+            this(mobType, count, spawnPoint, null, null, null, null, null, null, null, null, null);
         }
     }
 

@@ -48,15 +48,15 @@ public final class ClientSetup {
             adminStylesRegistered = true;
 
             try (var stream = ClientSetup.class.getResourceAsStream(
-                    "/assets/" + ArcadiaDungeon.MODID + "/ui/admin-global.css")) {
+                    "/assets/" + ArcadiaDungeon.MODID + "/ui/admin/admin-global.css")) {
                 if (stream == null) {
-                    ArcadiaDungeon.LOGGER.warn("[Arcadia][UI] admin-global.css not found; admin screens will use Tessera defaults");
+                    ArcadiaDungeon.LOGGER.warn("[Arcadia][UI] ui/admin/admin-global.css not found; admin screens will use Tessera defaults");
                     return;
                 }
                 TesseraTemplate.addGlobalStylesheet(new String(stream.readAllBytes(), StandardCharsets.UTF_8));
                 ArcadiaDungeon.LOGGER.info("[Arcadia][UI] Registered TesseraUI global admin stylesheet");
             } catch (IOException e) {
-                ArcadiaDungeon.LOGGER.warn("[Arcadia][UI] Failed to load admin-global.css", e);
+                ArcadiaDungeon.LOGGER.warn("[Arcadia][UI] Failed to load ui/admin/admin-global.css", e);
             }
         }
     }

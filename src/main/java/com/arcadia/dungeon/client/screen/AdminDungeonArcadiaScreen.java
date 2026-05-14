@@ -34,7 +34,7 @@ public final class AdminDungeonArcadiaScreen extends com.tesseraui.TesseraScreen
     private boolean panelDirty = true;
 
     public AdminDungeonArcadiaScreen(String dungeonId, String dungeonName) {
-        super(Component.literal("Arcadia — " + dungeonName));
+        super(Component.translatable("arcadia.admin.arcadia.title", dungeonName));
         this.dungeonId   = dungeonId;
         this.dungeonName = dungeonName;
     }
@@ -93,7 +93,7 @@ public final class AdminDungeonArcadiaScreen extends com.tesseraui.TesseraScreen
         inputHandlers.put("onReqLevel", v -> setNullableInt(cfg,    "requiredLevel", v));
 
         TesseraModel model = key -> modelData.getOrDefault(key, null);
-        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin-dungeon-arcadia");
+        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin/admin-dungeon-arcadia");
         panel = TesseraTemplateRenderer.build(template, model, handlers, inputHandlers, renderContext, px, py, panelW, panelH);
     }
 

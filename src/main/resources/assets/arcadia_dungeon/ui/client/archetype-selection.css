@@ -1,0 +1,191 @@
+.archetype-screen {
+  background: #1A1208;
+  border: 2;
+  border-color: #D89255;
+  border-radius: 4px;
+  gap: 0;
+}
+
+.arch-header {
+  background: #26190D;
+  border-bottom: 1;
+  border-color: #5A3A1C;
+  padding: 6px 8px;
+  align-items: center;
+  gap: 8px;
+}
+
+.arch-title-block {
+  flex: 1;
+  min-width: 0;
+  gap: 1px;
+}
+
+.arch-kicker {
+  color: #8FB96B;
+  font-size: 6;
+  overflow: hidden;
+}
+
+.arch-title {
+  color: #F0B27A;
+  font-size: 10;
+  font-weight: 700;
+  overflow: hidden;
+}
+
+.arch-subtitle {
+  color: #7A6A55;
+  font-size: 6;
+  overflow: hidden;
+}
+
+.arch-count {
+  color: #C2AD8E;
+  font-size: 6;
+  border: 1;
+  border-color: #3A2818;
+  background: #120D08;
+  padding: 2px 5px;
+  width: 70px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.arch-content {
+  flex: 1;
+  padding: 6px 8px;
+  gap: 4px;
+}
+
+.arch-vlist {
+  flex: 1;
+  min-height: 0;
+  background: #120D08;
+  border: 1;
+  border-color: #2A1E12;
+}
+
+.archetype-card {
+  align-items: center;
+  gap: 7px;
+  min-height: 54px;
+  padding: 5px 6px;
+  background: #1B140F;
+  border: 1;
+  border-color: #3A2818;
+}
+
+.archetype-card:hover {
+  background: #261B12;
+  border-color: #D89255;
+}
+
+.arch-icon {
+  width: 22px;
+  min-width: 22px;
+  height: 22px;
+  background: #2A1A08;
+  color: #F0B27A;
+  border: 1;
+  border-color: #A0642C;
+  font-size: 10;
+  font-weight: 700;
+  text-align: center;
+}
+
+.arch-main {
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+.arch-name-row,
+.arch-meta-row {
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.arch-name {
+  color: #F3E7D3;
+  font-size: 8;
+  font-weight: 700;
+  flex: 1;
+  overflow: hidden;
+}
+
+.arch-role {
+  color: #D89255;
+  font-size: 6;
+  border: 1;
+  border-color: #5A3A1C;
+  background: #120D08;
+  padding: 1px 4px;
+  overflow: hidden;
+  min-width: 44px;
+  text-align: center;
+}
+
+.arch-id {
+  color: #7A6A55;
+  font-size: 6;
+  overflow: hidden;
+}
+
+.arch-detail {
+  color: #C2AD8E;
+  font-size: 6;
+  overflow: hidden;
+}
+
+.select-btn,
+.secondary-btn {
+  background: #2A2019;
+  color: #C2AD8E;
+  border: 1;
+  border-color: #A0642C;
+  font-size: 7;
+  padding: 3px 10px;
+  overflow: hidden;
+}
+
+.select-btn {
+  width: 54px;
+  min-width: 54px;
+  height: 18px;
+}
+
+.select-btn:hover,
+.secondary-btn:hover {
+  background: #3A2718;
+  color: #F3E7D3;
+  border-color: #F0B27A;
+}
+
+.empty-panel {
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.empty-title {
+  color: #F0B27A;
+  font-size: 8;
+  font-weight: 700;
+}
+
+.empty-text {
+  color: #7A6A55;
+  font-size: 7;
+  text-align: center;
+}
+
+.arch-footer {
+  background: #26190D;
+  border-top: 1;
+  border-color: #5A3A1C;
+  padding: 4px 8px;
+  justify-content: flex-start;
+}

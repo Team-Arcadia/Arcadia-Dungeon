@@ -1,0 +1,385 @@
+<col class="cfg-screen wave-detail-screen">
+  <row class="cfg-header">
+    <label class="cfg-title">{{ cfg.title }}</label>
+  </row>
+
+  <row class="boss-tab-bar wave-tab-bar">
+    <button class="boss-tab-btn wave-tab-btn" onclick="tabWave">{{ tab.waveLabel }}</button>
+    <button class="boss-tab-btn wave-tab-btn" onclick="tabMobs">{{ tab.mobsLabel }}</button>
+    <button class="boss-tab-btn wave-tab-btn" onclick="tabIdentity">{{ tab.identityLabel }}</button>
+    <button class="boss-tab-btn wave-tab-btn" onclick="tabSpawn">{{ tab.spawnLabel }}</button>
+    <button class="boss-tab-btn wave-tab-btn" onclick="tabStats">{{ tab.statsLabel }}</button>
+    <button class="boss-tab-btn wave-tab-btn" onclick="tabEquip">{{ tab.equipLabel }}</button>
+    <button class="boss-tab-btn wave-tab-btn" onclick="tabCombat">{{ tab.combatLabel }}</button>
+  </row>
+
+  <col class="boss-tab-body" v-if="tab.wave">
+    <label class="section-title" data-i18n="arcadia.admin.wave.settings">Parametres de vague</label>
+    <row class="boss-main-row">
+      <col class="field-group flex-1">
+        <label class="field-label" data-i18n="arcadia.admin.common.name">Nom</label>
+        <input id="waveName" class="field-input wide" value="{{ v.waveName }}" oninput="onWaveName"
+               placeholder="{{ t:arcadia.admin.placeholder.wave_name }}"
+               tooltip-i18n="arcadia.admin.wave.tooltip.name" />
+      </col>
+    </row>
+
+    <label class="section-title" data-i18n="arcadia.admin.wave.trigger">Declenchement</label>
+    <row class="zone-mode-row">
+      <button class="{{ v.triggerOrderedClass }}" onclick="setTriggerOrdered"
+              tooltip-i18n="arcadia.admin.wave.tooltip.trigger_ordered"
+              data-i18n="arcadia.admin.wave.trigger.ordered">Ordre</button>
+      <button class="{{ v.triggerTicksClass }}" onclick="setTriggerTicks"
+              tooltip-i18n="arcadia.admin.wave.tooltip.trigger_ticks"
+              data-i18n="arcadia.admin.wave.trigger.ticks">Ticks depuis debut</button>
+    </row>
+    <row class="boss-main-row" v-if="v.showOrdered">
+      <col class="field-group wave-count-field">
+        <label class="field-label" data-i18n="arcadia.admin.wave.order">Ordre</label>
+        <input id="waveOrder" class="field-input wide" value="{{ v.waveOrder }}" oninput="onWaveOrder"
+               placeholder="{{ t:arcadia.admin.placeholder.one }}"
+               tooltip-i18n="arcadia.admin.wave.tooltip.order" />
+      </col>
+      <label class="cfg-note flex-1">{{ v.triggerNote }}</label>
+    </row>
+    <row class="boss-main-row" v-if="v.showTicks">
+      <col class="field-group wave-delay-field">
+        <label class="field-label" data-i18n="arcadia.admin.wave.ticks">Ticks</label>
+        <input id="waveDelay" class="field-input wide" value="{{ v.waveDelay }}" oninput="onWaveDelay"
+               placeholder="{{ t:arcadia.admin.placeholder.wave_delay }}"
+               tooltip-i18n="arcadia.admin.wave.tooltip.delay_ticks" />
+      </col>
+      <label class="cfg-note flex-1">{{ v.triggerNote }}</label>
+    </row>
+
+    <row class="boss-main-row">
+      <col class="field-group flex-1">
+        <label class="field-label" data-i18n="arcadia.admin.common.message">Message</label>
+        <input id="waveMessage" class="field-input wide" value="{{ v.waveMessage }}" oninput="onWaveMessage"
+               placeholder="{{ t:arcadia.admin.placeholder.wave_message }}"
+               tooltip-i18n="arcadia.admin.wave.tooltip.message" />
+      </col>
+    </row>
+
+    <row class="wave-option-strip">
+      <row class="boss-check-row wave-check-wide" tooltip-i18n="arcadia.admin.wave.tooltip.glow">
+        <checkbox class="boss-check" checked="{{ v.waveGlowChecked }}" oninput="onWaveGlow"></checkbox>
+        <label class="boss-check-label" data-i18n="arcadia.admin.wave.glow">Glow</label>
+      </row>
+      <col class="field-group wave-delay-field">
+        <label class="field-label" data-i18n="arcadia.admin.wave.glow_seconds">Glow s</label>
+        <input id="waveGlowDelay" class="field-input wide" value="{{ v.waveGlowDelay }}" oninput="onWaveGlowDelay"
+               placeholder="{{ t:arcadia.admin.placeholder.glow_delay }}"
+               tooltip-i18n="arcadia.admin.wave.tooltip.glow_delay" />
+      </col>
+      <label class="cfg-note flex-1" data-i18n="arcadia.admin.wave.settings.note">Ces reglages s'appliquent a toute la vague.</label>
+    </row>
+  </col>
+
+  <col class="boss-tab-body" v-if="tab.mobs">
+    <row class="boss-tab-toolbar">
+      <label class="section-title flex-1" data-i18n="arcadia.admin.wave.mobs">Mobs</label>
+      <label class="cfg-note">{{ mob.selected }}</label>
+      <button class="btn-add" onclick="addMob" data-i18n="arcadia.admin.wave.add.mob">+ Ajouter mob</button>
+    </row>
+    <virtual-list id="waveMobList" class="wave-mob-list" v-for="m in mob.count" row-height="34">
+      <row class="{{ m.rowClass }}" onclick="{{ m.selectKey }}">
+        <label class="row-idx">{{ m.mobIndex }}</label>
+        <col class="wave-mob-main">
+          <label class="boss-row-name">{{ m.mobName }}</label>
+          <label class="wave-row-sub">{{ m.mobType }}</label>
+        </col>
+        <label class="wave-mob-summary">{{ m.mobSummary }}</label>
+        <badge class="boss-row-chip wave-count-chip">{{ m.mobCount }}</badge>
+        <button class="btn-del boss-col-del" onclick="{{ m.delKey }}" data-i18n="arcadia.admin.common.delete.short">X</button>
+      </row>
+    </virtual-list>
+    <col class="wave-mob-selected-card">
+      <row class="value-label-row">
+        <label class="field-label flex-1" data-i18n="arcadia.admin.wave.selected_mob">Mob selectionne</label>
+        <badge class="boss-row-chip">{{ v.mobCount }}</badge>
+      </row>
+      <label class="boss-row-name">{{ mob.selectedName }}</label>
+      <label class="wave-row-sub">{{ v.mobType }}</label>
+      <label class="wave-selected-summary">{{ v.mobSummary }}</label>
+      <row class="wave-mob-actions">
+        <button class="btn-add wave-mob-action" onclick="tabIdentity" data-i18n="arcadia.admin.common.identity">Identite</button>
+        <button class="btn-add wave-mob-action" onclick="tabSpawn" data-i18n="arcadia.admin.common.spawn">Spawn</button>
+        <button class="btn-add wave-mob-action" onclick="tabStats" data-i18n="arcadia.admin.common.stats">Stats</button>
+        <button class="btn-add wave-mob-action" onclick="tabEquip" data-i18n="arcadia.admin.common.equipment">Equipement</button>
+        <button class="btn-add wave-mob-action" onclick="tabCombat" data-i18n="arcadia.admin.common.combat">Combat</button>
+      </row>
+    </col>
+  </col>
+
+  <col class="boss-tab-body" v-if="tab.identity">
+    <label class="section-title">{{ mob.selectedName }}</label>
+    <row class="boss-main-row">
+      <col class="field-group flex-1">
+        <label class="field-label" data-i18n="arcadia.admin.common.entity">Entite</label>
+        <input id="waveMobType" class="field-input wide" value="{{ v.mobType }}" oninput="onWaveMobType"
+               placeholder="{{ t:arcadia.admin.placeholder.mob_type }}" autocomplete="{{ s.entities }}"
+               tooltip-i18n="arcadia.admin.wave.tooltip.mob_type" />
+      </col>
+      <col class="field-group wave-count-field">
+        <label class="field-label" data-i18n="arcadia.admin.wave.quantity">Quantite</label>
+        <input id="waveMobCount" class="field-input wide" value="{{ v.mobCount }}" oninput="onWaveMobCount"
+               placeholder="{{ t:arcadia.admin.placeholder.one }}"
+               tooltip-i18n="arcadia.admin.wave.tooltip.mob_count" />
+      </col>
+    </row>
+    <row class="boss-main-row">
+      <col class="field-group flex-1">
+        <label class="field-label" data-i18n="arcadia.admin.wave.custom_name">Nom custom</label>
+        <input id="waveMobName" class="field-input wide" value="{{ v.mobName }}" oninput="onWaveMobName"
+               placeholder="{{ t:arcadia.admin.placeholder.mob_name }}"
+               tooltip-i18n="arcadia.admin.wave.tooltip.mob_name" />
+      </col>
+    </row>
+  </col>
+
+  <col class="boss-tab-body" v-if="tab.spawn">
+    <label class="section-title" data-i18n="arcadia.admin.wave.spawn.point">Point de spawn</label>
+    <row class="boss-main-row">
+      <col class="field-group wave-pos-field">
+        <label class="field-label" data-i18n="arcadia.admin.common.x">X</label>
+        <input id="waveSpawnX" class="field-input wide" value="{{ v.spawnX }}" oninput="onWaveSpawnX" placeholder="{{ t:arcadia.admin.placeholder.zero }}"
+               tooltip-i18n="arcadia.admin.wave.tooltip.spawn_x" />
+      </col>
+      <col class="field-group wave-pos-field">
+        <label class="field-label" data-i18n="arcadia.admin.common.y">Y</label>
+        <input id="waveSpawnY" class="field-input wide" value="{{ v.spawnY }}" oninput="onWaveSpawnY" placeholder="{{ t:arcadia.admin.placeholder.y }}"
+               tooltip-i18n="arcadia.admin.wave.tooltip.spawn_y" />
+      </col>
+      <col class="field-group wave-pos-field">
+        <label class="field-label" data-i18n="arcadia.admin.common.z">Z</label>
+        <input id="waveSpawnZ" class="field-input wide" value="{{ v.spawnZ }}" oninput="onWaveSpawnZ" placeholder="{{ t:arcadia.admin.placeholder.zero }}"
+               tooltip-i18n="arcadia.admin.wave.tooltip.spawn_z" />
+      </col>
+      <col class="field-group flex-1">
+        <label class="field-label" data-i18n="arcadia.admin.common.dimension">Dimension</label>
+        <input id="waveSpawnDim" class="field-input wide" value="{{ v.spawnDim }}" oninput="onWaveSpawnDim"
+               placeholder="{{ t:arcadia.admin.placeholder.dimension }}" autocomplete="{{ s.dimensions }}"
+               tooltip-i18n="arcadia.admin.wave.tooltip.spawn_dim" />
+      </col>
+      <button class="btn-capture wave-capture-btn" onclick="captureSpawn" data-i18n="arcadia.admin.common.capture"
+              tooltip-i18n="arcadia.admin.common.capture_position.tooltip">Capturer</button>
+    </row>
+
+    <row class="boss-tab-toolbar">
+      <label class="section-title flex-1" data-i18n="arcadia.admin.wave.spawn.area">Zone aleatoire</label>
+      <label class="cfg-note">{{ v.areaStatus }}</label>
+      <button class="btn-del" onclick="clearArea" data-i18n="arcadia.admin.wave.area.clear"
+              tooltip-i18n="arcadia.admin.wave.tooltip.area_clear">Vider</button>
+    </row>
+
+    <row class="boss-main-row">
+      <label class="wave-area-label" data-i18n="arcadia.admin.common.pos1">Pos1</label>
+      <col class="field-group wave-pos-field">
+        <label class="field-label" data-i18n="arcadia.admin.common.x">X</label>
+        <input id="waveArea1X" class="field-input wide" value="{{ v.a1X }}" oninput="onWaveArea1X" placeholder="{{ t:arcadia.admin.placeholder.zero }}"
+               tooltip-i18n="arcadia.admin.wave.tooltip.area_pos" />
+      </col>
+      <col class="field-group wave-pos-field">
+        <label class="field-label" data-i18n="arcadia.admin.common.y">Y</label>
+        <input id="waveArea1Y" class="field-input wide" value="{{ v.a1Y }}" oninput="onWaveArea1Y" placeholder="{{ t:arcadia.admin.placeholder.y }}"
+               tooltip-i18n="arcadia.admin.wave.tooltip.area_pos" />
+      </col>
+      <col class="field-group wave-pos-field">
+        <label class="field-label" data-i18n="arcadia.admin.common.z">Z</label>
+        <input id="waveArea1Z" class="field-input wide" value="{{ v.a1Z }}" oninput="onWaveArea1Z" placeholder="{{ t:arcadia.admin.placeholder.zero }}"
+               tooltip-i18n="arcadia.admin.wave.tooltip.area_pos" />
+      </col>
+      <col class="field-group flex-1">
+        <label class="field-label" data-i18n="arcadia.admin.common.dimension">Dimension</label>
+        <input id="waveArea1Dim" class="field-input wide" value="{{ v.a1Dim }}" oninput="onWaveArea1Dim"
+               autocomplete="{{ s.dimensions }}" tooltip-i18n="arcadia.admin.wave.tooltip.area_dim" />
+      </col>
+      <button class="btn-capture wave-capture-btn" onclick="captureArea1" data-i18n="arcadia.admin.common.capture"
+              tooltip-i18n="arcadia.admin.common.capture_position.tooltip">Capturer</button>
+    </row>
+
+    <row class="boss-main-row">
+      <label class="wave-area-label" data-i18n="arcadia.admin.common.pos2">Pos2</label>
+      <col class="field-group wave-pos-field">
+        <label class="field-label" data-i18n="arcadia.admin.common.x">X</label>
+        <input id="waveArea2X" class="field-input wide" value="{{ v.a2X }}" oninput="onWaveArea2X" placeholder="{{ t:arcadia.admin.placeholder.zero }}"
+               tooltip-i18n="arcadia.admin.wave.tooltip.area_pos" />
+      </col>
+      <col class="field-group wave-pos-field">
+        <label class="field-label" data-i18n="arcadia.admin.common.y">Y</label>
+        <input id="waveArea2Y" class="field-input wide" value="{{ v.a2Y }}" oninput="onWaveArea2Y" placeholder="{{ t:arcadia.admin.placeholder.y }}"
+               tooltip-i18n="arcadia.admin.wave.tooltip.area_pos" />
+      </col>
+      <col class="field-group wave-pos-field">
+        <label class="field-label" data-i18n="arcadia.admin.common.z">Z</label>
+        <input id="waveArea2Z" class="field-input wide" value="{{ v.a2Z }}" oninput="onWaveArea2Z" placeholder="{{ t:arcadia.admin.placeholder.zero }}"
+               tooltip-i18n="arcadia.admin.wave.tooltip.area_pos" />
+      </col>
+      <col class="field-group flex-1">
+        <label class="field-label" data-i18n="arcadia.admin.common.dimension">Dimension</label>
+        <input id="waveArea2Dim" class="field-input wide" value="{{ v.a2Dim }}" oninput="onWaveArea2Dim"
+               autocomplete="{{ s.dimensions }}" tooltip-i18n="arcadia.admin.wave.tooltip.area_dim" />
+      </col>
+      <button class="btn-capture wave-capture-btn" onclick="captureArea2" data-i18n="arcadia.admin.common.capture"
+              tooltip-i18n="arcadia.admin.common.capture_position.tooltip">Capturer</button>
+    </row>
+  </col>
+
+  <col class="boss-tab-body" v-if="tab.stats">
+    <label class="section-title" data-i18n="arcadia.admin.common.stats">Stats</label>
+    <row class="wave-slider-grid">
+      <col class="value-slider-group wave-slider-card" tooltip-i18n="arcadia.admin.wave.tooltip.mob_hp">
+        <row class="value-label-row">
+          <label class="field-label flex-1" data-i18n="arcadia.admin.common.hp">HP</label>
+          <label class="value-current">{{ v.mobHp }}</label>
+        </row>
+        <slider class="value-slider" min="1" max="200" value="{{ v.mobHp }}" oninput="onWaveMobHp"></slider>
+      </col>
+      <col class="value-slider-group wave-slider-card" tooltip-i18n="arcadia.admin.wave.tooltip.mob_damage">
+        <row class="value-label-row">
+          <label class="field-label flex-1" data-i18n="arcadia.admin.common.damage.short">Dmg</label>
+          <label class="value-current">{{ v.mobDmg }}</label>
+        </row>
+        <slider class="value-slider" min="0" max="50" value="{{ v.mobDmg }}" oninput="onWaveMobDmg"></slider>
+      </col>
+      <col class="value-slider-group wave-slider-card" tooltip-i18n="arcadia.admin.wave.tooltip.mob_speed">
+        <row class="value-label-row">
+          <label class="field-label flex-1" data-i18n="arcadia.admin.common.speed.short">Spd</label>
+          <label class="value-current">{{ v.mobSpd }}</label>
+        </row>
+        <slider class="value-slider" min="0" max="1" value="{{ v.mobSpd }}" oninput="onWaveMobSpd"></slider>
+      </col>
+      <col class="value-slider-group wave-slider-card" tooltip-i18n="arcadia.admin.tooltip.armor">
+        <row class="value-label-row">
+          <label class="field-label flex-1" data-i18n="arcadia.admin.common.armor">Armor</label>
+          <label class="value-current">{{ v.mobArmor }}</label>
+        </row>
+        <slider class="value-slider" min="0" max="30" value="{{ v.mobArmor }}" oninput="onWaveMobArmor"></slider>
+      </col>
+    </row>
+    <col class="field-group">
+      <label class="field-label" data-i18n="arcadia.admin.common.attributes.kv">Attributs key=value</label>
+      <input id="waveAttrs" class="field-input wide" value="{{ v.attrs }}" oninput="onWaveAttrs"
+             placeholder="{{ t:arcadia.admin.placeholder.attributes }}"
+             autocomplete="{{ s.attributes }}" tooltip-i18n="arcadia.admin.tooltip.attributes" />
+    </col>
+  </col>
+
+  <col class="boss-tab-body" v-if="tab.equip">
+    <label class="section-title" data-i18n="arcadia.admin.common.equipment">Equipement</label>
+    <row class="boss-main-row">
+      <col class="field-group equip-field">
+        <label class="field-label" data-i18n="arcadia.admin.common.slot.main">Main</label>
+        <input id="waveEqMain" class="field-input wide" value="{{ v.eqMain }}" oninput="onWaveEqMain"
+               placeholder="{{ t:arcadia.admin.placeholder.item.main }}" autocomplete="{{ s.items }}"
+               tooltip-i18n="arcadia.admin.tooltip.equipment.main" />
+      </col>
+      <col class="field-group equip-field">
+        <label class="field-label" data-i18n="arcadia.admin.common.slot.off">Off</label>
+        <input id="waveEqOff" class="field-input wide" value="{{ v.eqOff }}" oninput="onWaveEqOff"
+               placeholder="{{ t:arcadia.admin.placeholder.item.off }}" autocomplete="{{ s.items }}"
+               tooltip-i18n="arcadia.admin.tooltip.equipment.off" />
+      </col>
+      <col class="field-group equip-field">
+        <label class="field-label" data-i18n="arcadia.admin.common.slot.head">Head</label>
+        <input id="waveEqHead" class="field-input wide" value="{{ v.eqHead }}" oninput="onWaveEqHead"
+               placeholder="{{ t:arcadia.admin.placeholder.item.head }}" autocomplete="{{ s.items }}"
+               tooltip-i18n="arcadia.admin.tooltip.equipment.head" />
+      </col>
+    </row>
+    <row class="boss-main-row">
+      <col class="field-group equip-field">
+        <label class="field-label" data-i18n="arcadia.admin.common.slot.chest">Chest</label>
+        <input id="waveEqChest" class="field-input wide" value="{{ v.eqChest }}" oninput="onWaveEqChest"
+               placeholder="{{ t:arcadia.admin.placeholder.item.chest }}" autocomplete="{{ s.items }}"
+               tooltip-i18n="arcadia.admin.tooltip.equipment.chest" />
+      </col>
+      <col class="field-group equip-field">
+        <label class="field-label" data-i18n="arcadia.admin.common.slot.legs">Legs</label>
+        <input id="waveEqLegs" class="field-input wide" value="{{ v.eqLegs }}" oninput="onWaveEqLegs"
+               placeholder="{{ t:arcadia.admin.placeholder.item.legs }}" autocomplete="{{ s.items }}"
+               tooltip-i18n="arcadia.admin.tooltip.equipment.legs" />
+      </col>
+      <col class="field-group equip-field">
+        <label class="field-label" data-i18n="arcadia.admin.common.slot.feet">Feet</label>
+        <input id="waveEqFeet" class="field-input wide" value="{{ v.eqFeet }}" oninput="onWaveEqFeet"
+               placeholder="{{ t:arcadia.admin.placeholder.item.feet }}" autocomplete="{{ s.items }}"
+               tooltip-i18n="arcadia.admin.tooltip.equipment.feet" />
+      </col>
+    </row>
+  </col>
+
+  <col class="boss-tab-body" v-if="tab.combat">
+    <label class="section-title" data-i18n="arcadia.admin.common.combat">Combat</label>
+    <row class="wave-slider-grid">
+      <col class="value-slider-group wave-slider-card" tooltip-i18n="arcadia.admin.wave.tooltip.attack_range">
+        <row class="value-label-row">
+          <label class="field-label flex-1" data-i18n="arcadia.admin.wave.combat.attack_range">Range</label>
+          <label class="value-current">{{ v.combatAttackRange }}</label>
+        </row>
+        <slider class="value-slider" min="0" max="32" value="{{ v.combatAttackRange }}" oninput="onWaveCombatAttackRange"></slider>
+      </col>
+      <col class="value-slider-group wave-slider-card" tooltip-i18n="arcadia.admin.wave.tooltip.aggro_range">
+        <row class="value-label-row">
+          <label class="field-label flex-1" data-i18n="arcadia.admin.wave.combat.aggro_range">Aggro</label>
+          <label class="value-current">{{ v.combatAggroRange }}</label>
+        </row>
+        <slider class="value-slider" min="0" max="64" value="{{ v.combatAggroRange }}" oninput="onWaveCombatAggroRange"></slider>
+      </col>
+      <col class="value-slider-group wave-slider-card" tooltip-i18n="arcadia.admin.wave.tooltip.dodge_chance">
+        <row class="value-label-row">
+          <label class="field-label flex-1" data-i18n="arcadia.admin.wave.combat.dodge_chance">Dodge</label>
+          <label class="value-current">{{ v.combatDodgeChance }}</label>
+        </row>
+        <slider class="value-slider" min="0" max="1" value="{{ v.combatDodgeChance }}" oninput="onWaveCombatDodgeChance"></slider>
+      </col>
+    </row>
+    <row class="boss-main-row">
+      <col class="field-group wave-combat-field">
+        <label class="field-label" data-i18n="arcadia.admin.wave.combat.attack_cooldown">Attack ms</label>
+        <input id="waveCombatAttackCooldown" class="field-input wide" value="{{ v.combatAttackCooldown }}"
+               oninput="onWaveCombatAttackCooldown" placeholder="{{ t:arcadia.admin.placeholder.zero }}"
+               tooltip-i18n="arcadia.admin.wave.tooltip.attack_cooldown" />
+      </col>
+      <col class="field-group wave-combat-field">
+        <label class="field-label" data-i18n="arcadia.admin.wave.combat.projectile_cooldown">Projectile ms</label>
+        <input id="waveCombatProjectileCooldown" class="field-input wide" value="{{ v.combatProjectileCooldown }}"
+               oninput="onWaveCombatProjectileCooldown" placeholder="{{ t:arcadia.admin.placeholder.zero }}"
+               tooltip-i18n="arcadia.admin.wave.tooltip.projectile_cooldown" />
+      </col>
+      <col class="field-group wave-combat-field">
+        <label class="field-label" data-i18n="arcadia.admin.wave.combat.dodge_cooldown">Dodge ms</label>
+        <input id="waveCombatDodgeCooldown" class="field-input wide" value="{{ v.combatDodgeCooldown }}"
+               oninput="onWaveCombatDodgeCooldown" placeholder="{{ t:arcadia.admin.placeholder.zero }}"
+               tooltip-i18n="arcadia.admin.wave.tooltip.dodge_cooldown" />
+      </col>
+      <row class="boss-check-row wave-check-wide" tooltip-i18n="arcadia.admin.wave.tooltip.projectiles_only">
+        <checkbox class="boss-check" checked="{{ v.combatDodgeProjectilesOnly }}" oninput="onWaveCombatDodgeProjectilesOnly"></checkbox>
+        <label class="boss-check-label" data-i18n="arcadia.admin.wave.combat.projectiles_only">Projectiles</label>
+      </row>
+    </row>
+    <row class="boss-main-row">
+      <col class="field-group flex-1">
+        <label class="field-label" data-i18n="arcadia.admin.wave.combat.dodge_message">Message dodge</label>
+        <input id="waveCombatDodgeMessage" class="field-input wide" value="{{ v.combatDodgeMessage }}"
+               oninput="onWaveCombatDodgeMessage" placeholder="{{ t:arcadia.admin.placeholder.dodge_message }}"
+               tooltip-i18n="arcadia.admin.wave.tooltip.dodge_message" />
+      </col>
+    </row>
+    <row class="boss-main-row">
+      <col class="field-group flex-1">
+        <label class="field-label" data-i18n="arcadia.admin.common.combat.kv">Combat key=value</label>
+        <input id="waveCombat" class="field-input wide" value="{{ v.combat }}" oninput="onWaveCombat"
+               placeholder="{{ t:arcadia.admin.placeholder.combat }}" tooltip-i18n="arcadia.admin.tooltip.combat" />
+      </col>
+    </row>
+  </col>
+
+  <row class="cfg-footer">
+    <button class="btn-back" onclick="back" data-i18n="arcadia.admin.common.back">Retour</button>
+    <button class="btn-del" onclick="deleteWave" data-i18n="arcadia.admin.common.delete">Supprimer</button>
+    <col class="spacer" />
+    <button class="btn-save" onclick="save" data-i18n="arcadia.admin.common.save">Sauvegarder</button>
+  </row>
+</col>

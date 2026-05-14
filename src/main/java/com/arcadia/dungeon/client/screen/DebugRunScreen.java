@@ -27,7 +27,7 @@ public final class DebugRunScreen extends TesseraScreen {
     private RunStatePayload lastRenderedState = null;
 
     public DebugRunScreen() {
-        super(Component.literal("Arcadia Debug"));
+        super(Component.translatable("arcadia.client.debug.title"));
     }
 
     @Override
@@ -37,21 +37,15 @@ public final class DebugRunScreen extends TesseraScreen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics g, int mx, int my, float partialTick) {
-        // Overlay sombre simple — pas de Gaussian blur shader MC 1.21 (trop intrusif pour un debug screen)
-        g.fill(0, 0, width, height, 0x88000000);
-    }
-
-    @Override
     public void render(GuiGraphics g, int mx, int my, float partialTick) {
         RunStatePayload current = RunStateClient.getState().orElse(null);
         if (current != lastRenderedState) {
             lastRenderedState = current;
             rebuildPanel();
         }
-        renderBackground(g, mx, my, partialTick);
-        if (panel != null) panel.render(g, mx, my);
         super.render(g, mx, my, partialTick);
+        if (panel != null) panel.render(g, mx, my);
+        renderTesseraOverlays(g, mx, my);
     }
 
     @Override
@@ -75,7 +69,7 @@ public final class DebugRunScreen extends TesseraScreen {
         int py = (height - PANEL_H) / 2;
 
         TesseraModel model = buildModel(RunStateClient.getState().orElse(null));
-        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/debug-screen");
+        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/client/debug-screen");
         panel = TesseraTemplateRenderer.build(template, model, Map.of("close", this::onClose),
             px, py, PANEL_W, PANEL_H);
     }

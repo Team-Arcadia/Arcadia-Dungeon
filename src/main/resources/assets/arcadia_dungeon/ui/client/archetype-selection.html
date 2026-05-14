@@ -1,0 +1,36 @@
+<col class="archetype-screen">
+  <row class="arch-header">
+    <col class="arch-title-block">
+      <label class="arch-kicker" data-i18n="arcadia.client.arch.kicker">PREPARATION</label>
+      <label class="arch-title" data-i18n="arcadia.client.arch.title">Choisir une classe</label>
+      <label class="arch-subtitle">{{ dungeon.name }}</label>
+    </col>
+    <label class="arch-count">{{ archetype.total }}</label>
+  </row>
+
+  <col class="arch-content">
+    <col class="empty-panel" v-if="archetype.empty">
+      <label class="empty-title" data-i18n="arcadia.client.arch.empty.title">Aucune classe</label>
+      <label class="empty-text" data-i18n="arcadia.client.arch.empty.text">Configure les archetypes du donjon dans l'admin UI.</label>
+    </col>
+
+    <virtual-list id="archetypeList" class="arch-vlist" v-for="a in archetype.count" row-height="56">
+      <row class="archetype-card" onclick="{{ a.onclick }}">
+        <label class="arch-icon">{{ a.icon }}</label>
+        <col class="arch-main">
+          <row class="arch-name-row">
+            <label class="arch-name">{{ a.name }}</label>
+            <label class="arch-role">{{ a.role }}</label>
+          </row>
+          <label class="arch-id">{{ a.id }}</label>
+          <label class="arch-detail">{{ a.detail }}</label>
+        </col>
+        <button class="select-btn" onclick="{{ a.onclick }}" data-i18n="arcadia.client.arch.select">Choisir</button>
+      </row>
+    </virtual-list>
+  </col>
+
+  <row class="arch-footer">
+    <button class="secondary-btn" onclick="back" data-i18n="arcadia.client.back">Retour</button>
+  </row>
+</col>

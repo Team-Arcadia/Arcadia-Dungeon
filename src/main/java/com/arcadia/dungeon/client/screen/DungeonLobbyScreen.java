@@ -21,8 +21,8 @@ import java.util.Map;
  */
 public final class DungeonLobbyScreen extends TesseraScreen {
 
-    private static final int PANEL_W = 320;
-    private static final int PANEL_H = 220;
+    private static final int PANEL_W = 400;
+    private static final int PANEL_H = 260;
 
     private final String dungeonId;
     private final String dungeonName;
@@ -34,7 +34,7 @@ public final class DungeonLobbyScreen extends TesseraScreen {
 
     public DungeonLobbyScreen(String dungeonId, String dungeonName,
                               String archetypeId, String archetypeName) {
-        super(Component.literal("Lobby — " + dungeonName));
+        super(Component.translatable("arcadia.client.lobby.screen.title", dungeonName));
         this.dungeonId = dungeonId;
         this.dungeonName = dungeonName;
         this.archetypeId = archetypeId;
@@ -48,11 +48,6 @@ public final class DungeonLobbyScreen extends TesseraScreen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics g, int mx, int my, float partialTick) {
-        g.fill(0, 0, width, height, 0x88000000);
-    }
-
-    @Override
     public void render(GuiGraphics g, int mx, int my, float partialTick) {
         // Si en attente de réponse serveur, fermer quand la run passe IN_PROGRESS
         if (launching) {
@@ -62,9 +57,9 @@ public final class DungeonLobbyScreen extends TesseraScreen {
                 return;
             }
         }
-        renderBackground(g, mx, my, partialTick);
-        if (panel != null) panel.render(g, mx, my);
         super.render(g, mx, my, partialTick);
+        if (panel != null) panel.render(g, mx, my);
+        renderTesseraOverlays(g, mx, my);
     }
 
     @Override
@@ -101,7 +96,7 @@ public final class DungeonLobbyScreen extends TesseraScreen {
             "launch.status",  launching ? "Démarrage..." : ""
         ));
 
-        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/dungeon-lobby");
+        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/client/dungeon-lobby");
         panel = TesseraTemplateRenderer.build(template, model, Map.of(
             "launch", this::onLaunch,
             "close",  this::onClose

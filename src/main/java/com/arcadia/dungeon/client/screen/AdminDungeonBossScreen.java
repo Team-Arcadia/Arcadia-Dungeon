@@ -33,7 +33,7 @@ public final class AdminDungeonBossScreen extends com.tesseraui.TesseraScreen {
     private boolean panelDirty = true;
 
     public AdminDungeonBossScreen(String dungeonId, String dungeonName) {
-        super(Component.literal("Boss - " + dungeonName));
+        super(Component.translatable("arcadia.admin.boss.title", dungeonName));
         this.dungeonId = dungeonId;
         this.dungeonName = dungeonName;
     }
@@ -108,7 +108,7 @@ public final class AdminDungeonBossScreen extends com.tesseraui.TesseraScreen {
         }
 
         TesseraModel model = key -> modelData.getOrDefault(key, null);
-        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin-dungeon-boss");
+        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin/admin-dungeon-boss");
         panel = TesseraTemplateRenderer.build(template, model, handlers, Map.of(), renderContext, px, py, panelW, panelH);
     }
 

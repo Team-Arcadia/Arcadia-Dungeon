@@ -1,0 +1,45 @@
+<col class="cfg-screen">
+  <row class="cfg-header">
+    <label class="cfg-title">{{ cfg.title }}</label>
+  </row>
+
+  <col class="cfg-body">
+
+    <col class="field-group">
+      <label class="field-label" data-i18n="arcadia.admin.msg.start">Message de dÃ©but</label>
+      <input id="msgStart"
+             class="field-input wide"
+             value="{{ v.start }}"
+             oninput="onStart"
+             tooltip-i18n="arcadia.admin.msg.tooltip.start" />
+    </col>
+
+    <col class="field-group">
+      <label class="field-label" data-i18n="arcadia.admin.msg.victory">Message de victoire</label>
+      <input id="msgVictory"
+             class="field-input wide"
+             value="{{ v.victory }}"
+             oninput="onVictory"
+             tooltip-i18n="arcadia.admin.msg.tooltip.victory" />
+    </col>
+
+    <col class="field-group">
+      <label class="field-label" data-i18n="arcadia.admin.msg.fail">Message de dÃ©faite</label>
+      <input id="msgFail"
+             class="field-input wide"
+             value="{{ v.fail }}"
+             oninput="onFail"
+             tooltip-i18n="arcadia.admin.msg.tooltip.fail" />
+    </col>
+
+    <label class="cfg-note" data-i18n="arcadia.admin.msg.format.note">Â§7Format Minecraft supportÃ© (Â§a&aÂ§7 â†’ vert, etc.)</label>
+
+  </col>
+
+  <row class="cfg-footer">
+    <button class="btn-back"  onclick="back"  data-i18n="arcadia.admin.msg.back">â† Retour</button>
+    <col class="spacer" />
+    <button class="btn-save"  onclick="save"  data-i18n="arcadia.admin.msg.save">âœ” Sauvegarder</button>
+  </row>
+
+</col>

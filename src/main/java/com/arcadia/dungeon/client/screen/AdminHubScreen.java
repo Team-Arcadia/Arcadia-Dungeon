@@ -6,11 +6,13 @@ import com.tesseraui.TesseraPanel;
 import com.tesseraui.TesseraTemplate;
 import com.tesseraui.TesseraTemplateRenderer;
 import com.arcadia.dungeon.client.state.DungeonListClient;
+import com.arcadia.dungeon.domain.config.DungeonConfig;
 import com.arcadia.dungeon.network.DeleteDungeonPayload;
 import com.arcadia.dungeon.network.DungeonListPayload;
 import com.arcadia.dungeon.network.ReloadRequestPayload;
 import com.arcadia.dungeon.network.RequestDungeonListPayload;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -44,7 +46,7 @@ public final class AdminHubScreen extends com.tesseraui.TesseraScreen {
     private boolean panelDirty = true;
 
     public AdminHubScreen() {
-        super(Component.literal("Admin — Arcadia Dungeon"));
+        super(Component.translatable("arcadia.admin.hub.screen.title"));
     }
 
     @Override
@@ -114,11 +116,11 @@ public final class AdminHubScreen extends com.tesseraui.TesseraScreen {
         Map<String, String> modelData = new HashMap<>();
         modelData.put("dungeon.count",    String.valueOf(allDungeons.size()));
         modelData.put("dungeon.filtered", String.valueOf(filtered.size()));
-        modelData.put("filter.hint",      filtered.isEmpty() && !filterText.isEmpty() ? "Aucun résultat" : "");
+        modelData.put("filter.hint",      filtered.isEmpty() && !filterText.isEmpty() ? I18n.get("arcadia.admin.hub.empty") : "");
 
         for (int i = 0; i < filtered.size(); i++) {
             DungeonListPayload.DungeonSummary d = filtered.get(i);
-            boolean warn = d.schemaVersion() > 1;
+            boolean warn = d.schemaVersion() != DungeonConfig.CURRENT_SCHEMA_VERSION;
             modelData.put("d.name." + i,         d.name());
             modelData.put("d.status." + i,      warn ? "⚠" : "✓");
             modelData.put("d.statusClass." + i, warn ? "status-warn" : "status-ok");
@@ -127,8 +129,10 @@ public final class AdminHubScreen extends com.tesseraui.TesseraScreen {
 
         Map<String, Runnable> handlers = new HashMap<>();
         handlers.put("create",  () -> ArcadiaNavigator.push(new AdminDungeonCreateScreen()));
+        handlers.put("classes", () -> ArcadiaNavigator.push(new AdminDungeonArchetypesScreen()));
         handlers.put("reload",  () -> PacketDistributor.sendToServer(new ReloadRequestPayload()));
         handlers.put("monitor", () -> ArcadiaNavigator.push(new AdminMonitorScreen()));
+        handlers.put("debug",   () -> ArcadiaNavigator.push(new AdminDungeonDebugScreen()));
         handlers.put("close",   ArcadiaNavigator::closeAll);
 
         for (int i = 0; i < filtered.size(); i++) {
@@ -137,10 +141,10 @@ public final class AdminHubScreen extends com.tesseraui.TesseraScreen {
             handlers.put("ctx." + i, () -> {
                 final boolean canPaste = clipboard != null;
                 TesseraContextMenu.builder()
-                    .item("Copier",   () -> clipboard = d)
-                    .item("Coller",   () -> ArcadiaNavigator.push(new AdminDungeonCreateScreen(clipboard.name())), canPaste)
+                    .item(I18n.get("arcadia.admin.context.copy"),   () -> clipboard = d)
+                    .item(I18n.get("arcadia.admin.context.paste"),   () -> ArcadiaNavigator.push(new AdminDungeonCreateScreen(clipboard.name())), canPaste)
                     .separator()
-                    .item("Supprimer", () -> {
+                    .item(I18n.get("arcadia.admin.common.delete"), () -> {
                         PacketDistributor.sendToServer(new DeleteDungeonPayload(d.id()));
                         panelDirty = true;
                     })
@@ -153,7 +157,7 @@ public final class AdminHubScreen extends com.tesseraui.TesseraScreen {
         handlers.put("ctxList", () -> {
             if (clipboard == null) return;
             TesseraContextMenu.builder()
-                .item("Coller — " + clipboard.name(),
+                .item(I18n.get("arcadia.admin.context.paste_named", clipboard.name()),
                     () -> ArcadiaNavigator.push(new AdminDungeonCreateScreen(clipboard.name())))
                 .showAt((int) lastMx, (int) lastMy);
         });
@@ -166,7 +170,7 @@ public final class AdminHubScreen extends com.tesseraui.TesseraScreen {
         });
 
         TesseraModel model = key -> modelData.getOrDefault(key, null);
-        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin-hub");
+        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin/admin-hub");
         panel = TesseraTemplateRenderer.build(template, model, handlers, inputHandlers, renderContext, px, py, panelW, panelH);
     }
 

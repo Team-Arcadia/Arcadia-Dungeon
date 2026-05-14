@@ -1,0 +1,130 @@
+<col class="cfg-screen">
+  <row class="cfg-header">
+    <label class="cfg-title">{{ cfg.title }}</label>
+  </row>
+
+  <row class="boss-tab-bar">
+    <button class="boss-tab-btn" onclick="tabTemplate">{{ tab.templateLabel }}</button>
+    <button class="boss-tab-btn" onclick="tabArea">{{ tab.areaLabel }}</button>
+    <button class="boss-tab-btn" onclick="tabSpawn">{{ tab.spawnLabel }}</button>
+  </row>
+
+  <col class="boss-tab-body" v-if="tab.template">
+    <label class="section-title" data-i18n="arcadia.admin.zone.placement_mode">Mode de placement</label>
+    <row class="zone-mode-row">
+      <button class="{{ mode.templateClass }}"
+              onclick="modeTemplate"
+              tooltip-i18n="arcadia.admin.zone.mode.template.tooltip">{{ mode.templateLabel }}</button>
+      <button class="{{ mode.customClass }}"
+              onclick="modeCustom"
+              tooltip-i18n="arcadia.admin.zone.mode.custom.tooltip">{{ mode.customLabel }}</button>
+    </row>
+
+    <label class="zone-status-line">{{ template.status }}</label>
+    <col class="field-group">
+      <label class="field-label" data-i18n="arcadia.admin.zone.template_nbt">Template NBT</label>
+      <input id="templateRef"
+             class="field-input wide"
+             value="{{ template.ref }}"
+             oninput="onTemplateRef"
+             autocomplete="{{ s.structures }}"
+             tooltip-i18n="arcadia.admin.zone.template_nbt.tooltip" />
+    </col>
+
+    <col class="field-group">
+      <label class="field-label" data-i18n="arcadia.admin.zone.template_dimension">Dimension template</label>
+      <input id="templateDim"
+             class="field-input wide dim-field"
+             value="{{ template.dim }}"
+             oninput="onTemplateDim"
+             autocomplete="{{ s.dimensions }}"
+             tooltip-i18n="arcadia.admin.zone.template_dimension.tooltip" />
+    </col>
+
+    <row class="zone-origin-row">
+      <col class="field-group w-60">
+        <label class="field-label" data-i18n="arcadia.admin.zone.origin_x">Orig X</label>
+        <input id="originX" class="field-input wide" value="{{ template.originX }}" oninput="onOriginX" />
+      </col>
+      <col class="field-group w-60">
+        <label class="field-label" data-i18n="arcadia.admin.zone.origin_y">Orig Y</label>
+        <input id="originY" class="field-input wide" value="{{ template.originY }}" oninput="onOriginY" />
+      </col>
+      <col class="field-group w-60">
+        <label class="field-label" data-i18n="arcadia.admin.zone.origin_z">Orig Z</label>
+        <input id="originZ" class="field-input wide" value="{{ template.originZ }}" oninput="onOriginZ" />
+      </col>
+    </row>
+
+    <row class="zone-action-row">
+      <button class="btn-capture"
+              onclick="useOrigin"
+              tooltip-i18n="arcadia.admin.zone.use_origin.tooltip" data-i18n="arcadia.admin.common.use_position">Utiliser ma position</button>
+      <button class="btn-capture"
+              onclick="generateTemplate"
+              tooltip-i18n="arcadia.admin.zone.generate.tooltip" data-i18n="arcadia.admin.zone.generate_nbt">Generer NBT</button>
+      <button class="btn-danger"
+              onclick="resetTemplate"
+              tooltip-i18n="arcadia.admin.zone.reset.tooltip" data-i18n="arcadia.admin.zone.reset_nbt">Reset NBT</button>
+    </row>
+  </col>
+
+  <col class="boss-tab-body" v-if="tab.area">
+    <label class="section-title" data-i18n="arcadia.admin.zone.global_zone">Zone globale</label>
+    <label class="{{ area.statusClass }}">{{ area.status }}</label>
+    <row class="zone-pos-row">
+      <label class="field-label flex-1">{{ area.pos1 }}</label>
+      <label class="field-label flex-1">{{ area.pos2 }}</label>
+    </row>
+    <button class="btn-capture"
+            onclick="areaWand"
+            tooltip-i18n="arcadia.admin.zone.wand.tooltip" data-i18n="arcadia.admin.zone.define_wand">Definir avec wand</button>
+  </col>
+
+  <col class="boss-tab-body" v-if="tab.spawn">
+    <label class="section-title" data-i18n="arcadia.admin.zone.spawn">Coordonnees spawn</label>
+    <label class="{{ zone.statusClass }}">{{ zone.status }}</label>
+
+    <row class="zone-origin-row">
+      <col class="field-group w-60">
+        <label class="field-label" data-i18n="arcadia.admin.zone.x">X</label>
+        <input id="zx" class="field-input wide"
+               value="{{ v.x }}" oninput="onX"
+               tooltip-i18n="arcadia.admin.zone.tooltip.x" />
+      </col>
+      <col class="field-group w-60">
+        <label class="field-label" data-i18n="arcadia.admin.zone.y">Y</label>
+        <input id="zy" class="field-input wide"
+               value="{{ v.y }}" oninput="onY"
+               tooltip-i18n="arcadia.admin.zone.tooltip.y" />
+      </col>
+      <col class="field-group w-60">
+        <label class="field-label" data-i18n="arcadia.admin.zone.z">Z</label>
+        <input id="zz" class="field-input wide"
+               value="{{ v.z }}" oninput="onZ"
+               tooltip-i18n="arcadia.admin.zone.tooltip.z" />
+      </col>
+    </row>
+
+    <col class="field-group">
+      <label class="field-label" data-i18n="arcadia.admin.zone.dim">Dimension spawn</label>
+      <input id="zdim"
+             class="field-input wide dim-field"
+             value="{{ v.dim }}"
+             oninput="onDim"
+             autocomplete="{{ s.dimensions }}"
+             tooltip-i18n="arcadia.admin.zone.tooltip.dim" />
+    </col>
+
+    <button class="btn-capture"
+            onclick="capture"
+            tooltip-i18n="arcadia.admin.zone.tooltip.capture"
+            data-i18n="arcadia.admin.zone.capture">Capturer ma position</button>
+  </col>
+
+  <row class="cfg-footer">
+    <button class="btn-back" onclick="back" data-i18n="arcadia.admin.zone.back">Retour</button>
+    <col class="spacer" />
+    <button class="btn-save" onclick="save" data-i18n="arcadia.admin.zone.save">Sauvegarder</button>
+  </row>
+</col>

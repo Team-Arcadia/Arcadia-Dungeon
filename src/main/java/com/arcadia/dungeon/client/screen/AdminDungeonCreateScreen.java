@@ -7,6 +7,7 @@ import com.tesseraui.TesseraTemplateRenderer;
 import com.arcadia.dungeon.ArcadiaDungeon;
 import com.arcadia.dungeon.network.CreateDungeonPayload;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -42,12 +43,12 @@ public final class AdminDungeonCreateScreen extends com.tesseraui.TesseraScreen 
     private boolean panelDirty = false;
 
     public AdminDungeonCreateScreen() {
-        super(Component.literal("Admin — Créer un donjon"));
+        super(Component.translatable("arcadia.admin.create.screen.title"));
     }
 
     /** Constructeur avec préremplissage (utilisé par le coller du menu contextuel). */
     public AdminDungeonCreateScreen(String prefillName) {
-        super(Component.literal("Admin — Créer un donjon"));
+        super(Component.translatable("arcadia.admin.create.screen.title"));
         this.fName = prefillName != null ? prefillName : "";
     }
 
@@ -97,9 +98,9 @@ public final class AdminDungeonCreateScreen extends com.tesseraui.TesseraScreen 
         int py = (height - panelH) / 2;
 
         Map<String, String> modelData = new HashMap<>();
-        modelData.put("err.id",    errors.contains("id")    ? "ID requis (ex: tgh ou arcadia_dungeon:tgh)" : "");
-        modelData.put("err.name",  errors.contains("name")  ? "Nom requis"               : "");
-        modelData.put("err.lives", errors.contains("lives") ? "Vies : 1–99"              : "");
+        modelData.put("err.id",    errors.contains("id")    ? I18n.get("arcadia.admin.create.err.id") : "");
+        modelData.put("err.name",  errors.contains("name")  ? I18n.get("arcadia.admin.create.err.name") : "");
+        modelData.put("err.lives", errors.contains("lives") ? I18n.get("arcadia.admin.create.err.lives") : "");
         modelData.put("err.class.id",    errors.contains("id")    ? "field-error" : "");
         modelData.put("err.class.name",  errors.contains("name")  ? "field-error" : "");
         modelData.put("err.class.lives", errors.contains("lives") ? "field-error" : "");
@@ -115,7 +116,7 @@ public final class AdminDungeonCreateScreen extends com.tesseraui.TesseraScreen 
         inputHandlers.put("onLives", t -> fLives = t != null ? t : "");
 
         TesseraModel model = key -> modelData.getOrDefault(key, null);
-        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin-dungeon-create");
+        TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin/admin-dungeon-create");
         panel = TesseraTemplateRenderer.build(template, model, handlers, inputHandlers, renderContext, px, py, panelW, panelH);
     }
 

@@ -19,37 +19,32 @@ class DungeonConfigGsonTest {
     void roundtripExampleDungeon() {
         // Given : un DungeonConfig complet
         DungeonConfig original = new DungeonConfig(
-            1,
+            DungeonConfig.CURRENT_SCHEMA_VERSION,
             "arcadia_dungeon:example",
             "arcadia.dungeon.example.name",
             new DungeonConfig.Currency("arcadia.currency.gears.name", "arcadia_dungeon:textures/icons/gear.png"),
             3,
+            List.of(),
             List.of(
-                new DungeonConfig.RoomRef(
-                    "entry",
-                    "arcadia_dungeon:rooms/entry_basic",
-                    List.of(
-                        new DungeonConfig.Wave(
-                            List.of(
-                                new DungeonConfig.MobSpawn("minecraft:zombie", 2, null)
-                            ),
-                            0
-                        ),
-                        new DungeonConfig.Wave(
-                            List.of(
-                                new DungeonConfig.MobSpawn("minecraft:skeleton", 1, null)
-                            ),
-                            30
-                        )
-                    )
+                new DungeonConfig.Wave(
+                    "Wave 1",
+                    List.of(new DungeonConfig.MobSpawn("minecraft:zombie", 2, null)),
+                    "ordered",
+                    0,
+                    "Wave 1 arrives",
+                    true,
+                    60
                 ),
-                new DungeonConfig.RoomRef(
-                    "boss_chamber",
-                    "arcadia_dungeon:rooms/boss_arena",
-                    List.of()
+                new DungeonConfig.Wave(
+                    "Wave 2",
+                    List.of(new DungeonConfig.MobSpawn("minecraft:skeleton", 1, null)),
+                    "ticks",
+                    30,
+                    "Wave 2 arrives",
+                    false,
+                    0
                 )
             ),
-            List.of(),
             List.of(
                 new DungeonConfig.BossDefinition(
                     "minecraft:wither_skeleton",
@@ -92,6 +87,9 @@ class DungeonConfigGsonTest {
             null,
             null,
             null,
+            null,
+            null,
+            null,
             null
         );
 
@@ -101,10 +99,12 @@ class DungeonConfigGsonTest {
 
         // Then : equals (records ont equals généré)
         assertEquals(original, roundtrip);
-        assertEquals(1, roundtrip.schemaVersion());
+        assertEquals(2, roundtrip.schemaVersion());
         assertEquals("arcadia_dungeon:example", roundtrip.id());
         assertEquals(3, roundtrip.lives());
-        assertEquals(2, roundtrip.rooms().size());
+        assertEquals(0, roundtrip.rooms().size());
+        assertEquals(2, roundtrip.configuredWaves().size());
+        assertEquals("ticks", roundtrip.configuredWaves().get(1).triggerMode());
         assertEquals(1, roundtrip.configuredBosses().size());
         assertEquals(2, roundtrip.configuredBosses().get(0).phases().size());
         assertEquals(50, roundtrip.rewards().currency());
@@ -113,7 +113,7 @@ class DungeonConfigGsonTest {
     }
 
     @Test
-    void schemaVersionConstantIsOne() {
-        assertEquals(1, DungeonConfig.CURRENT_SCHEMA_VERSION);
+    void schemaVersionConstantIsTwo() {
+        assertEquals(2, DungeonConfig.CURRENT_SCHEMA_VERSION);
     }
 }

@@ -1,55 +1,74 @@
 {
-  "_doc": "Donjon exemple Arcadia v1.0 — généré au premier boot. Auto-documentation par les champs _doc. Tu peux supprimer ce fichier ou le copier comme base pour ton propre donjon. Voir le wiki ou _bmad-output/planning-artifacts/prd-v1.md §7 pour le schéma complet.",
+  "_doc": "Arcadia Dungeon example config for the current development schema. This file is seeded on first boot and can be copied as a base for a custom dungeon.",
 
-  "_doc_schemaVersion": "Version du schéma config. Toujours 1 en MVP. Permet à v1.1+ de migrer sans casser les configs existantes.",
-  "schemaVersion": 1,
+  "_doc_schemaVersion": "Current config schema. Development builds are strict: update JSON when the schema changes.",
+  "schemaVersion": 2,
 
-  "_doc_id": "Identifiant unique du donjon. Format namespace:id. Doit correspondre au nom de fichier (ex: example_dungeon.json → arcadia_dungeon:example_dungeon).",
+  "_doc_id": "Unique dungeon id. Format namespace:id.",
   "id": "arcadia_dungeon:example",
 
-  "_doc_nameKey": "Nom affiché. Soit clé i18n (résolue dans lang/fr_fr.json) soit literal string.",
+  "_doc_nameKey": "Displayed name. Can be an i18n key or a literal string.",
   "nameKey": "arcadia.dungeon.example.name",
 
-  "_doc_currency": "Currency Arcadia distribuée à fin de run. Configurable par donjon : nom + icône.",
+  "_doc_currency": "Arcadia currency awarded at the end of a run.",
   "currency": {
     "nameKey": "arcadia.currency.gears.name",
     "iconPath": "arcadia_dungeon:textures/icons/gear.png"
   },
 
-  "_doc_lives": "Pool de vies partagé par le groupe. Chaque mort consomme 1. À 0 → DEFEAT. MVP : 3 vies fixes.",
+  "_doc_lives": "Shared life pool for the group.",
   "lives": 3,
 
-  "_doc_rooms": "Liste ordonnée 2-3 salles. Chaque salle référence un template (structure Minecraft) + ses waves de mobs.",
-  "rooms": [
+  "_doc_rooms": "Reserved for future room metadata. Wave order is now configured by the top-level waves array.",
+  "rooms": [],
+
+  "_doc_waves": "Global dungeon wave sequence. triggerMode can be ordered or ticks. ordered waits for the previous wave; ticks uses delayTicks since dungeon start.",
+  "waves": [
     {
-      "id": "entry",
-      "templateRef": "arcadia_dungeon:rooms/entry_basic",
-      "waves": [
+      "_doc": "Wave 1: ordered first wave.",
+      "name": "Wave 1",
+      "triggerMode": "ordered",
+      "delayTicks": 0,
+      "startMessage": "La vague arrive...",
+      "glowingAfterDelay": true,
+      "glowingDelaySeconds": 60,
+      "mobs": [
         {
-          "_doc": "Wave 1 : 2 zombies au démarrage (delay 0).",
-          "mobs": [{ "mobType": "minecraft:zombie", "count": 2 }],
-          "delayTicks": 0
-        },
-        {
-          "_doc": "Wave 2 : 1 squelette après 30 ticks (1.5s).",
-          "mobs": [{ "mobType": "minecraft:skeleton", "count": 1 }],
-          "delayTicks": 30
+          "mobType": "minecraft:zombie",
+          "count": 2,
+          "spawnPoint": {
+            "dimension": "arcadia_dungeon:dungeon",
+            "x": 0.0,
+            "y": 64.0,
+            "z": 0.0
+          }
         }
       ]
     },
     {
-      "id": "transition",
-      "templateRef": "arcadia_dungeon:rooms/corridor_short",
-      "waves": []
-    },
-    {
-      "id": "boss_chamber",
-      "templateRef": "arcadia_dungeon:rooms/boss_arena",
-      "waves": []
+      "_doc": "Wave 2: timed wave, spawned 30 ticks after run start.",
+      "name": "Wave 2",
+      "triggerMode": "ticks",
+      "delayTicks": 30,
+      "startMessage": "Une nouvelle vague approche...",
+      "glowingAfterDelay": true,
+      "glowingDelaySeconds": 60,
+      "mobs": [
+        {
+          "mobType": "minecraft:skeleton",
+          "count": 1,
+          "spawnPoint": {
+            "dimension": "arcadia_dungeon:dungeon",
+            "x": 4.0,
+            "y": 64.0,
+            "z": 0.0
+          }
+        }
+      ]
     }
   ],
 
-  "_doc_bosses": "Boss du donjon. 1 boss minimum. Chaque entree peut etre optionnelle via optional + spawnChance.",
+  "_doc_bosses": "Dungeon bosses. At least one boss is required.",
   "bosses": [
     {
       "id": "guardian",
@@ -59,18 +78,18 @@
       "spawnChance": 1.0,
       "requiredKill": true,
       "phases": [
-      {
-        "_doc": "Phase 2 : à 50% HP, dégâts boss × 1.2.",
-        "triggerHpPercent": 50,
-        "damageMultiplier": 1.2,
-        "speedMultiplier": 1.0
-      },
-      {
-        "_doc": "Phase 3 : à 25% HP, dégâts × 1.5 + vitesse × 1.1.",
-        "triggerHpPercent": 25,
-        "damageMultiplier": 1.5,
-        "speedMultiplier": 1.1
-      }
+        {
+          "_doc": "Phase 2 at 50 percent HP.",
+          "triggerHpPercent": 50,
+          "damageMultiplier": 1.2,
+          "speedMultiplier": 1.0
+        },
+        {
+          "_doc": "Phase 3 at 25 percent HP.",
+          "triggerHpPercent": 25,
+          "damageMultiplier": 1.5,
+          "speedMultiplier": 1.1
+        }
       ],
       "rewards": [
         { "item": "minecraft:diamond", "min": 1, "max": 1, "chance": 0.5 }
@@ -78,7 +97,7 @@
     }
   ],
 
-  "_doc_rewards": "Récompenses VICTORY. DEFEAT = currency × 0.25 (pas de loot).",
+  "_doc_rewards": "Victory rewards. Defeat applies the configured defeat multiplier in code.",
   "rewards": {
     "currency": 50,
     "loot": [
@@ -86,31 +105,15 @@
     ]
   },
 
-  "_doc_structureRef": "Référence NBT à placer lors du /arcadia setup. Format namespace:path (sans .nbt). Nul = donjon déjà présent dans le monde, on enregistre juste le spawn.",
+  "_doc_structureRef": "NBT structure to place when using template generation. Null means an already built custom dungeon.",
   "structureRef": "arcadia_dungeon:chateau_defaut",
 
-  "_doc_dimension": "Dimension où placer la structure et téléporter les joueurs. Nul = dimension courante de l'admin au moment du /arcadia setup.",
+  "_doc_dimension": "Dimension where the dungeon template is placed and players are teleported.",
   "dimension": "arcadia_dungeon:dungeon",
 
-  "_doc_placementY": "Y forcé pour le coin NW de la structure NBT. Nul = Y courant de l'admin. Utile en dimension void où Y=0 est trop bas.",
+  "_doc_placementY": "Forced Y for the NBT origin.",
   "placementY": 64,
 
-  "_doc_archetypes": "3 kits de départ équilibrés. Joueur en choisit 1 au join. Items du kit = SEULS items utilisables en run (inventaire externe mis de côté).",
-  "archetypes": [
-    {
-      "id": "warrior",
-      "nameKey": "arcadia.archetype.warrior.name",
-      "items": ["minecraft:iron_sword", "minecraft:iron_chestplate", "minecraft:iron_helmet"]
-    },
-    {
-      "id": "mage",
-      "nameKey": "arcadia.archetype.mage.name",
-      "items": ["minecraft:stick", "minecraft:leather_chestplate", "minecraft:potion"]
-    },
-    {
-      "id": "archer",
-      "nameKey": "arcadia.archetype.archer.name",
-      "items": ["minecraft:bow", "minecraft:leather_chestplate", "minecraft:arrow"]
-    }
-  ]
+  "_doc_archetypes": "Deprecated per-dungeon classes kept empty. Free player classes are configured globally.",
+  "archetypes": []
 }
