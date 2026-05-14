@@ -33,6 +33,7 @@ import com.arcadia.dungeon.network.SaveZonePayload;
 import com.arcadia.dungeon.network.RunStatePayload;
 import com.arcadia.dungeon.network.ServerPayloadHandler;
 import com.arcadia.dungeon.network.StartRunPayload;
+import com.arcadia.dungeon.network.StructurePlacementStatusPayload;
 import com.arcadia.dungeon.persistence.DungeonRegistry;
 import com.arcadia.dungeon.persistence.GlobalClassRegistry;
 import com.arcadia.dungeon.persistence.PlacementRegistry;
@@ -40,6 +41,7 @@ import com.arcadia.dungeon.services.StructurePlacer;
 import com.arcadia.dungeon.client.hud.RunOverlayHud;
 import com.arcadia.dungeon.services.ArchetypeService;
 import com.arcadia.dungeon.services.BossPhaseService;
+import com.arcadia.dungeon.services.DungeonInstanceService;
 import com.arcadia.dungeon.services.DungeonZoneProtectionService;
 import com.arcadia.dungeon.services.PlayerDeathService;
 import com.arcadia.dungeon.services.PlayerProgressService;
@@ -47,6 +49,7 @@ import com.arcadia.dungeon.services.RewardDistributionService;
 import com.arcadia.dungeon.services.RoomProgressionService;
 import com.arcadia.dungeon.services.RunCleanupService;
 import com.arcadia.dungeon.services.RunLifecycleService;
+import com.arcadia.dungeon.services.StructurePlacementScheduler;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -95,6 +98,8 @@ public class ArcadiaDungeon {
     private static volatile RunCleanupService       runCleanupService;
     private static volatile PlacementRegistry       placementRegistry;
     private static volatile StructurePlacer         structurePlacer;
+    private static volatile StructurePlacementScheduler structurePlacementScheduler;
+    private static volatile DungeonInstanceService dungeonInstanceService;
     private static volatile DungeonAreaWandEventHandler areaWandEventHandler;
     private static volatile DungeonZoneProtectionService zoneProtectionService;
 
@@ -162,6 +167,18 @@ public class ArcadiaDungeon {
         StructurePlacer p = structurePlacer;
         if (p == null) throw new IllegalStateException("StructurePlacer not initialized — call after ServerStartingEvent");
         return p;
+    }
+
+    public static StructurePlacementScheduler structurePlacementScheduler() {
+        StructurePlacementScheduler s = structurePlacementScheduler;
+        if (s == null) throw new IllegalStateException("StructurePlacementScheduler not initialized - call after ServerStartingEvent");
+        return s;
+    }
+
+    public static DungeonInstanceService dungeonInstanceService() {
+        DungeonInstanceService s = dungeonInstanceService;
+        if (s == null) throw new IllegalStateException("DungeonInstanceService not initialized - call after ServerStartingEvent");
+        return s;
     }
 
     public ArcadiaDungeon(IEventBus modEventBus) {
@@ -234,6 +251,8 @@ public class ArcadiaDungeon {
             ServerPayloadHandler::handleRequestAreaWand);
         registrar.playToClient(AreaWandStatusPayload.TYPE, AreaWandStatusPayload.CODEC,
             ClientPayloadHandler::handleAreaWandStatus);
+        registrar.playToClient(StructurePlacementStatusPayload.TYPE, StructurePlacementStatusPayload.CODEC,
+            ClientPayloadHandler::handleStructurePlacementStatus);
         LOGGER.info("[Arcadia][BOOT] Payloads registered (S2C: RunState/DungeonList/OpenAdminHub/OpenResultScreen/OpenDebugScreen/MonitorData/DungeonEditData | C2S: StartRun/AbandonRun/JoinRun/RequestResync/RequestDungeonList/ReloadRequest/CreateDungeon/DeleteDungeon/MonitorRefresh/ForceEndRun/RequestDungeonEdit/SaveDungeonConfig/SaveGlobalClasses/SaveZone/CaptureSpawn/GenerateDungeonTemplate/RequestAreaWand)");
     }
 
@@ -291,6 +310,16 @@ public class ArcadiaDungeon {
                 structurePlacer = new StructurePlacer();
             }
 
+            if (structurePlacementScheduler == null) {
+                structurePlacementScheduler = new StructurePlacementScheduler();
+                NeoForge.EVENT_BUS.register(structurePlacementScheduler);
+            }
+
+            if (dungeonInstanceService == null) {
+                dungeonInstanceService = new DungeonInstanceService(dungeonRegistry, structurePlacementScheduler);
+                runLifecycleService.setDungeonInstanceService(dungeonInstanceService);
+            }
+
             if (areaWandEventHandler == null) {
                 areaWandEventHandler = new DungeonAreaWandEventHandler();
                 NeoForge.EVENT_BUS.register(areaWandEventHandler);
@@ -313,6 +342,8 @@ public class ArcadiaDungeon {
             if (runCleanupService != null)    { runCleanupService.shutdown(); runCleanupService = null; }
             if (areaWandEventHandler != null) { NeoForge.EVENT_BUS.unregister(areaWandEventHandler); areaWandEventHandler = null; }
             if (zoneProtectionService != null) { NeoForge.EVENT_BUS.unregister(zoneProtectionService); zoneProtectionService = null; }
+            if (dungeonInstanceService != null) { dungeonInstanceService.shutdown(); dungeonInstanceService = null; }
+            if (structurePlacementScheduler != null) { NeoForge.EVENT_BUS.unregister(structurePlacementScheduler); structurePlacementScheduler.shutdown(); structurePlacementScheduler = null; }
             if (playerDeathService != null)   { playerDeathService.shutdown(); NeoForge.EVENT_BUS.unregister(playerDeathService); playerDeathService = null; }
             if (bossPhaseService != null)     { NeoForge.EVENT_BUS.unregister(bossPhaseService); bossPhaseService = null; }
             if (roomProgressionService != null) { NeoForge.EVENT_BUS.unregister(roomProgressionService); roomProgressionService = null; }
@@ -332,7 +363,15 @@ public class ArcadiaDungeon {
             new ArcadiaDebugCommand().register(event.getDispatcher());
             if (placementRegistry == null) placementRegistry = new PlacementRegistry();
             if (structurePlacer == null) structurePlacer = new StructurePlacer();
-            new ArcadiaSetupCommand(structurePlacer, placementRegistry).register(event.getDispatcher());
+            if (structurePlacementScheduler == null) {
+                structurePlacementScheduler = new StructurePlacementScheduler();
+                NeoForge.EVENT_BUS.register(structurePlacementScheduler);
+            }
+            if (dungeonInstanceService == null && dungeonRegistry != null) {
+                dungeonInstanceService = new DungeonInstanceService(dungeonRegistry, structurePlacementScheduler);
+                if (runLifecycleService != null) runLifecycleService.setDungeonInstanceService(dungeonInstanceService);
+            }
+            new ArcadiaSetupCommand(placementRegistry, structurePlacementScheduler).register(event.getDispatcher());
             new ArcadiaAdminCommand().register(event.getDispatcher());
             LOGGER.info("[Arcadia][BOOT] Commands registered (/arcadia reload, /arcadia setup, /arcadia debug *, /arcadia admin)");
         }

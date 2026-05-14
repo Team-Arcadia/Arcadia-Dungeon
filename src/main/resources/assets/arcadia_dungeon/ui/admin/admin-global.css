@@ -223,6 +223,7 @@
 
 .status-ok { color: var(--green-ok); font-size: 6; }
 .status-unset { color: var(--copper); font-size: 6; }
+.status-error { color: var(--red-err); font-size: 6; }
 
 .zone-mode-row,
 .zone-action-row,
@@ -264,6 +265,14 @@
   flex-shrink: 0;
 }
 
+.generation-status {
+  height: 9px;
+  min-height: 9px;
+  font-size: 6;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
 .zone-action-row .btn-capture,
 .zone-action-row .btn-danger {
   flex: 1;
@@ -274,6 +283,13 @@
 .zone-origin-row .field-group {
   flex: 1;
   min-width: 0;
+}
+
+.field-value {
+  height: 12px;
+  color: var(--text-mid);
+  font-size: 6;
+  overflow: hidden;
 }
 
 .dim-field {

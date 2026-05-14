@@ -22,6 +22,7 @@
     </row>
 
     <label class="zone-status-line">{{ template.status }}</label>
+    <label class="generation-status {{ generation.statusClass }}" v-if="generation.visible">{{ generation.status }}</label>
     <col class="field-group">
       <label class="field-label" data-i18n="arcadia.admin.zone.template_nbt">Template NBT</label>
       <input id="templateRef"
@@ -44,23 +45,28 @@
 
     <row class="zone-origin-row">
       <col class="field-group w-60">
-        <label class="field-label" data-i18n="arcadia.admin.zone.origin_x">Orig X</label>
-        <input id="originX" class="field-input wide" value="{{ template.originX }}" oninput="onOriginX" />
+        <label class="field-label" data-i18n="arcadia.admin.zone.placement_slot">Slot</label>
+        <input id="placementSlot"
+               class="field-input wide"
+               value="{{ template.slot }}"
+               oninput="onPlacementSlot"
+               tooltip-i18n="arcadia.admin.zone.placement_slot.tooltip" />
       </col>
       <col class="field-group w-60">
         <label class="field-label" data-i18n="arcadia.admin.zone.origin_y">Orig Y</label>
-        <input id="originY" class="field-input wide" value="{{ template.originY }}" oninput="onOriginY" />
+        <input id="originY"
+               class="field-input wide"
+               value="{{ template.originY }}"
+               oninput="onOriginY"
+               tooltip-i18n="arcadia.admin.zone.origin_y.tooltip" />
       </col>
-      <col class="field-group w-60">
-        <label class="field-label" data-i18n="arcadia.admin.zone.origin_z">Orig Z</label>
-        <input id="originZ" class="field-input wide" value="{{ template.originZ }}" oninput="onOriginZ" />
+      <col class="field-group flex-1">
+        <label class="field-label" data-i18n="arcadia.admin.zone.slot_origin">Origine calculee</label>
+        <label class="field-value">{{ template.originPreview }}</label>
       </col>
     </row>
 
     <row class="zone-action-row">
-      <button class="btn-capture"
-              onclick="useOrigin"
-              tooltip-i18n="arcadia.admin.zone.use_origin.tooltip" data-i18n="arcadia.admin.common.use_position">Utiliser ma position</button>
       <button class="btn-capture"
               onclick="generateTemplate"
               tooltip-i18n="arcadia.admin.zone.generate.tooltip" data-i18n="arcadia.admin.zone.generate_nbt">Generer NBT</button>

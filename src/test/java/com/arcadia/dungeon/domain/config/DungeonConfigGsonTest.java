@@ -90,6 +90,7 @@ class DungeonConfigGsonTest {
             null,
             null,
             null,
+            null,
             null
         );
 

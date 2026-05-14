@@ -7,10 +7,12 @@ import com.tesseraui.TesseraTemplateRenderer;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.arcadia.dungeon.client.state.DungeonEditClient;
+import com.arcadia.dungeon.client.state.StructurePlacementClient;
 import com.arcadia.dungeon.network.CaptureSpawnPayload;
 import com.arcadia.dungeon.network.GenerateDungeonTemplatePayload;
 import com.arcadia.dungeon.network.RequestAreaWandPayload;
 import com.arcadia.dungeon.network.SaveZonePayload;
+import com.arcadia.dungeon.services.DungeonPlacementSlots;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.language.I18n;
@@ -46,12 +48,14 @@ public final class AdminDungeonZoneScreen extends com.tesseraui.TesseraScreen {
     // Valeurs de saisie manuelle (fallback sur DungeonEditClient au premier build)
     private double manualX, manualY, manualZ;
     private String manualDim = AdminUiSuggestions.DEFAULT_DIMENSION;
-    private int originX, originY = 64, originZ;
+    private int originY = DungeonPlacementSlots.DEFAULT_Y;
+    private int placementSlot = DungeonPlacementSlots.MIN_SLOT;
     private String templateRef = "arcadia_dungeon:chateau_defaut";
     private String templateDim = AdminUiSuggestions.DEFAULT_DIMENSION;
     private String activeTab = "template";
     private boolean initialized = false;
     private int seenAreaVersion = -1;
+    private String seenGenerationStatus = "";
 
     public AdminDungeonZoneScreen(String dungeonId, String dungeonName) {
         super(Component.translatable("arcadia.admin.zone.title", dungeonName));
@@ -82,6 +86,11 @@ public final class AdminDungeonZoneScreen extends com.tesseraui.TesseraScreen {
             seenAreaVersion = DungeonEditClient.areaVersion();
             loadTemplateFieldsFromConfig();
             syncTemplateInputStates();
+            panelDirty = true;
+        }
+        String generationStatusKey = generationStatusKey();
+        if (!generationStatusKey.equals(seenGenerationStatus)) {
+            seenGenerationStatus = generationStatusKey;
             panelDirty = true;
         }
         if (panelDirty) { rebuildPanel(); panelDirty = false; }
@@ -134,11 +143,14 @@ public final class AdminDungeonZoneScreen extends com.tesseraui.TesseraScreen {
         modelData.put("mode.templateLabel", modeLabel(templateMode, "arcadia.admin.zone.mode.template"));
         modelData.put("mode.customLabel",   modeLabel(!templateMode, "arcadia.admin.zone.mode.custom"));
         modelData.put("template.status",    templateStatus(cfg));
+        modelData.put("generation.status",  generationStatus());
+        modelData.put("generation.statusClass", generationStatusClass());
+        modelData.put("generation.visible", String.valueOf(StructurePlacementClient.get(dungeonId).isPresent()));
         modelData.put("template.ref",       templateRef);
         modelData.put("template.dim",       templateDim);
-        modelData.put("template.originX",   String.valueOf(originX));
+        modelData.put("template.slot",      String.valueOf(placementSlot));
         modelData.put("template.originY",   String.valueOf(originY));
-        modelData.put("template.originZ",   String.valueOf(originZ));
+        modelData.put("template.originPreview", originPreview());
         modelData.put("s.structures",       AdminUiSuggestions.STRUCTURES);
         modelData.put("zone.statusKey",    spawnSet ? "arcadia.admin.zone.status.set" : "arcadia.admin.zone.status.unset");
         modelData.put("zone.status",       I18n.get(spawnSet ? "arcadia.admin.zone.status.set" : "arcadia.admin.zone.status.unset"));
@@ -166,19 +178,6 @@ public final class AdminDungeonZoneScreen extends com.tesseraui.TesseraScreen {
         handlers.put("modeCustom", () -> {
             cfg.addProperty("generationMode", "custom");
             panelDirty = true;
-        });
-        handlers.put("useOrigin", () -> {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.player != null) {
-                originX = (int) Math.floor(mc.player.getX());
-                originY = (int) Math.floor(mc.player.getY());
-                originZ = (int) Math.floor(mc.player.getZ());
-                templateDim = mc.player.level().dimension().location().toString();
-                setStr(cfg, "dimension", templateDim);
-                setNullableInt(cfg, "placementY", String.valueOf(originY));
-                syncTemplateInputStates();
-                panelDirty = true;
-            }
         });
         handlers.put("generateTemplate", () -> generateTemplate(false));
         handlers.put("resetTemplate", () -> generateTemplate(true));
@@ -210,9 +209,11 @@ public final class AdminDungeonZoneScreen extends com.tesseraui.TesseraScreen {
         inputHandlers.put("onDim", v -> { if (v != null && !v.isBlank()) manualDim = v.trim(); });
         inputHandlers.put("onTemplateRef", v -> { templateRef = clean(v, ""); setStr(cfg, "structureRef", templateRef); });
         inputHandlers.put("onTemplateDim", v -> { templateDim = clean(v, AdminUiSuggestions.DEFAULT_DIMENSION); setStr(cfg, "dimension", templateDim); });
-        inputHandlers.put("onOriginX", v -> originX = intOr(v, originX));
         inputHandlers.put("onOriginY", v -> { originY = intOr(v, originY); setNullableInt(cfg, "placementY", String.valueOf(originY)); });
-        inputHandlers.put("onOriginZ", v -> originZ = intOr(v, originZ));
+        inputHandlers.put("onPlacementSlot", v -> {
+            placementSlot = DungeonPlacementSlots.clampSlot(intOr(v, placementSlot));
+            syncTemplateInputStates();
+        });
 
         TesseraModel model = key -> modelData.getOrDefault(key, null);
         TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/admin/admin-dungeon-zone");
@@ -239,11 +240,10 @@ public final class AdminDungeonZoneScreen extends com.tesseraui.TesseraScreen {
         templateRef = str(cfg, "structureRef", templateRef);
         templateDim = str(cfg, "dimension", AdminUiSuggestions.DEFAULT_DIMENSION);
         originY = intOr(str(cfg, "placementY", String.valueOf(originY)), originY);
+        placementSlot = DungeonPlacementSlots.clampSlot(intOr(str(cfg, "generatedSlot", String.valueOf(placementSlot)), placementSlot));
         JsonObject origin = object(cfg, "generatedOrigin");
         if (origin != null) {
-            originX = intOr(str(origin, "x", String.valueOf(originX)), originX);
             originY = intOr(str(origin, "y", String.valueOf(originY)), originY);
-            originZ = intOr(str(origin, "z", String.valueOf(originZ)), originZ);
             templateDim = str(origin, "dimension", templateDim);
         }
     }
@@ -251,9 +251,8 @@ public final class AdminDungeonZoneScreen extends com.tesseraui.TesseraScreen {
     private void syncTemplateInputStates() {
         setInputText("templateRef", templateRef);
         setInputText("templateDim", templateDim);
-        setInputText("originX", String.valueOf(originX));
+        setInputText("placementSlot", String.valueOf(placementSlot));
         setInputText("originY", String.valueOf(originY));
-        setInputText("originZ", String.valueOf(originZ));
     }
 
     private void syncSpawnInputStates() {
@@ -285,12 +284,55 @@ public final class AdminDungeonZoneScreen extends com.tesseraui.TesseraScreen {
             dungeonId,
             templateRef,
             templateDim,
-            originX,
             originY,
-            originZ,
+            placementSlot,
             reset
         ));
         AdminUiFeedback.templateGenerationSent(reset);
+        panelDirty = true;
+    }
+
+    private String generationStatus() {
+        return StructurePlacementClient.get(dungeonId).map(status -> {
+            if (status.done()) {
+                return status.success()
+                    ? I18n.get("arcadia.admin.zone.generation.complete")
+                    : I18n.get("arcadia.admin.zone.generation.error", status.message());
+            }
+            if ("prepare".equals(status.stage())) return I18n.get("arcadia.admin.zone.generation.prepare");
+            int total = Math.max(1, status.total());
+            int percent = Math.min(100, Math.max(0, status.processed() * 100 / total));
+            return I18n.get("arcadia.admin.zone.generation.progress",
+                generationStageLabel(status.stage()), percent, status.processed(), status.total());
+        }).orElse("");
+    }
+
+    private String generationStatusClass() {
+        return StructurePlacementClient.get(dungeonId)
+            .map(status -> status.done()
+                ? (status.success() ? "status-ok" : "status-error")
+                : "status-warn")
+            .orElse("status-unset");
+    }
+
+    private String generationStatusKey() {
+        return StructurePlacementClient.get(dungeonId)
+            .map(status -> status.stage() + ":" + status.processed() + ":" + status.total() + ":" + status.done() + ":" + status.success())
+            .orElse("");
+    }
+
+    private static String generationStageLabel(String stage) {
+        return switch (stage) {
+            case "clear" -> I18n.get("arcadia.admin.zone.generation.stage.clear");
+            case "place" -> I18n.get("arcadia.admin.zone.generation.stage.place");
+            case "entities" -> I18n.get("arcadia.admin.zone.generation.stage.entities");
+            default -> I18n.get("arcadia.admin.zone.generation.stage.prepare");
+        };
+    }
+
+    private String originPreview() {
+        var origin = DungeonPlacementSlots.originFor(placementSlot, originY);
+        return I18n.get("arcadia.admin.zone.slot.preview", origin.getX(), origin.getY(), origin.getZ());
     }
 
     private static String templateStatus(JsonObject cfg) {
@@ -298,6 +340,7 @@ public final class AdminDungeonZoneScreen extends com.tesseraui.TesseraScreen {
         JsonObject size = object(cfg, "generatedSize");
         if (origin == null || size == null) return I18n.get("arcadia.admin.zone.template.status.missing");
         return I18n.get("arcadia.admin.zone.template.status.generated",
+            str(cfg, "generatedSlot", "?"),
             str(origin, "dimension", "?"),
             str(origin, "x", "0"),
             str(origin, "y", "0"),

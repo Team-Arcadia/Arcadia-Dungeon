@@ -39,6 +39,7 @@ public final class RunLifecycleService {
     private final Map<UUID, OriginPos> playerOrigins = new ConcurrentHashMap<>();
 
     private ArchetypeService archetypeService;
+    private DungeonInstanceService dungeonInstanceService;
 
     public RunLifecycleService(DungeonRegistry dungeonRegistry) {
         this.dungeonRegistry = dungeonRegistry;
@@ -47,6 +48,10 @@ public final class RunLifecycleService {
     /** Injecté après construction (évite la dépendance circulaire). */
     public void setArchetypeService(ArchetypeService svc) {
         this.archetypeService = svc;
+    }
+
+    public void setDungeonInstanceService(DungeonInstanceService svc) {
+        this.dungeonInstanceService = svc;
     }
 
     /**
@@ -74,6 +79,7 @@ public final class RunLifecycleService {
         activeRuns.remove(run.id());
         restorePlayerOrigins(run);
         tryRestoreInventories(run);
+        tryCleanupInstance(run);
         ArcadiaDungeon.LOGGER.info("[Arcadia][RUN] event=end runId={} result={} duration={}s",
             run.id(), result, run.elapsedSeconds());
     }
@@ -87,6 +93,7 @@ public final class RunLifecycleService {
         activeRuns.remove(run.id());
         restorePlayerOrigins(run);
         tryRestoreInventories(run);
+        tryCleanupInstance(run);
         ArcadiaDungeon.LOGGER.info("[Arcadia][RUN] event=abandon runId={} requestedBy={}",
             run.id(), requestingPlayerId);
     }
@@ -154,5 +161,10 @@ public final class RunLifecycleService {
         var server = ServerLifecycleHooks.getCurrentServer();
         if (server == null) return;
         archetypeService.restoreAll(run, server);
+    }
+
+    private void tryCleanupInstance(Run run) {
+        if (dungeonInstanceService == null) return;
+        dungeonInstanceService.cleanupRun(run);
     }
 }

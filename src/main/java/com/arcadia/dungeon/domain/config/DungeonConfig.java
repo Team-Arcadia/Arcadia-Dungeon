@@ -32,6 +32,7 @@ public record DungeonConfig(
     String generationMode, // nullable - "template" or "custom"
     AreaPos generatedOrigin, // nullable - last generated NBT origin
     GeneratedSize generatedSize, // nullable - last generated NBT size
+    Integer generatedSlot, // nullable - deterministic placement slot used by last generated NBT
     // Post-MVP configurable fields
     String startMessage,   // nullable - chat message broadcast when the run starts
     String victoryMessage, // nullable - victory chat message
@@ -67,7 +68,7 @@ public record DungeonConfig(
     public DungeonConfig withArea(AreaPos pos1, AreaPos pos2) {
         return new DungeonConfig(schemaVersion, id, nameKey, currency, lives, rooms, waves, bosses, rewards,
             archetypes, structureRef, dimension, placementY, pos1, pos2, generationMode, generatedOrigin,
-            generatedSize, startMessage, victoryMessage,
+            generatedSize, generatedSlot, startMessage, victoryMessage,
             failMessage, requiredLevel, xpMultiplier);
     }
 
@@ -77,10 +78,11 @@ public record DungeonConfig(
                                         AreaPos areaPos1,
                                         AreaPos areaPos2,
                                         AreaPos generatedOrigin,
-                                        GeneratedSize generatedSize) {
+                                        GeneratedSize generatedSize,
+                                        Integer generatedSlot) {
         return new DungeonConfig(schemaVersion, id, nameKey, currency, lives, rooms, waves, bosses, rewards,
             archetypes, structureRef, dimension, placementY, areaPos1, areaPos2, "template", generatedOrigin,
-            generatedSize, startMessage, victoryMessage, failMessage, requiredLevel, xpMultiplier);
+            generatedSize, generatedSlot, startMessage, victoryMessage, failMessage, requiredLevel, xpMultiplier);
     }
 
     public static boolean isInsideArea(AreaPos areaPos1, AreaPos areaPos2, String dimension,

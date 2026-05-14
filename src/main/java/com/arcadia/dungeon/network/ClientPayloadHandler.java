@@ -11,6 +11,7 @@ import com.arcadia.dungeon.client.state.DungeonEditClient;
 import com.arcadia.dungeon.client.state.DungeonListClient;
 import com.arcadia.dungeon.client.state.PlayerProgressClient;
 import com.arcadia.dungeon.client.state.RunStateClient;
+import com.arcadia.dungeon.client.state.StructurePlacementClient;
 import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -93,6 +94,10 @@ public final class ClientPayloadHandler {
                     DungeonEditClient.getString("nameKey", payload.dungeonId())));
             }
         });
+    }
+
+    public static void handleStructurePlacementStatus(StructurePlacementStatusPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> StructurePlacementClient.update(payload));
     }
 
     public static void handleOpenResultScreen(OpenResultScreenPayload payload, IPayloadContext context) {

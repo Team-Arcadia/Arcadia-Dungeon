@@ -11,9 +11,8 @@ public record GenerateDungeonTemplatePayload(
     String dungeonId,
     String structureRef,
     String dimension,
-    int originX,
     int originY,
-    int originZ,
+    int placementSlot,
     boolean resetExisting
 ) implements CustomPacketPayload {
 
@@ -27,16 +26,14 @@ public record GenerateDungeonTemplatePayload(
                 buf.writeUtf(p.dungeonId(), 64);
                 buf.writeUtf(p.structureRef(), 256);
                 buf.writeUtf(p.dimension(), 256);
-                buf.writeInt(p.originX());
                 buf.writeInt(p.originY());
-                buf.writeInt(p.originZ());
+                buf.writeInt(p.placementSlot());
                 buf.writeBoolean(p.resetExisting());
             },
             buf -> new GenerateDungeonTemplatePayload(
                 buf.readUtf(64),
                 buf.readUtf(256),
                 buf.readUtf(256),
-                buf.readInt(),
                 buf.readInt(),
                 buf.readInt(),
                 buf.readBoolean()
