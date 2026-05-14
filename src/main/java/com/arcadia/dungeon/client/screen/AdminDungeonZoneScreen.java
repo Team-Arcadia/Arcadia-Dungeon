@@ -126,13 +126,13 @@ public final class AdminDungeonZoneScreen extends com.tesseraui.TesseraScreen {
         modelData.put("tab.template",      String.valueOf("template".equals(activeTab)));
         modelData.put("tab.area",          String.valueOf("area".equals(activeTab)));
         modelData.put("tab.spawn",         String.valueOf("spawn".equals(activeTab)));
-        modelData.put("tab.templateLabel", "template".equals(activeTab) ? "> Template" : "Template");
-        modelData.put("tab.areaLabel",     "area".equals(activeTab) ? "> Zone" : "Zone");
-        modelData.put("tab.spawnLabel",    "spawn".equals(activeTab) ? "> Spawn" : "Spawn");
+        modelData.put("tab.templateLabel", tabLabel("template", "arcadia.admin.zone.tab.template"));
+        modelData.put("tab.areaLabel",     tabLabel("area", "arcadia.admin.zone.tab.area"));
+        modelData.put("tab.spawnLabel",    tabLabel("spawn", "arcadia.admin.zone.tab.spawn"));
         modelData.put("mode.templateClass", templateMode ? "zone-mode-btn zone-mode-active" : "zone-mode-btn");
         modelData.put("mode.customClass",   templateMode ? "zone-mode-btn" : "zone-mode-btn zone-mode-active");
-        modelData.put("mode.templateLabel", templateMode ? "> Template NBT" : "Template NBT");
-        modelData.put("mode.customLabel",   templateMode ? "Custom existant" : "> Custom existant");
+        modelData.put("mode.templateLabel", modeLabel(templateMode, "arcadia.admin.zone.mode.template"));
+        modelData.put("mode.customLabel",   modeLabel(!templateMode, "arcadia.admin.zone.mode.custom"));
         modelData.put("template.status",    templateStatus(cfg));
         modelData.put("template.ref",       templateRef);
         modelData.put("template.dim",       templateDim);
@@ -146,8 +146,8 @@ public final class AdminDungeonZoneScreen extends com.tesseraui.TesseraScreen {
         modelData.put("area.status",       areaStatus());
         modelData.put("area.statusClass",  DungeonEditClient.areaSet()
             ? "status-ok" : (DungeonEditClient.areaSelecting() ? "status-warn" : "status-unset"));
-        modelData.put("area.pos1",         DungeonEditClient.areaPos1Set() ? areaPos(true) : "Pos1: -");
-        modelData.put("area.pos2",         DungeonEditClient.areaPos2Set() ? areaPos(false) : "Pos2: -");
+        modelData.put("area.pos1",         DungeonEditClient.areaPos1Set() ? areaPos(true) : I18n.get("arcadia.admin.zone.area.pos1.missing"));
+        modelData.put("area.pos2",         DungeonEditClient.areaPos2Set() ? areaPos(false) : I18n.get("arcadia.admin.zone.area.pos2.missing"));
         modelData.put("v.x",   fmt(manualX));
         modelData.put("v.y",   fmt(manualY));
         modelData.put("v.z",   fmt(manualZ));
@@ -224,6 +224,16 @@ public final class AdminDungeonZoneScreen extends com.tesseraui.TesseraScreen {
         panelDirty = true;
     }
 
+    private String tabLabel(String tab, String key) {
+        String label = I18n.get(key);
+        return tab.equals(activeTab) ? "> " + label : label;
+    }
+
+    private static String modeLabel(boolean active, String key) {
+        String label = I18n.get(key);
+        return active ? "> " + label : label;
+    }
+
     private void loadTemplateFieldsFromConfig() {
         JsonObject cfg = DungeonEditClient.config();
         templateRef = str(cfg, "structureRef", templateRef);
@@ -286,29 +296,36 @@ public final class AdminDungeonZoneScreen extends com.tesseraui.TesseraScreen {
     private static String templateStatus(JsonObject cfg) {
         JsonObject origin = object(cfg, "generatedOrigin");
         JsonObject size = object(cfg, "generatedSize");
-        if (origin == null || size == null) return "NBT non genere";
-        return "Genere @ " + str(origin, "dimension", "?")
-            + " " + str(origin, "x", "0") + "/" + str(origin, "y", "0") + "/" + str(origin, "z", "0")
-            + " size " + str(size, "x", "0") + "x" + str(size, "y", "0") + "x" + str(size, "z", "0");
+        if (origin == null || size == null) return I18n.get("arcadia.admin.zone.template.status.missing");
+        return I18n.get("arcadia.admin.zone.template.status.generated",
+            str(origin, "dimension", "?"),
+            str(origin, "x", "0"),
+            str(origin, "y", "0"),
+            str(origin, "z", "0"),
+            str(size, "x", "0"),
+            str(size, "y", "0"),
+            str(size, "z", "0"));
     }
 
     private static String areaStatus() {
         if (DungeonEditClient.areaSet()) {
-            return "Zone definie dans " + DungeonEditClient.areaDim();
+            return I18n.get("arcadia.admin.zone.area.status.set", DungeonEditClient.areaDim());
         }
         if (DungeonEditClient.areaSelecting()) {
-            if (DungeonEditClient.areaPos1Set() && !DungeonEditClient.areaPos2Set()) return "Selection wand: Pos2 attendu";
-            if (!DungeonEditClient.areaPos1Set() && DungeonEditClient.areaPos2Set()) return "Selection wand: Pos1 attendu";
-            return "Selection wand en cours";
+            if (DungeonEditClient.areaPos1Set() && !DungeonEditClient.areaPos2Set()) return I18n.get("arcadia.admin.zone.area.status.wait_pos2");
+            if (!DungeonEditClient.areaPos1Set() && DungeonEditClient.areaPos2Set()) return I18n.get("arcadia.admin.zone.area.status.wait_pos1");
+            return I18n.get("arcadia.admin.zone.area.status.selecting");
         }
-        return "Zone globale non definie";
+        return I18n.get("arcadia.admin.zone.area.status.unset");
     }
 
     private static String areaPos(boolean first) {
         if (first) {
-            return "Pos1: " + DungeonEditClient.areaX1() + " / " + DungeonEditClient.areaY1() + " / " + DungeonEditClient.areaZ1();
+            return I18n.get("arcadia.admin.zone.area.pos1",
+                DungeonEditClient.areaX1(), DungeonEditClient.areaY1(), DungeonEditClient.areaZ1());
         }
-        return "Pos2: " + DungeonEditClient.areaX2() + " / " + DungeonEditClient.areaY2() + " / " + DungeonEditClient.areaZ2();
+        return I18n.get("arcadia.admin.zone.area.pos2",
+            DungeonEditClient.areaX2(), DungeonEditClient.areaY2(), DungeonEditClient.areaZ2());
     }
 
     private static String str(JsonObject o, String key, String def) {

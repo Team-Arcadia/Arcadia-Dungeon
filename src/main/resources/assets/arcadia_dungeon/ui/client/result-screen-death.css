@@ -8,7 +8,7 @@
 
 .death-header {
   background: #24120F;
-  border-bottom: 1;
+  border: 1;
   border-color: #8B2020;
   padding: 7px 10px;
   align-items: center;
@@ -75,7 +75,7 @@
 
 .death-footer {
   background: #201812;
-  border-top: 1;
+  border: 1;
   border-color: #5A3A1C;
   padding: 5px 10px;
   justify-content: center;

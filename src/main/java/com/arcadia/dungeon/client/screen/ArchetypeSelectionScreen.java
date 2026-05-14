@@ -70,8 +70,10 @@ public final class ArchetypeSelectionScreen extends TesseraScreen {
     // ── Internals ─────────────────────────────────────────────────────────
 
     private void rebuildPanel() {
-        int px = (width - PANEL_W) / 2;
-        int py = (height - PANEL_H) / 2;
+        int panelW = Math.max(1, Math.min(PANEL_W, width - 16));
+        int panelH = Math.max(1, Math.min(PANEL_H, height - 16));
+        int px = (width - panelW) / 2;
+        int py = (height - panelH) / 2;
 
         // Tronquer le nom du donjon pour le header (AC5 texte long)
         String displayName = dungeonName.length() > 38
@@ -104,7 +106,7 @@ public final class ArchetypeSelectionScreen extends TesseraScreen {
 
         TesseraModel model = key -> modelData.getOrDefault(key, null);
         TesseraTemplate template = TesseraTemplate.load("arcadia_dungeon:ui/client/archetype-selection");
-        panel = TesseraTemplateRenderer.build(template, model, handlers, px, py, PANEL_W, PANEL_H);
+        panel = TesseraTemplateRenderer.build(template, model, handlers, px, py, panelW, panelH);
     }
 
     /** Retourne une icône par défaut selon l'id d'archétype (clé ou suffixe). */

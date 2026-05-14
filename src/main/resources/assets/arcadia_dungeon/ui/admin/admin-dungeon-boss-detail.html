@@ -1,4 +1,5 @@
 <col class="cfg-screen">
+  <link rel="stylesheet" href="admin-global.css" />
   <row class="cfg-header">
     <label class="cfg-title">{{ cfg.title }}</label>
   </row>
@@ -40,17 +41,17 @@
           <label class="field-label flex-1" data-i18n="arcadia.admin.common.hp">HP</label>
           <label class="value-current">{{ v.bossHp }}</label>
         </row>
-        <slider class="value-slider" min="1" max="1000" value="{{ v.bossHp }}" oninput="onBossHp"></slider>
+        <slider id="bossHpSlider" class="value-slider" min="1" max="1000" value="{{ v.bossHp }}" oninput="onBossHp"></slider>
       </col>
       <col class="value-slider-group boss-slider-main" tooltip-i18n="arcadia.admin.boss.tooltip.damage">
         <row class="value-label-row">
           <label class="field-label flex-1" data-i18n="arcadia.admin.common.damage.short">Dmg</label>
           <label class="value-current">{{ v.bossDamage }}</label>
         </row>
-        <slider class="value-slider" min="0" max="100" value="{{ v.bossDamage }}" oninput="onBossDamage"></slider>
+        <slider id="bossDamageSlider" class="value-slider" min="0" max="100" value="{{ v.bossDamage }}" oninput="onBossDamage"></slider>
       </col>
       <row class="boss-check-row boss-check-inline" tooltip-i18n="arcadia.admin.boss.tooltip.bossbar">
-        <checkbox class="boss-check" checked="{{ v.showBossBarChecked }}" oninput="onBossBar"></checkbox>
+        <checkbox id="bossBarCheck" class="boss-check" checked="{{ v.showBossBarChecked }}" oninput="onBossBar"></checkbox>
         <label class="boss-check-label" data-i18n="arcadia.admin.boss.bossbar">Barre</label>
       </row>
     </row>
@@ -64,18 +65,18 @@
           <label class="field-label flex-1" data-i18n="arcadia.admin.boss.chance">Chance</label>
           <label class="value-current">{{ v.bossChance }}</label>
         </row>
-        <slider class="value-slider" min="0" max="1" value="{{ v.bossChance }}" oninput="onBossChance"></slider>
+        <slider id="bossChanceSlider" class="value-slider" min="0" max="1" value="{{ v.bossChance }}" oninput="onBossChance"></slider>
       </col>
       <row class="boss-check-row boss-check-inline" tooltip-i18n="arcadia.admin.boss.tooltip.optional">
-        <checkbox class="boss-check" checked="{{ v.bossOptionalChecked }}" oninput="onBossOptional"></checkbox>
+        <checkbox id="bossOptionalCheck" class="boss-check" checked="{{ v.bossOptionalChecked }}" oninput="onBossOptional"></checkbox>
         <label class="boss-check-label" data-i18n="arcadia.admin.boss.optional">Optionnel</label>
       </row>
       <row class="boss-check-row boss-check-inline" tooltip-i18n="arcadia.admin.boss.tooltip.required">
-        <checkbox class="boss-check" checked="{{ v.bossRequiredChecked }}" oninput="onBossRequired"></checkbox>
+        <checkbox id="bossRequiredCheck" class="boss-check" checked="{{ v.bossRequiredChecked }}" oninput="onBossRequired"></checkbox>
         <label class="boss-check-label" data-i18n="arcadia.admin.boss.kill_required.short">Kill req.</label>
       </row>
       <row class="boss-check-row boss-check-inline" tooltip-i18n="arcadia.admin.boss.tooltip.spawn_start">
-        <checkbox class="boss-check" checked="{{ v.spawnAtStartChecked }}" oninput="onSpawnAtStart"></checkbox>
+        <checkbox id="bossSpawnAtStartCheck" class="boss-check" checked="{{ v.spawnAtStartChecked }}" oninput="onSpawnAtStart"></checkbox>
         <label class="boss-check-label" data-i18n="arcadia.admin.boss.spawn_start">Spawn debut</label>
       </row>
       <col class="field-group boss-col-small">
@@ -168,7 +169,7 @@
           <label class="field-label flex-1" data-i18n="arcadia.admin.common.armor">Armor</label>
           <label class="value-current">{{ v.bossArmor }}</label>
         </row>
-        <slider class="value-slider" min="0" max="30" value="{{ v.bossArmor }}" oninput="onBossArmor"></slider>
+        <slider id="bossArmorSlider" class="value-slider" min="0" max="30" value="{{ v.bossArmor }}" oninput="onBossArmor"></slider>
       </col>
       <col class="field-group flex-1">
         <label class="field-label" data-i18n="arcadia.admin.common.attributes.kv">Attributs key=value</label>
@@ -203,21 +204,21 @@
               <label class="field-label flex-1" data-i18n="arcadia.admin.boss.phase.hp_percent">HP%</label>
               <label class="value-current">{{ p.phaseHp }}</label>
             </row>
-            <slider class="value-slider" min="1" max="100" value="{{ p.phaseHp }}" oninput="{{ p.phaseHpKey }}"></slider>
+            <slider id="{{ p.phaseHpId }}" class="value-slider" min="1" max="100" value="{{ p.phaseHp }}" oninput="{{ p.phaseHpKey }}"></slider>
           </col>
           <col class="value-slider-group boss-phase-slider" tooltip-i18n="arcadia.admin.boss.tooltip.phase_damage">
             <row class="value-label-row">
               <label class="field-label flex-1" data-i18n="arcadia.admin.common.damage.short">Dmg</label>
               <label class="value-current">{{ p.phaseDmg }}</label>
             </row>
-            <slider class="value-slider" min="0.5" max="5" value="{{ p.phaseDmg }}" oninput="{{ p.phaseDmgKey }}"></slider>
+            <slider id="{{ p.phaseDmgId }}" class="value-slider" min="0.5" max="5" value="{{ p.phaseDmg }}" oninput="{{ p.phaseDmgKey }}"></slider>
           </col>
           <col class="value-slider-group boss-phase-slider" tooltip-i18n="arcadia.admin.boss.tooltip.phase_speed">
             <row class="value-label-row">
               <label class="field-label flex-1" data-i18n="arcadia.admin.common.speed.short">Spd</label>
               <label class="value-current">{{ p.phaseSpd }}</label>
             </row>
-            <slider class="value-slider" min="0.5" max="3" value="{{ p.phaseSpd }}" oninput="{{ p.phaseSpdKey }}"></slider>
+            <slider id="{{ p.phaseSpdId }}" class="value-slider" min="0.5" max="3" value="{{ p.phaseSpd }}" oninput="{{ p.phaseSpdKey }}"></slider>
           </col>
           <col class="field-group flex-1">
             <label class="field-label" data-i18n="arcadia.admin.boss.message.phase">Message phase</label>
@@ -232,14 +233,12 @@
             <label class="field-label" data-i18n="arcadia.admin.boss.summons">Summons</label>
             <input id="{{ p.phaseSummonsId }}" class="field-input wide"
                    value="{{ p.phaseSummons }}" oninput="{{ p.phaseSummonsKey }}" placeholder="{{ t:arcadia.admin.placeholder.phase_summons }}"
-                   autocomplete="{{ p.entitySuggestions }}"
                    tooltip-i18n="arcadia.admin.boss.tooltip.summons" />
           </col>
           <col class="field-group flex-1">
             <label class="field-label" data-i18n="arcadia.admin.boss.effects">Effets</label>
             <input id="{{ p.phaseEffectsId }}" class="field-input wide"
                    value="{{ p.phaseEffects }}" oninput="{{ p.phaseEffectsKey }}" placeholder="{{ t:arcadia.admin.placeholder.phase_effects }}"
-                   autocomplete="{{ p.effectSuggestions }}"
                    tooltip-i18n="arcadia.admin.boss.tooltip.effects" />
           </col>
         </row>
@@ -261,7 +260,7 @@
       <button class="btn-add" onclick="addReward" data-i18n="arcadia.admin.boss.add.drop">+ Ajouter drop</button>
     </row>
 
-    <virtual-list id="rewardList" class="hub-vlist" v-for="r in reward.count" row-height="32">
+    <virtual-list id="rewardList" class="hub-vlist" v-for="r in reward.count" row-height="40">
       <row class="list-row boss-edit-row">
         <label class="row-idx">{{ r.rewardIndex }}</label>
         <col class="field-group boss-col-item">

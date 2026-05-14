@@ -108,8 +108,10 @@ public final class ResultScreen extends TesseraScreen {
     // ── Internals ─────────────────────────────────────────────────────────
 
     private void rebuildPanel() {
-        int px = (width - PANEL_W) / 2;
-        int py = (height - PANEL_H) / 2;
+        int panelW = Math.max(1, Math.min(PANEL_W, width - 16));
+        int panelH = Math.max(1, Math.min(PANEL_H, height - 16));
+        int px = (width - panelW) / 2;
+        int py = (height - panelH) / 2;
 
         final TesseraModel model;
         final String templateId;
@@ -159,7 +161,7 @@ public final class ResultScreen extends TesseraScreen {
         }
 
         TesseraTemplate template = TesseraTemplate.load(templateId);
-        panel = TesseraTemplateRenderer.build(template, model, actions, px, py, PANEL_W, PANEL_H);
+        panel = TesseraTemplateRenderer.build(template, model, actions, px, py, panelW, panelH);
     }
 
     private static String formatTime(long seconds) {

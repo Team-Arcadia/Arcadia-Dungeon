@@ -8,7 +8,7 @@
 
 .debug-header {
   background: #26190D;
-  border-bottom: 1;
+  border: 1;
   border-color: #5A3A1C;
   padding: 5px 8px;
 }
@@ -51,7 +51,7 @@
 .debug-footer {
   justify-content: flex-end;
   background: #26190D;
-  border-top: 1;
+  border: 1;
   border-color: #5A3A1C;
   padding: 4px 8px;
 }

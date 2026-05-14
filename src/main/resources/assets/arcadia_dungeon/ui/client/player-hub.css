@@ -8,7 +8,7 @@
 
 .player-header {
   background: #26190D;
-  border-bottom: 1;
+  border: 1;
   border-color: #5A3518;
   padding: 4px 8px;
   align-items: center;
@@ -70,7 +70,7 @@
 
 .nav-row {
   background: #18110C;
-  border-bottom: 1;
+  border: 1;
   border-color: #2B1C11;
   padding: 3px 7px;
   gap: 4px;
@@ -246,7 +246,7 @@
   min-height: 36px;
   padding: 4px 6px;
   background: #17100B;
-  border-bottom: 1;
+  border: 1;
   border-color: #261A12;
 }
 
@@ -332,7 +332,7 @@
   min-height: 34px;
   padding: 5px 7px;
   background: #17100B;
-  border-bottom: 1;
+  border: 1;
   border-color: #2B1C11;
 }
 
@@ -584,7 +584,7 @@
 
 .footer-row {
   background: #201711;
-  border-top: 1;
+  border: 1;
   border-color: #5A3518;
   padding: 3px 8px;
   justify-content: flex-end;

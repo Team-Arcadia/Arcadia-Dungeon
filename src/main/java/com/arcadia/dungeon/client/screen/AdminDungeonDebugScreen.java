@@ -9,6 +9,7 @@ import com.tesseraui.TesseraPanel;
 import com.tesseraui.TesseraTemplate;
 import com.tesseraui.TesseraTemplateRenderer;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -97,9 +98,9 @@ public final class AdminDungeonDebugScreen extends com.tesseraui.TesseraScreen {
         int py = (height - panelH) / 2;
 
         Map<String, String> modelData = new HashMap<>();
-        modelData.put("cfg.title", "Debug global");
+        modelData.put("cfg.title", I18n.get("arcadia.admin.debug.global.title"));
         modelData.put("debug.empty", lastRuns.isEmpty() ? "true" : "");
-        modelData.put("debug.summary", lastRuns.isEmpty() ? "" : lastRuns.size() + " run(s) active(s)");
+        modelData.put("debug.summary", lastRuns.isEmpty() ? "" : I18n.get("arcadia.admin.debug.summary", lastRuns.size()));
 
         Map<String, Runnable> handlers = new HashMap<>();
         handlers.put("back", ArcadiaNavigator::back);

@@ -8,7 +8,7 @@
 
 .arch-header {
   background: #26190D;
-  border-bottom: 1;
+  border: 1;
   border-color: #5A3A1C;
   padding: 6px 8px;
   align-items: center;
@@ -184,7 +184,7 @@
 
 .arch-footer {
   background: #26190D;
-  border-top: 1;
+  border: 1;
   border-color: #5A3A1C;
   padding: 4px 8px;
   justify-content: flex-start;

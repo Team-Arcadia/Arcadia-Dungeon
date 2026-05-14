@@ -79,8 +79,10 @@ public final class DungeonLobbyScreen extends TesseraScreen {
     // ── Internals ─────────────────────────────────────────────────────────
 
     private void rebuildPanel() {
-        int px = (width - PANEL_W) / 2;
-        int py = (height - PANEL_H) / 2;
+        int panelW = Math.max(1, Math.min(PANEL_W, width - 16));
+        int panelH = Math.max(1, Math.min(PANEL_H, height - 16));
+        int px = (width - panelW) / 2;
+        int py = (height - panelH) / 2;
 
         String playerName = Minecraft.getInstance().player != null
             ? Minecraft.getInstance().player.getGameProfile().getName() : "???";
@@ -100,7 +102,7 @@ public final class DungeonLobbyScreen extends TesseraScreen {
         panel = TesseraTemplateRenderer.build(template, model, Map.of(
             "launch", this::onLaunch,
             "close",  this::onClose
-        ), px, py, PANEL_W, PANEL_H);
+        ), px, py, panelW, panelH);
     }
 
     private void onLaunch() {

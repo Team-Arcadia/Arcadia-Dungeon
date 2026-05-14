@@ -16,7 +16,7 @@
 
 .result-header {
   background: #201812;
-  border-bottom: 1;
+  border: 1;
   border-color: #5A3A1C;
   padding: 7px 10px;
   align-items: center;
@@ -74,7 +74,7 @@
 .result-stats {
   padding: 7px 10px;
   gap: 6px;
-  border-bottom: 1;
+  border: 1;
   border-color: #2A1E12;
 }
 
@@ -158,7 +158,7 @@
 
 .result-footer {
   background: #201812;
-  border-top: 1;
+  border: 1;
   border-color: #5A3A1C;
   padding: 5px 10px;
   gap: 6px;

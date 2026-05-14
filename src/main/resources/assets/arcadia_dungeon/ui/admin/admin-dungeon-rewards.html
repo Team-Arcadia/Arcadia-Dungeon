@@ -1,4 +1,5 @@
 <col class="cfg-screen">
+  <link rel="stylesheet" href="admin-global.css" />
   <row class="cfg-header">
     <label class="cfg-title">{{ cfg.title }}</label>
   </row>
@@ -18,13 +19,12 @@
     <!-- Loot table -->
     <label class="section-title" data-i18n="arcadia.admin.rewards.loot">Table de butin</label>
 
-    <virtual-list id="lootList" class="hub-vlist" v-for="l in loot.count" row-height="26">
+    <virtual-list id="lootList" class="hub-vlist" v-for="l in loot.count" row-height="38">
       <row class="list-row">
         <label class="row-idx">{{ l.lootIndex }}</label>
         <col class="field-group flex-2">
           <input id="{{ l.lootItemId }}" class="field-input wide"
                  value="{{ l.lootItem }}" oninput="{{ l.lootItemKey }}"
-                 autocomplete="{{ l.itemSuggestions }}"
                  placeholder="{{ t:arcadia.admin.placeholder.reward_item }}" />
         </col>
         <col class="field-group w-36">
@@ -37,7 +37,7 @@
                  value="{{ l.lootMax }}" oninput="{{ l.lootMaxKey }}"
                  placeholder="{{ t:arcadia.admin.placeholder.lives }}" />
         </col>
-        <button class="btn-del" onclick="{{ l.lootDelKey }}">âœ—</button>
+        <button class="btn-del" onclick="{{ l.lootDelKey }}" data-i18n="arcadia.admin.common.delete.short">X</button>
       </row>
     </virtual-list>
 

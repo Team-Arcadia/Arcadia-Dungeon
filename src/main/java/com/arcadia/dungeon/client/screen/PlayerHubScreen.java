@@ -112,8 +112,8 @@ public final class PlayerHubScreen extends TesseraScreen {
     }
 
     private void rebuildPanel() {
-        int panelW = Math.max(460, Math.min(MAX_W, width - MARGIN * 2));
-        int panelH = Math.max(280, Math.min(MAX_H, height - MARGIN * 2));
+        int panelW = Math.max(1, Math.min(MAX_W, width - MARGIN * 2));
+        int panelH = Math.max(1, Math.min(MAX_H, height - MARGIN * 2));
         int px = (width - panelW) / 2;
         int py = (height - panelH) / 2;
 
@@ -298,10 +298,10 @@ public final class PlayerHubScreen extends TesseraScreen {
         modelData.put("opt.feed", String.valueOf(optionFeed));
         modelData.put("opt.toasts", String.valueOf(optionToasts));
         modelData.put("opt.spectator", String.valueOf(optionSpectator));
-        modelData.put("opt.hudState", optionHud ? "ON" : "OFF");
-        modelData.put("opt.feedState", optionFeed ? "ON" : "OFF");
-        modelData.put("opt.toastsState", optionToasts ? "ON" : "OFF");
-        modelData.put("opt.spectatorState", optionSpectator ? "ON" : "OFF");
+        modelData.put("opt.hudState", optionState(optionHud));
+        modelData.put("opt.feedState", optionState(optionFeed));
+        modelData.put("opt.toastsState", optionState(optionToasts));
+        modelData.put("opt.spectatorState", optionState(optionSpectator));
 
         inputHandlers.put("toggleHud", v -> toggleOption("hud", v));
         inputHandlers.put("toggleFeed", v -> toggleOption("feed", v));
@@ -384,8 +384,12 @@ public final class PlayerHubScreen extends TesseraScreen {
             }
             default -> { return; }
         }
-        TesseraToast.show(tr("arcadia.player.toast.option", option, enabled ? "ON" : "OFF"));
+        TesseraToast.show(tr("arcadia.player.toast.option", option, optionState(enabled)));
         panelDirty = true;
+    }
+
+    private static String optionState(boolean enabled) {
+        return tr(enabled ? "arcadia.player.option.on" : "arcadia.player.option.off");
     }
 
     private DungeonListPayload.DungeonSummary selectedDungeon(List<DungeonListPayload.DungeonSummary> dungeons) {

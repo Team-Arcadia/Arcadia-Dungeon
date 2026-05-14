@@ -1,4 +1,5 @@
 <col class="cfg-screen wave-detail-screen">
+  <link rel="stylesheet" href="admin-global.css" />
   <row class="cfg-header">
     <label class="cfg-title">{{ cfg.title }}</label>
   </row>
@@ -63,7 +64,7 @@
 
     <row class="wave-option-strip">
       <row class="boss-check-row wave-check-wide" tooltip-i18n="arcadia.admin.wave.tooltip.glow">
-        <checkbox class="boss-check" checked="{{ v.waveGlowChecked }}" oninput="onWaveGlow"></checkbox>
+        <checkbox id="waveGlowCheck" class="boss-check" checked="{{ v.waveGlowChecked }}" oninput="onWaveGlow"></checkbox>
         <label class="boss-check-label" data-i18n="arcadia.admin.wave.glow">Glow</label>
       </row>
       <col class="field-group wave-delay-field">
@@ -82,7 +83,7 @@
       <label class="cfg-note">{{ mob.selected }}</label>
       <button class="btn-add" onclick="addMob" data-i18n="arcadia.admin.wave.add.mob">+ Ajouter mob</button>
     </row>
-    <virtual-list id="waveMobList" class="wave-mob-list" v-for="m in mob.count" row-height="34">
+    <virtual-list id="waveMobList" class="wave-mob-list" v-for="m in mob.count" row-height="44">
       <row class="{{ m.rowClass }}" onclick="{{ m.selectKey }}">
         <label class="row-idx">{{ m.mobIndex }}</label>
         <col class="wave-mob-main">
@@ -234,28 +235,28 @@
           <label class="field-label flex-1" data-i18n="arcadia.admin.common.hp">HP</label>
           <label class="value-current">{{ v.mobHp }}</label>
         </row>
-        <slider class="value-slider" min="1" max="200" value="{{ v.mobHp }}" oninput="onWaveMobHp"></slider>
+        <slider id="waveMobHpSlider" class="value-slider" min="1" max="200" value="{{ v.mobHp }}" oninput="onWaveMobHp"></slider>
       </col>
       <col class="value-slider-group wave-slider-card" tooltip-i18n="arcadia.admin.wave.tooltip.mob_damage">
         <row class="value-label-row">
           <label class="field-label flex-1" data-i18n="arcadia.admin.common.damage.short">Dmg</label>
           <label class="value-current">{{ v.mobDmg }}</label>
         </row>
-        <slider class="value-slider" min="0" max="50" value="{{ v.mobDmg }}" oninput="onWaveMobDmg"></slider>
+        <slider id="waveMobDmgSlider" class="value-slider" min="0" max="50" value="{{ v.mobDmg }}" oninput="onWaveMobDmg"></slider>
       </col>
       <col class="value-slider-group wave-slider-card" tooltip-i18n="arcadia.admin.wave.tooltip.mob_speed">
         <row class="value-label-row">
           <label class="field-label flex-1" data-i18n="arcadia.admin.common.speed.short">Spd</label>
           <label class="value-current">{{ v.mobSpd }}</label>
         </row>
-        <slider class="value-slider" min="0" max="1" value="{{ v.mobSpd }}" oninput="onWaveMobSpd"></slider>
+        <slider id="waveMobSpdSlider" class="value-slider" min="0" max="1" value="{{ v.mobSpd }}" oninput="onWaveMobSpd"></slider>
       </col>
       <col class="value-slider-group wave-slider-card" tooltip-i18n="arcadia.admin.tooltip.armor">
         <row class="value-label-row">
           <label class="field-label flex-1" data-i18n="arcadia.admin.common.armor">Armor</label>
           <label class="value-current">{{ v.mobArmor }}</label>
         </row>
-        <slider class="value-slider" min="0" max="30" value="{{ v.mobArmor }}" oninput="onWaveMobArmor"></slider>
+        <slider id="waveMobArmorSlider" class="value-slider" min="0" max="30" value="{{ v.mobArmor }}" oninput="onWaveMobArmor"></slider>
       </col>
     </row>
     <col class="field-group">
@@ -318,21 +319,21 @@
           <label class="field-label flex-1" data-i18n="arcadia.admin.wave.combat.attack_range">Range</label>
           <label class="value-current">{{ v.combatAttackRange }}</label>
         </row>
-        <slider class="value-slider" min="0" max="32" value="{{ v.combatAttackRange }}" oninput="onWaveCombatAttackRange"></slider>
+        <slider id="waveCombatAttackRangeSlider" class="value-slider" min="0" max="32" value="{{ v.combatAttackRange }}" oninput="onWaveCombatAttackRange"></slider>
       </col>
       <col class="value-slider-group wave-slider-card" tooltip-i18n="arcadia.admin.wave.tooltip.aggro_range">
         <row class="value-label-row">
           <label class="field-label flex-1" data-i18n="arcadia.admin.wave.combat.aggro_range">Aggro</label>
           <label class="value-current">{{ v.combatAggroRange }}</label>
         </row>
-        <slider class="value-slider" min="0" max="64" value="{{ v.combatAggroRange }}" oninput="onWaveCombatAggroRange"></slider>
+        <slider id="waveCombatAggroRangeSlider" class="value-slider" min="0" max="64" value="{{ v.combatAggroRange }}" oninput="onWaveCombatAggroRange"></slider>
       </col>
       <col class="value-slider-group wave-slider-card" tooltip-i18n="arcadia.admin.wave.tooltip.dodge_chance">
         <row class="value-label-row">
           <label class="field-label flex-1" data-i18n="arcadia.admin.wave.combat.dodge_chance">Dodge</label>
           <label class="value-current">{{ v.combatDodgeChance }}</label>
         </row>
-        <slider class="value-slider" min="0" max="1" value="{{ v.combatDodgeChance }}" oninput="onWaveCombatDodgeChance"></slider>
+        <slider id="waveCombatDodgeChanceSlider" class="value-slider" min="0" max="1" value="{{ v.combatDodgeChance }}" oninput="onWaveCombatDodgeChance"></slider>
       </col>
     </row>
     <row class="boss-main-row">
@@ -355,7 +356,7 @@
                tooltip-i18n="arcadia.admin.wave.tooltip.dodge_cooldown" />
       </col>
       <row class="boss-check-row wave-check-wide" tooltip-i18n="arcadia.admin.wave.tooltip.projectiles_only">
-        <checkbox class="boss-check" checked="{{ v.combatDodgeProjectilesOnly }}" oninput="onWaveCombatDodgeProjectilesOnly"></checkbox>
+        <checkbox id="waveCombatProjectilesOnlyCheck" class="boss-check" checked="{{ v.combatDodgeProjectilesOnly }}" oninput="onWaveCombatDodgeProjectilesOnly"></checkbox>
         <label class="boss-check-label" data-i18n="arcadia.admin.wave.combat.projectiles_only">Projectiles</label>
       </row>
     </row>

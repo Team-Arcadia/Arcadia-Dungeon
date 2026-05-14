@@ -1,4 +1,5 @@
 <col class="cfg-screen">
+  <link rel="stylesheet" href="admin-global.css" />
   <row class="cfg-header">
     <label class="cfg-title" data-i18n="arcadia.admin.archetypes.title">Classes gratuites</label>
   </row>
@@ -28,7 +29,6 @@
           <label class="field-label" data-i18n="arcadia.admin.archetypes.kit">Kit gratuit (items separes par virgule)</label>
           <input id="{{ a.archItemsId }}" class="field-input wide"
                  value="{{ a.archItems }}" oninput="{{ a.archItemsKey }}"
-                 autocomplete="{{ a.itemSuggestions }}"
                  placeholder="{{ t:arcadia.admin.placeholder.class_kit }}" />
         </col>
 

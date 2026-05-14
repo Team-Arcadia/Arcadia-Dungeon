@@ -8,7 +8,7 @@
 
 .lobby-header {
   background: #201812;
-  border-bottom: 1;
+  border: 1;
   border-color: #5A3A1C;
   padding: 7px 10px;
   align-items: center;
@@ -48,7 +48,7 @@
 .lobby-progress {
   padding: 5px 10px;
   gap: 5px;
-  border-bottom: 1;
+  border: 1;
   border-color: #2A1E12;
 }
 
@@ -156,7 +156,7 @@
 
 .lobby-footer {
   background: #201812;
-  border-top: 1;
+  border: 1;
   border-color: #5A3A1C;
   padding: 5px 10px;
   gap: 6px;
