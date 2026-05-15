@@ -1101,6 +1101,116 @@
   min-width: 48px;
 }
 
+/* Global debug */
+.admin-debug-body {
+  gap: 7px;
+}
+
+.debug-tab-bar {
+  flex-shrink: 0;
+}
+
+.debug-tab-content {
+  gap: 7px;
+  min-height: 0;
+  flex: 1;
+}
+
+.debug-grid,
+.debug-status-row {
+  flex-direction: row;
+  gap: 6px;
+  align-items: flex-start;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  min-width: 0;
+  min-height: 31px;
+}
+
+.debug-field-player {
+  flex: 1;
+  min-width: 120px;
+}
+
+.debug-field-small {
+  width: 86px;
+  min-width: 86px;
+}
+
+.debug-field-dungeon {
+  flex: 1;
+  min-width: 0;
+}
+
+.debug-field-time {
+  width: 78px;
+  min-width: 78px;
+}
+
+.admin-debug-screen .field-group {
+  min-height: 29px;
+}
+
+.admin-debug-screen .field-input {
+  height: 16px;
+  min-height: 16px;
+}
+
+.debug-action-grid {
+  gap: 6px;
+  flex-shrink: 0;
+  min-height: 44px;
+}
+
+.debug-action-row {
+  flex-direction: row;
+  gap: 6px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  min-height: 18px;
+}
+
+.debug-action-btn {
+  width: 88px;
+  min-width: 88px;
+  height: 18px;
+  min-height: 18px;
+  padding: 2px 5px;
+  border: 1;
+  border-color: var(--border-mid);
+  border-radius: 2px;
+  background: var(--surface-1);
+  color: var(--text-mid);
+  font-size: 6;
+  overflow: hidden;
+}
+
+.debug-action-btn:hover {
+  color: var(--copper);
+  border-color: var(--copper);
+  background: #3A2510;
+}
+
+.debug-status {
+  width: 112px;
+  min-width: 112px;
+  height: 16px;
+  min-height: 16px;
+  padding: 2px 5px;
+  border: 1;
+  border-color: var(--border-idle);
+  color: var(--text-mid);
+  background: var(--bg-row);
+  font-size: 6;
+  overflow: hidden;
+}
+
+.debug-danger {
+  gap: 4px;
+  padding: 5px;
+  flex-shrink: 0;
+}
+
 .hub-list {
   flex: 1;
   padding: 3px 6px;

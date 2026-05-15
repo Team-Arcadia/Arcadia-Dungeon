@@ -126,6 +126,18 @@ public final class ArcadiaDatabaseService implements AutoCloseable {
         }
     }
 
+    public synchronized void deleteDungeonInventory(UUID playerId) {
+        ensureOpen();
+        try (PreparedStatement statement = connection.prepareStatement(
+            "DELETE FROM player_dungeon_inventory WHERE player_id = ?")) {
+            statement.setString(1, playerId.toString());
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            ArcadiaDungeon.LOGGER.error("[Arcadia][DB] dungeon_inventory_delete_failed playerId={} error={}",
+                playerId, e.getMessage());
+        }
+    }
+
     public synchronized Optional<ListTag> loadNormalInventoryBackup(UUID playerId) {
         ensureOpen();
         try (PreparedStatement statement = connection.prepareStatement(
@@ -154,6 +166,22 @@ public final class ArcadiaDatabaseService implements AutoCloseable {
             ArcadiaDungeon.LOGGER.error("[Arcadia][DB] normal_inventory_backup_check_failed playerId={} error={}",
                 playerId, e.getMessage());
             return false;
+        }
+    }
+
+    public synchronized Optional<String> loadNormalInventoryBackupRunId(UUID playerId) {
+        ensureOpen();
+        try (PreparedStatement statement = connection.prepareStatement(
+            "SELECT run_id FROM player_inventory_backup WHERE player_id = ? LIMIT 1")) {
+            statement.setString(1, playerId.toString());
+            try (ResultSet result = statement.executeQuery()) {
+                if (!result.next()) return Optional.empty();
+                return Optional.ofNullable(result.getString(1));
+            }
+        } catch (SQLException e) {
+            ArcadiaDungeon.LOGGER.error("[Arcadia][DB] normal_inventory_backup_run_id_failed playerId={} error={}",
+                playerId, e.getMessage());
+            return Optional.empty();
         }
     }
 

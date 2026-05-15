@@ -18,6 +18,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -34,6 +35,7 @@ public final class ArchetypeService {
     private final GlobalClassRegistry globalClassRegistry;
     private final ArcadiaDatabaseService databaseService;
     private final Map<UUID, ListTag> inventoryBackups = new ConcurrentHashMap<>();
+    private final Set<UUID> debugInventoryPreviews = ConcurrentHashMap.newKeySet();
 
     public ArchetypeService(DungeonRegistry dungeonRegistry,
                             GlobalClassRegistry globalClassRegistry,
@@ -48,14 +50,18 @@ public final class ArchetypeService {
      * Must be called on the server game thread.
      */
     public void preparePlayer(ServerPlayer player, RunId runId, String dungeonId, String archetypeId) {
+        preparePlayer(player, runId.toString(), dungeonId, archetypeId);
+    }
+
+    private void preparePlayer(ServerPlayer player, String backupId, String dungeonId, String archetypeId) {
         ListTag dungeonInventory = databaseService.loadDungeonInventory(player.getUUID()).orElse(null);
-        stripAndSaveInventory(player, runId);
+        stripAndSaveInventory(player, backupId);
         try {
             applyDungeonInventoryOrKit(player, dungeonId, archetypeId, dungeonInventory);
         } catch (Exception e) {
             ArcadiaDungeon.LOGGER.error("[Arcadia][ARCHETYPE] giveKit failed - restoring inventory for {}",
                 player.getUUID(), e);
-            restoreInventory(player.getUUID(), player.getServer());
+            restoreInventory(player.getUUID(), player.getServer(), false);
             throw e;
         }
         ArcadiaDungeon.LOGGER.info("[Arcadia][ARCHETYPE] event=kit_given playerId={} dungeon={} archetype={}",
@@ -66,13 +72,48 @@ public final class ArchetypeService {
         preparePlayer(player, RunId.generate(), dungeonId, archetypeId);
     }
 
+    public boolean prepareDebugInventory(ServerPlayer player, String dungeonId) {
+        if (ArcadiaDungeon.runLifecycleService().findActiveRunForPlayer(player.getUUID()).isPresent()
+            || hasBackup(player.getUUID())) {
+            ArcadiaDungeon.LOGGER.warn("[Arcadia][ARCHETYPE] debug inventory refused playerId={} reason=active_run_or_backup",
+                player.getUUID());
+            return false;
+        }
+        String archetypeId = ArcadiaDungeon.playerProgressService()
+            .get(player.getUUID())
+            .map(PlayerProgress::selectedClassId)
+            .filter(id -> id != null && !id.isBlank())
+            .orElseGet(this::fallbackArchetypeId);
+        debugInventoryPreviews.add(player.getUUID());
+        try {
+            preparePlayer(player, "debug:" + UUID.randomUUID(), dungeonId, archetypeId);
+        } catch (RuntimeException e) {
+            debugInventoryPreviews.remove(player.getUUID());
+            throw e;
+        }
+        ArcadiaDungeon.LOGGER.info("[Arcadia][ARCHETYPE] event=debug_inventory_prepared playerId={} dungeon={} archetype={}",
+            player.getUUID(), dungeonId, archetypeId);
+        return true;
+    }
+
+    public boolean restoreDebugInventory(ServerPlayer player) {
+        boolean debugPreview = debugInventoryPreviews.remove(player.getUUID()) || hasDebugBackup(player.getUUID());
+        if (!debugPreview) {
+            ArcadiaDungeon.LOGGER.warn("[Arcadia][ARCHETYPE] debug inventory restore ignored playerId={} reason=no_debug_backup",
+                player.getUUID());
+            return false;
+        }
+        restoreInventory(player.getUUID(), player.getServer(), false);
+        return true;
+    }
+
     /**
      * Restores saved inventory for every player in the run.
      * Offline players keep their disk backup and are restored on next login.
      */
     public void restoreAll(Run run, MinecraftServer server) {
         for (UUID playerId : run.playerIds()) {
-            restoreInventory(playerId, server);
+            restoreInventory(playerId, server, true);
         }
     }
 
@@ -84,11 +125,13 @@ public final class ArchetypeService {
             .isPresent();
         if (inActiveRun) return;
         if (hasBackup(player.getUUID())) {
-            restoreInventory(player.getUUID(), player.getServer());
+            boolean debugBackup = debugInventoryPreviews.remove(player.getUUID()) || hasDebugBackup(player.getUUID());
+            boolean saveDungeonInventory = !debugBackup;
+            restoreInventory(player.getUUID(), player.getServer(), saveDungeonInventory);
         }
     }
 
-    private void stripAndSaveInventory(ServerPlayer player, RunId runId) {
+    private void stripAndSaveInventory(ServerPlayer player, String backupId) {
         UUID playerId = player.getUUID();
         if (hasBackup(playerId)) {
             ArcadiaDungeon.LOGGER.warn("[Arcadia][ARCHETYPE] existing inventory backup kept playerId={}", playerId);
@@ -99,14 +142,15 @@ public final class ArchetypeService {
         ListTag saved = new ListTag();
         player.getInventory().save(saved);
         inventoryBackups.put(playerId, saved.copy());
-        persistInventoryBackup(playerId, runId, saved);
+        persistInventoryBackup(playerId, backupId, saved);
         player.getInventory().clearContent();
     }
 
     private void giveKit(ServerPlayer player, String dungeonId, String archetypeId) {
         DungeonConfig config = dungeonRegistry.get(dungeonId).orElse(null);
         List<String> items = resolveKit(player, config, archetypeId);
-        for (String itemId : items) {
+        for (int i = 0; i < items.size(); i++) {
+            String itemId = items.get(i);
             ResourceLocation rl = ResourceLocation.tryParse(itemId);
             if (rl == null) {
                 ArcadiaDungeon.LOGGER.warn("[Arcadia][ARCHETYPE] item invalid: {}", itemId);
@@ -118,10 +162,13 @@ public final class ArchetypeService {
                 continue;
             }
             ItemStack stack = new ItemStack(item, 1);
-            if (!player.getInventory().add(stack)) {
+            if (i < 3) {
+                player.getInventory().setItem(i, stack);
+            } else if (!player.getInventory().add(stack)) {
                 player.drop(stack, false);
             }
         }
+        syncInventory(player);
     }
 
     private void applyDungeonInventoryOrKit(ServerPlayer player,
@@ -131,6 +178,7 @@ public final class ArchetypeService {
         if (dungeonInventory != null) {
             player.getInventory().clearContent();
             player.getInventory().load(dungeonInventory);
+            syncInventory(player);
             ArcadiaDungeon.LOGGER.info("[Arcadia][ARCHETYPE] event=dungeon_inventory_loaded playerId={}",
                 player.getUUID());
             return;
@@ -176,7 +224,7 @@ public final class ArchetypeService {
             .orElse(List.of());
     }
 
-    private void restoreInventory(UUID playerId, MinecraftServer server) {
+    private void restoreInventory(UUID playerId, MinecraftServer server, boolean saveDungeonInventory) {
         ListTag saved = inventoryBackups.get(playerId);
         if (saved == null) {
             saved = loadInventoryBackup(playerId);
@@ -189,9 +237,12 @@ public final class ArchetypeService {
             return;
         }
 
-        saveDungeonInventory(player);
+        if (saveDungeonInventory) {
+            saveDungeonInventory(player);
+        }
         player.getInventory().clearContent();
         player.getInventory().load(saved);
+        syncInventory(player);
         inventoryBackups.remove(playerId);
         deleteInventoryBackup(playerId);
         ArcadiaDungeon.LOGGER.info("[Arcadia][ARCHETYPE] event=inventory_restored playerId={}", playerId);
@@ -216,14 +267,26 @@ public final class ArchetypeService {
             player.getUUID());
     }
 
+    private static void syncInventory(ServerPlayer player) {
+        player.getInventory().setChanged();
+        player.inventoryMenu.broadcastChanges();
+        player.containerMenu.broadcastChanges();
+    }
+
     private boolean hasBackup(UUID playerId) {
         return inventoryBackups.containsKey(playerId)
             || databaseService.hasNormalInventoryBackup(playerId);
     }
 
-    private void persistInventoryBackup(UUID playerId, RunId runId, ListTag inventory) {
+    private boolean hasDebugBackup(UUID playerId) {
+        return databaseService.loadNormalInventoryBackupRunId(playerId)
+            .map(id -> id.startsWith("debug:"))
+            .orElse(false);
+    }
+
+    private void persistInventoryBackup(UUID playerId, String backupId, ListTag inventory) {
         try {
-            databaseService.saveNormalInventoryBackup(playerId, runId.toString(), inventory);
+            databaseService.saveNormalInventoryBackup(playerId, backupId, inventory);
             ArcadiaDungeon.LOGGER.info("[Arcadia][ARCHETYPE] event=inventory_backup_saved playerId={} store=sqlite",
                 playerId);
         } catch (RuntimeException e) {
@@ -243,5 +306,12 @@ public final class ArchetypeService {
 
     private void deleteInventoryBackup(UUID playerId) {
         databaseService.deleteNormalInventoryBackup(playerId);
+    }
+
+    private String fallbackArchetypeId() {
+        return globalClassRegistry.classes().stream()
+            .findFirst()
+            .map(DungeonConfig.ArchetypeDefinition::id)
+            .orElse("warrior");
     }
 }

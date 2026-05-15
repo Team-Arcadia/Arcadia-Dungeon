@@ -1,21 +1,123 @@
-<col class="cfg-screen">
+<col class="cfg-screen admin-debug-screen">
   <link rel="stylesheet" href="admin-global.css" />
   <row class="cfg-header">
     <label class="cfg-title">{{ cfg.title }}</label>
+    <label class="cfg-subtitle">{{ debug.summary }}</label>
   </row>
 
-  <col class="cfg-body">
-    <label class="section-title" data-i18n="arcadia.admin.debug.global_runs">Runs actives globales</label>
+  <col class="cfg-body admin-debug-body">
+    <row class="boss-tab-bar debug-tab-bar">
+      <button class="boss-tab-btn" onclick="tabPlayer">{{ tab.playerLabel }}</button>
+      <button class="boss-tab-btn" onclick="tabHud">{{ tab.hudLabel }}</button>
+      <button class="boss-tab-btn" onclick="tabRuns">{{ tab.runsLabel }}</button>
+    </row>
 
-    <label class="cfg-note" v-if="debug.empty" data-i18n="arcadia.admin.debug.none">Aucune run active.</label>
-    <label class="cfg-note" v-show="debug.summary">{{ debug.summary }}</label>
+    <col class="debug-tab-content" v-if="tab.player">
+      <label class="section-title" data-i18n="arcadia.admin.debug.player_tools">Joueur / progression</label>
 
-    <col class="danger-zone">
-      <label class="danger-title" data-i18n="arcadia.admin.debug.danger">Danger zone</label>
-      <button class="btn-danger"
-              onclick="killAll"
-              tooltip-i18n="arcadia.admin.debug.kill_all.tooltip"
-              data-i18n="arcadia.admin.debug.kill_all">Terminer toutes les runs</button>
+      <row class="debug-grid debug-player-grid">
+        <col class="field-group debug-field-player">
+          <label class="field-label" data-i18n="arcadia.admin.debug.player">Joueur cible</label>
+          <input class="field-input wide"
+                 value="{{ v.player }}"
+                 oninput="onPlayer"
+                 autocomplete="{{ s.players }}"
+                 tooltip-i18n="arcadia.admin.debug.tooltip.player" />
+        </col>
+        <col class="field-group debug-field-small">
+          <label class="field-label" data-i18n="arcadia.admin.debug.amount">Montant</label>
+          <input class="field-input wide"
+                 value="{{ v.amount }}"
+                 oninput="onAmount"
+                 tooltip-i18n="arcadia.admin.debug.tooltip.amount" />
+        </col>
+        <col class="field-group debug-field-small">
+          <label class="field-label" data-i18n="arcadia.admin.debug.points">Points</label>
+          <input class="field-input wide"
+                 value="{{ v.points }}"
+                 oninput="onPoints"
+                 tooltip-i18n="arcadia.admin.debug.tooltip.points" />
+        </col>
+        <col class="field-group debug-field-time">
+          <label class="field-label" data-i18n="arcadia.admin.debug.time">Temps PB</label>
+          <input class="field-input wide"
+                 value="{{ v.time }}"
+                 oninput="onTime"
+                 tooltip-i18n="arcadia.admin.debug.tooltip.time" />
+        </col>
+      </row>
+
+      <row class="debug-grid debug-progress-grid">
+        <col class="field-group debug-field-dungeon">
+          <label class="field-label" data-i18n="arcadia.admin.debug.dungeon">Donjon progression</label>
+          <input class="field-input wide"
+                 value="{{ v.dungeon }}"
+                 oninput="onDungeon"
+                 autocomplete="{{ s.dungeons }}"
+                 tooltip-i18n="arcadia.admin.debug.tooltip.dungeon" />
+        </col>
+      </row>
+
+      <col class="debug-action-grid">
+        <row class="debug-action-row">
+          <button class="debug-action-btn" onclick="sync" data-i18n="arcadia.admin.debug.sync">Sync profil</button>
+          <button class="debug-action-btn" onclick="addCurrency" data-i18n="arcadia.admin.debug.add_currency">+ Argent</button>
+          <button class="debug-action-btn" onclick="setCurrency" data-i18n="arcadia.admin.debug.set_currency">Set argent</button>
+          <button class="debug-action-btn" onclick="grantCompletion" data-i18n="arcadia.admin.debug.grant_completion">Valider run</button>
+        </row>
+        <row class="debug-action-row">
+          <button class="debug-action-btn" onclick="unlockBadges" data-i18n="arcadia.admin.debug.unlock_badges">Unlock titres</button>
+          <button class="debug-action-btn" onclick="unlockCustom" data-i18n="arcadia.admin.debug.unlock_custom">Unlock loadout</button>
+          <button class="debug-action-btn" onclick="addLoadoutPoints" data-i18n="arcadia.admin.debug.add_points">+ Points</button>
+          <button class="btn-danger debug-action-btn" onclick="resetProgress"
+                  tooltip-i18n="arcadia.admin.debug.tooltip.reset"
+                  data-i18n="arcadia.admin.debug.reset_progress">Reset joueur</button>
+        </row>
+      </col>
+    </col>
+
+    <col class="debug-tab-content" v-if="tab.hud">
+      <label class="section-title" data-i18n="arcadia.admin.debug.hud_tools">HUD de run</label>
+      <row class="debug-grid">
+        <col class="field-group debug-field-player">
+          <label class="field-label" data-i18n="arcadia.admin.debug.player">Joueur cible</label>
+          <input class="field-input wide"
+                 value="{{ v.player }}"
+                 oninput="onPlayer"
+                 autocomplete="{{ s.players }}"
+                 tooltip-i18n="arcadia.admin.debug.tooltip.player" />
+        </col>
+        <col class="field-group debug-field-dungeon">
+          <label class="field-label" data-i18n="arcadia.admin.debug.dungeon">Donjon progression</label>
+          <input class="field-input wide"
+                 value="{{ v.dungeon }}"
+                 oninput="onDungeon"
+                 autocomplete="{{ s.dungeons }}"
+                 tooltip-i18n="arcadia.admin.debug.tooltip.dungeon" />
+        </col>
+      </row>
+      <row class="debug-status-row">
+        <label class="debug-status">{{ hud.option }}</label>
+        <label class="debug-status">{{ hud.state }}</label>
+      </row>
+      <row class="debug-action-row">
+        <button class="debug-action-btn" onclick="showHud" data-i18n="arcadia.admin.debug.hud_show">Afficher preview</button>
+        <button class="debug-action-btn" onclick="showHudInventory" data-i18n="arcadia.admin.debug.hud_inventory">HUD + inventaire</button>
+        <button class="debug-action-btn" onclick="restoreDebugInventory" data-i18n="arcadia.admin.debug.restore_inventory">Restaurer inv.</button>
+        <button class="debug-action-btn" onclick="hideHud" data-i18n="arcadia.admin.debug.hud_hide">Masquer HUD</button>
+      </row>
+    </col>
+
+    <col class="debug-tab-content" v-if="tab.runs">
+      <label class="section-title" data-i18n="arcadia.admin.debug.global_runs">Runs actives globales</label>
+      <label class="cfg-note" v-if="debug.empty" data-i18n="arcadia.admin.debug.none">Aucune run active.</label>
+      <col class="danger-zone debug-danger">
+        <label class="danger-title" data-i18n="arcadia.admin.debug.danger">Danger zone</label>
+        <button class="btn-danger"
+                onclick="killAll"
+                tooltip-i18n="arcadia.admin.debug.kill_all.tooltip"
+                data-i18n="arcadia.admin.debug.kill_all">Terminer toutes les runs</button>
+      </col>
     </col>
   </col>
 

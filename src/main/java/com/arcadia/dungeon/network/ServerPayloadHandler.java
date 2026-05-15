@@ -55,6 +55,7 @@ public final class ServerPayloadHandler {
     private static final PacketRateLimiter TEMPLATE_LIMITER       = new PacketRateLimiter(500L);
     private static final PacketRateLimiter LOADOUT_SELECT_LIMITER = new PacketRateLimiter(500L);
     private static final PacketRateLimiter LOADOUT_SAVE_LIMITER   = new PacketRateLimiter(1_000L);
+    private static final PacketRateLimiter ADMIN_DEBUG_LIMITER    = new PacketRateLimiter(300L);
 
     private static final Gson GSON = new Gson();
 
@@ -465,8 +466,74 @@ public final class ServerPayloadHandler {
             Run run = ArcadiaDungeon.runLifecycleService().findById(runId).orElse(null);
             if (run == null) return;
             ArcadiaDungeon.roomProgressionService().cleanupRun(runId);
-            ArcadiaDungeon.runLifecycleService().completeRun(run, payload.success() ? RunResult.VICTORY : RunResult.DEFEAT);
+            RunResult result = payload.success() ? RunResult.VICTORY : RunResult.DEFEAT;
+            ArcadiaDungeon.runLifecycleService().completeRun(run, result);
+            ArcadiaDungeon.rewardDistributionService().distribute(run, result);
             player.sendSystemMessage(Component.literal("�a? Run terminee : " + sanitize(rawId)));
+        });
+    }
+
+    public static void handleAdminDebugAction(AdminDebugActionPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            ServerPlayer admin = (ServerPlayer) context.player();
+            if (!admin.hasPermissions(2)) return;
+            if (!ADMIN_DEBUG_LIMITER.tryAcquire(admin.getUUID())) return;
+
+            ServerPlayer target = resolveDebugTarget(admin, payload.targetPlayer());
+            if (target == null) {
+                ArcadiaToast.error(admin, "arcadia.admin.debug.toast.player_not_found", sanitize(payload.targetPlayer()));
+                return;
+            }
+
+            String action = payload.action() != null ? payload.action().trim().toUpperCase() : "";
+            var progress = ArcadiaDungeon.playerProgressService();
+            String targetName = target.getGameProfile().getName();
+            UUID targetId = target.getUUID();
+            boolean mutated = true;
+
+            switch (action) {
+                case "ADD_CURRENCY" -> progress.addCurrency(targetId, targetName, payload.amount());
+                case "SET_CURRENCY" -> progress.setCurrency(targetId, targetName, Math.max(0L, payload.amount()));
+                case "ADD_LOADOUT_POINTS" -> progress.addLoadoutPoints(targetId, targetName, clampInt(payload.amount(), -999, 999));
+                case "UNLOCK_CUSTOM_LOADOUT" -> progress.unlockCustomLoadout(targetId, targetName);
+                case "RESET_PROGRESS" -> progress.resetProgress(targetId, targetName);
+                case "PREVIEW_DUNGEON_INVENTORY" -> {
+                    if (!ArcadiaDungeon.archetypeService().prepareDebugInventory(target, debugDungeonId(payload.dungeonId()))) {
+                        ArcadiaToast.error(admin, "arcadia.admin.debug.toast.inventory_unavailable", sanitize(targetName));
+                        return;
+                    }
+                    mutated = false;
+                }
+                case "RESTORE_DEBUG_INVENTORY" -> {
+                    if (!ArcadiaDungeon.archetypeService().restoreDebugInventory(target)) {
+                        ArcadiaToast.error(admin, "arcadia.admin.debug.toast.inventory_unavailable", sanitize(targetName));
+                        return;
+                    }
+                    mutated = false;
+                }
+                case "GRANT_COMPLETION" -> progress.recordRunCompletion(
+                    targetId, targetName, debugDungeonId(payload.dungeonId()), Math.max(1L, payload.timeSeconds()));
+                case "UNLOCK_PROFILE_BADGES" -> {
+                    String dungeonId = debugDungeonId(payload.dungeonId());
+                    progress.recordRunCompletion(targetId, targetName, dungeonId, Math.max(1L, payload.timeSeconds()));
+                    progress.unlockCustomLoadout(targetId, targetName);
+                    progress.addLoadoutPoints(targetId, targetName, 3);
+                }
+                case "SYNC_PROGRESS" -> mutated = false;
+                default -> {
+                    ArcadiaToast.error(admin, "arcadia.admin.debug.toast.unknown_action", sanitize(action));
+                    return;
+                }
+            }
+
+            if (mutated) {
+                progress.save();
+            }
+            sendPlayerProgress(target);
+            if (!target.getUUID().equals(admin.getUUID())) {
+                sendPlayerProgress(admin);
+            }
+            ArcadiaToast.success(admin, "arcadia.admin.debug.toast.done", sanitize(action), sanitize(targetName));
         });
     }
 
@@ -650,7 +717,9 @@ public final class ServerPayloadHandler {
             int originY = payload.originY() > -64 && payload.originY() < 320
                 ? payload.originY() : DungeonPlacementSlots.DEFAULT_Y;
             BlockPos origin = DungeonPlacementSlots.originFor(slot, originY);
-            StructurePlacementScheduler.ClearArea clearArea = previousGeneratedArea(player.getServer(), cfg);
+            StructurePlacementScheduler.ClearArea clearArea = shouldClearPreviousGeneration(cfg, dimLoc.toString(), slot, payload.resetExisting())
+                ? previousGeneratedArea(player.getServer(), cfg)
+                : null;
             boolean queued = ArcadiaDungeon.structurePlacementScheduler().enqueueTemplate(level, structure, origin, clearArea,
                 "admin-generate:" + id,
                 placed -> {
@@ -691,6 +760,20 @@ public final class ServerPayloadHandler {
                 player.sendSystemMessage(Component.literal("[Arcadia] Generation NBT planifiee : " + sanitize(id) + " slot " + slot));
             }
         });
+    }
+
+    private static boolean shouldClearPreviousGeneration(DungeonConfig cfg,
+                                                         String targetDimension,
+                                                         int targetSlot,
+                                                         boolean resetExisting) {
+        if (cfg.generatedOrigin() == null || cfg.generatedSize() == null || cfg.generatedSlot() == null) {
+            return false;
+        }
+        if (resetExisting) {
+            return true;
+        }
+        return cfg.generatedSlot() == targetSlot
+            && targetDimension.equals(cfg.generatedOrigin().dimension());
     }
 
     private static StructurePlacementScheduler.ClearArea previousGeneratedArea(MinecraftServer server, DungeonConfig cfg) {
@@ -820,6 +903,35 @@ public final class ServerPayloadHandler {
         String trimmed = id != null ? id.trim() : "";
         if (trimmed.isEmpty() || trimmed.contains(":")) return trimmed;
         return ArcadiaDungeon.MODID + ":" + trimmed;
+    }
+
+    private static ServerPlayer resolveDebugTarget(ServerPlayer admin, String targetPlayer) {
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        if (server == null) return null;
+        String query = targetPlayer != null ? targetPlayer.trim() : "";
+        if (query.isEmpty() || "self".equalsIgnoreCase(query) || "@s".equalsIgnoreCase(query)) {
+            return admin;
+        }
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            if (player.getGameProfile().getName().equalsIgnoreCase(query)) {
+                return player;
+            }
+        }
+        return null;
+    }
+
+    private static String debugDungeonId(String dungeonId) {
+        String id = dungeonId != null ? dungeonId.trim() : "";
+        if (!id.isEmpty()) return normalizeDungeonId(id);
+        return ArcadiaDungeon.dungeonRegistry().dungeons().keySet().stream()
+            .findFirst()
+            .orElse(ArcadiaDungeon.MODID + ":debug");
+    }
+
+    private static int clampInt(long value, int min, int max) {
+        if (value < min) return min;
+        if (value > max) return max;
+        return (int) value;
     }
 
     private static boolean isValidDungeonResourceId(String id) {

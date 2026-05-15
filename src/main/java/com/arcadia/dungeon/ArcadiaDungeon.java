@@ -5,6 +5,7 @@ import com.arcadia.dungeon.command.ArcadiaReloadCommand;
 import com.arcadia.dungeon.command.ArcadiaSetupCommand;
 import com.arcadia.dungeon.event.DungeonAreaWandEventHandler;
 import com.arcadia.dungeon.network.AbandonRunPayload;
+import com.arcadia.dungeon.network.AdminDebugActionPayload;
 import com.arcadia.dungeon.network.AreaWandStatusPayload;
 import com.arcadia.dungeon.network.ArcadiaToastPayload;
 import com.arcadia.dungeon.network.ClientPayloadDispatcher;
@@ -233,6 +234,8 @@ public class ArcadiaDungeon {
             ClientPayloadDispatcher::handleMonitorData);
         registrar.playToServer(ForceEndRunPayload.TYPE, ForceEndRunPayload.CODEC,
             ServerPayloadHandler::handleForceEndRun);
+        registrar.playToServer(AdminDebugActionPayload.TYPE, AdminDebugActionPayload.CODEC,
+            ServerPayloadHandler::handleAdminDebugAction);
         // ── Post-MVP — édition complète donjon ──
         registrar.playToServer(RequestDungeonEditPayload.TYPE, RequestDungeonEditPayload.CODEC,
             ServerPayloadHandler::handleRequestDungeonEdit);

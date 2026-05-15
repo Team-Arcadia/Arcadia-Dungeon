@@ -55,7 +55,10 @@ public final class PlayerProgress {
     public Map<String, DungeonProgress> dungeons() { return Map.copyOf(dungeons); }
 
     public void setPlayerName(String name) { this.playerName = name; }
-    public void addCurrency(long amount) { this.currency += amount; }
+    public void addCurrency(long amount) { this.currency = Math.max(0L, this.currency + amount); }
+    public void setCurrency(long amount) { this.currency = Math.max(0L, amount); }
+    public void addLoadoutPoints(int amount) { this.loadoutPoints = Math.max(0, this.loadoutPoints + amount); }
+    public void unlockCustomLoadout() { this.customLoadoutUnlocked = true; }
 
     public void selectClass(String classId) {
         this.selectedClassId = classId != null ? classId : "";

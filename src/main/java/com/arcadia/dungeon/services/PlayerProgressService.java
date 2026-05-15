@@ -66,6 +66,36 @@ public final class PlayerProgressService {
         saveAsync();
     }
 
+    public void setCurrency(UUID playerId, String playerName, long amount) {
+        PlayerProgress p = getOrCreate(playerId, playerName);
+        p.setCurrency(amount);
+        ArcadiaDungeon.LOGGER.info("[Arcadia][PROGRESS] event=currency_set playerId={} total={}",
+            playerId, p.currency());
+        saveAsync();
+    }
+
+    public void addLoadoutPoints(UUID playerId, String playerName, int amount) {
+        PlayerProgress p = getOrCreate(playerId, playerName);
+        p.addLoadoutPoints(amount);
+        ArcadiaDungeon.LOGGER.info("[Arcadia][PROGRESS] event=loadout_points_add playerId={} amount={} total={}",
+            playerId, amount, p.loadoutPoints());
+        saveAsync();
+    }
+
+    public void unlockCustomLoadout(UUID playerId, String playerName) {
+        PlayerProgress p = getOrCreate(playerId, playerName);
+        p.unlockCustomLoadout();
+        ArcadiaDungeon.LOGGER.info("[Arcadia][PROGRESS] event=custom_loadout_unlock playerId={}", playerId);
+        saveAsync();
+    }
+
+    public void resetProgress(UUID playerId, String playerName) {
+        progressMap.put(playerId, new PlayerProgress(playerId, playerName));
+        databaseService.deleteDungeonInventory(playerId);
+        ArcadiaDungeon.LOGGER.warn("[Arcadia][PROGRESS] event=reset playerId={}", playerId);
+        saveAsync();
+    }
+
     /**
      * Records a completion. Returns true when this completion produces a new PB.
      */
