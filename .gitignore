@@ -1,6 +1,6 @@
 build/
-runs/
-run/
+/runs/
+/run/
 .gradle/
 .idea/
 *.iml
@@ -11,10 +11,22 @@ run/
 .project
 bin/
 out/
-logs/
+/logs/
 .claude/
-gradle-wrapper.jar
 .vscode
+
+# Local runtime data / saves
+/config/
+/crash-reports/
+*.log
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
 
 # Local BMAD/Codex workspace artifacts
 .agents/
