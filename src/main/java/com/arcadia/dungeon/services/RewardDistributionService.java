@@ -46,11 +46,9 @@ public final class RewardDistributionService {
         if (result == RunResult.ABANDONED || result == RunResult.SERVER_SHUTDOWN) return;
 
         DungeonConfig config = dungeonRegistry.get(run.dungeonId()).orElse(null);
-        if (config == null || config.rewards() == null) return;
-
-        DungeonConfig.Rewards rewards = config.rewards();
+        DungeonConfig.Rewards rewards = config != null ? config.rewards() : null;
         double multiplier = result == RunResult.VICTORY ? 1.0 : DEFEAT_MULTIPLIER;
-        long currency = Math.round(rewards.currency() * multiplier);
+        long currency = rewards != null ? Math.round(rewards.currency() * multiplier) : 0L;
 
         var server = ServerLifecycleHooks.getCurrentServer();
         if (server == null) return;
@@ -86,7 +84,7 @@ public final class RewardDistributionService {
                     if (dp != null) bestTime = dp.bestTimeSeconds;
                 }
 
-                if (rewards.loot() != null) {
+                if (rewards != null && rewards.loot() != null) {
                     for (DungeonConfig.LootEntry entry : rewards.loot()) {
                         int count = giveItem(player, entry);
                         if (count > 0) {

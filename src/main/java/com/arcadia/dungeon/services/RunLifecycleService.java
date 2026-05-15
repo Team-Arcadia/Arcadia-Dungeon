@@ -5,6 +5,7 @@ import com.arcadia.dungeon.domain.config.DungeonConfig;
 import com.arcadia.dungeon.domain.run.Run;
 import com.arcadia.dungeon.domain.run.RunId;
 import com.arcadia.dungeon.domain.run.RunResult;
+import com.arcadia.dungeon.network.ServerPayloadHandler;
 import com.arcadia.dungeon.persistence.DungeonRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -76,6 +77,7 @@ public final class RunLifecycleService {
      */
     public void completeRun(Run run, RunResult result) {
         run.completeRun(result);
+        ServerPayloadHandler.broadcastRunState(run);
         activeRuns.remove(run.id());
         restorePlayerOrigins(run);
         tryRestoreInventories(run);
@@ -90,6 +92,7 @@ public final class RunLifecycleService {
      */
     public void abandonRun(Run run, UUID requestingPlayerId) {
         run.completeRun(RunResult.ABANDONED);
+        ServerPayloadHandler.broadcastRunState(run);
         activeRuns.remove(run.id());
         restorePlayerOrigins(run);
         tryRestoreInventories(run);

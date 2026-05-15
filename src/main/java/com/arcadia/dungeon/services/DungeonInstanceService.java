@@ -22,14 +22,14 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
-/** Runtime NBT instances used by active runs. Admin preview slots stay separate. */
+/** Template-backed dungeon instances used by active runs. */
 public final class DungeonInstanceService {
 
     private final DungeonRegistry dungeonRegistry;
     private final StructurePlacementScheduler scheduler;
     private final Map<RunId, Instance> activeInstances = new ConcurrentHashMap<>();
     private final Set<RunId> pendingRuns = ConcurrentHashMap.newKeySet();
-    private final Set<Integer> pendingSlots = ConcurrentHashMap.newKeySet();
+    private final Set<String> pendingSlots = ConcurrentHashMap.newKeySet();
 
     public DungeonInstanceService(DungeonRegistry dungeonRegistry, StructurePlacementScheduler scheduler) {
         this.dungeonRegistry = dungeonRegistry;
@@ -72,42 +72,58 @@ public final class DungeonInstanceService {
             return;
         }
 
-        Optional<Integer> slotOpt = allocateSlot(dimensionId);
-        if (slotOpt.isEmpty()) {
-            onError.accept(Component.literal("Aucun slot d'instance disponible"));
+        PlacementTarget target = resolvePlacementTarget(config, level, dimensionId);
+        if (target == null) {
+            Optional<Integer> slotOpt = allocateSlot(dimensionId);
+            if (slotOpt.isEmpty()) {
+                onError.accept(Component.literal("Aucun slot d'instance disponible"));
+                return;
+            }
+            int slot = slotOpt.get();
+            int y = config.placementY() != null ? config.placementY() : DungeonPlacementSlots.DEFAULT_Y;
+            target = new PlacementTarget(slot, DungeonPlacementSlots.originFor(slot, y), null, false);
+        } else if (isSlotActive(dimensionId, target.slot()) || !reserveSlot(dimensionId, target.slot())) {
+            onError.accept(Component.literal("Slot d'instance deja utilise : " + target.slot()));
             return;
         }
 
-        int slot = slotOpt.get();
-        int y = config.placementY() != null ? config.placementY() : DungeonPlacementSlots.DEFAULT_Y;
-        BlockPos origin = DungeonPlacementSlots.originFor(slot, y);
+        PlacementTarget placement = target;
         String label = "run-instance:" + run.id();
         pendingRuns.add(run.id());
 
-        boolean queued = scheduler.enqueueTemplate(level, structureRef, origin, null, label, result -> {
+        boolean queued = scheduler.enqueueTemplate(level, structureRef, placement.origin(), placement.clearArea(), label, result -> {
             pendingRuns.remove(run.id());
-            pendingSlots.remove(slot);
-            Instance instance = new Instance(run.id(), config.id(), level, dimensionId, slot, origin, result.size(), result.spawnPos());
+            releaseSlot(dimensionId, placement.slot());
+            Vec3 spawnPos = ArcadiaDungeon.placementRegistry()
+                .getSpawn(config.id())
+                .orElse(result.spawnPos());
+            Instance instance = new Instance(run.id(), config.id(), level, dimensionId, placement.slot(),
+                placement.origin(), result.size(), spawnPos, placement.adminConfigured());
             activeInstances.put(run.id(), instance);
-            onReady.accept(new PreparedInstance(level, result.spawnPos(), origin, result.size(), slot));
+            onReady.accept(new PreparedInstance(level, spawnPos, placement.origin(), result.size(), placement.slot()));
         }, message -> {
             pendingRuns.remove(run.id());
-            pendingSlots.remove(slot);
+            releaseSlot(dimensionId, placement.slot());
             onError.accept(message);
         });
 
         if (queued) {
             ArcadiaDungeon.LOGGER.info("[Arcadia][INSTANCE] event=queued runId={} dungeon={} slot={} origin={}",
-                run.id(), config.id(), slot, origin);
+                run.id(), config.id(), placement.slot(), placement.origin());
         } else {
             pendingRuns.remove(run.id());
-            pendingSlots.remove(slot);
+            releaseSlot(dimensionId, placement.slot());
         }
     }
 
     public void cleanupRun(Run run) {
         Instance instance = activeInstances.remove(run.id());
         if (instance == null) return;
+        if (instance.adminConfigured()) {
+            ArcadiaDungeon.LOGGER.info("[Arcadia][INSTANCE] event=retained runId={} dungeon={} slot={}",
+                run.id(), instance.dungeonId(), instance.slot());
+            return;
+        }
 
         String label = "run-cleanup:" + run.id();
         scheduler.enqueueClear(new StructurePlacementScheduler.ClearArea(instance.level(), instance.origin(), instance.size()),
@@ -137,7 +153,16 @@ public final class DungeonInstanceService {
     }
 
     private Optional<Integer> allocateSlot(String dimensionId) {
-        Set<Integer> occupied = new HashSet<>(pendingSlots);
+        Set<Integer> occupied = new HashSet<>();
+        for (String pendingSlot : pendingSlots) {
+            int separator = pendingSlot.lastIndexOf('#');
+            if (separator <= 0 || !dimensionId.equals(pendingSlot.substring(0, separator))) continue;
+            try {
+                occupied.add(Integer.parseInt(pendingSlot.substring(separator + 1)));
+            } catch (NumberFormatException ignored) {
+                // Ignore malformed in-memory keys.
+            }
+        }
         for (Instance instance : activeInstances.values()) {
             if (dimensionId.equals(instance.dimensionId())) occupied.add(instance.slot());
         }
@@ -148,9 +173,44 @@ public final class DungeonInstanceService {
 
         for (int slot = DungeonPlacementSlots.RUNTIME_MIN_SLOT; slot <= DungeonPlacementSlots.RUNTIME_MAX_SLOT; slot++) {
             if (occupied.contains(slot)) continue;
-            if (pendingSlots.add(slot)) return Optional.of(slot);
+            if (reserveSlot(dimensionId, slot)) return Optional.of(slot);
         }
         return Optional.empty();
+    }
+
+    private PlacementTarget resolvePlacementTarget(DungeonConfig config, ServerLevel level, String dimensionId) {
+        if (config.generatedSlot() == null || config.generatedOrigin() == null || config.generatedSize() == null) {
+            return null;
+        }
+        if (!dimensionId.equals(config.generatedOrigin().dimension())) {
+            return null;
+        }
+        BlockPos origin = new BlockPos(config.generatedOrigin().x(), config.generatedOrigin().y(), config.generatedOrigin().z());
+        BlockPos size = new BlockPos(config.generatedSize().x(), config.generatedSize().y(), config.generatedSize().z());
+        StructurePlacementScheduler.ClearArea clearArea =
+            new StructurePlacementScheduler.ClearArea(level, origin, size);
+        return new PlacementTarget(config.generatedSlot(), origin, clearArea, true);
+    }
+
+    private boolean reserveSlot(String dimensionId, int slot) {
+        return pendingSlots.add(slotKey(dimensionId, slot));
+    }
+
+    private boolean isSlotActive(String dimensionId, int slot) {
+        for (Instance instance : activeInstances.values()) {
+            if (dimensionId.equals(instance.dimensionId()) && instance.slot() == slot) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void releaseSlot(String dimensionId, int slot) {
+        pendingSlots.remove(slotKey(dimensionId, slot));
+    }
+
+    private static String slotKey(String dimensionId, int slot) {
+        return dimensionId + "#" + slot;
     }
 
     public record PreparedInstance(ServerLevel level, Vec3 spawnPos, BlockPos origin, BlockPos size, int slot) {}
@@ -162,5 +222,11 @@ public final class DungeonInstanceService {
                             int slot,
                             BlockPos origin,
                             BlockPos size,
-                            Vec3 spawnPos) {}
+                            Vec3 spawnPos,
+                            boolean adminConfigured) {}
+
+    private record PlacementTarget(int slot,
+                                   BlockPos origin,
+                                   StructurePlacementScheduler.ClearArea clearArea,
+                                   boolean adminConfigured) {}
 }

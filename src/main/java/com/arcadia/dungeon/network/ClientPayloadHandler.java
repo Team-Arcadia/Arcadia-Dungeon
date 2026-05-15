@@ -51,6 +51,12 @@ public final class ClientPayloadHandler {
 
             // S3.4 — Détection désync : runId différent du state courant
             RunStatePayload current = RunStateClient.getState().orElse(null);
+            if ("ENDED".equals(payload.phase())) {
+                if (current == null || current.runId().equals(payload.runId())) {
+                    RunStateClient.clear();
+                }
+                return;
+            }
             if (current != null && !current.runId().equals(payload.runId())) {
                 ArcadiaDungeon.LOGGER.warn(
                     "[Arcadia][SYNC] desync_detected cached_runId={} received_runId={} — requesting resync",
@@ -115,9 +121,14 @@ public final class ClientPayloadHandler {
     }
 
     public static void handleOpenResultScreen(OpenResultScreenPayload payload, IPayloadContext context) {
-        context.enqueueWork(() -> Minecraft.getInstance().setScreen(new ResultScreen(
-            payload.result(), payload.elapsedSeconds(), payload.currencyEarned(),
-            payload.newPb(), payload.bestTimeSeconds(),
-            payload.respawnSeconds(), payload.dungeonId(), payload.lootLines())));
+        context.enqueueWork(() -> {
+            if (!"DEATH".equals(payload.result())) {
+                RunStateClient.clear();
+            }
+            Minecraft.getInstance().setScreen(new ResultScreen(
+                payload.result(), payload.elapsedSeconds(), payload.currencyEarned(),
+                payload.newPb(), payload.bestTimeSeconds(),
+                payload.respawnSeconds(), payload.dungeonId(), payload.lootLines()));
+        });
     }
 }
