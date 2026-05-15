@@ -5,6 +5,7 @@ import com.arcadia.dungeon.client.state.PlayerHubPreferences;
 import com.arcadia.dungeon.client.state.PlayerProgressClient;
 import com.arcadia.dungeon.network.DungeonListPayload;
 import com.arcadia.dungeon.network.RequestDungeonListPayload;
+import com.arcadia.dungeon.network.SelectLoadoutClassPayload;
 import com.tesseraui.TesseraModel;
 import com.tesseraui.TesseraPanel;
 import com.tesseraui.TesseraRenderContext;
@@ -76,6 +77,10 @@ public final class PlayerHubScreen extends TesseraScreen {
         long progressVersion = PlayerProgressClient.version();
         if (progressVersion != lastKnownProgressVersion) {
             lastKnownProgressVersion = progressVersion;
+            if (!PlayerProgressClient.selectedClassId().isBlank()) {
+                selectedClassId = PlayerProgressClient.selectedClassId();
+                PlayerHubPreferences.selectedClassId(selectedClassId);
+            }
             panelDirty = true;
         }
         if (panelDirty) {
@@ -203,8 +208,11 @@ public final class PlayerHubScreen extends TesseraScreen {
         modelData.put("loadout.item.off", selectedClass.off());
         modelData.put("loadout.item.utility", selectedClass.utility());
         modelData.put("loadout.locked", tr("arcadia.player.loadout.locked"));
-        modelData.put("loadout.points", "0");
-        modelData.put("loadout.pointsLabel", tr("arcadia.player.points", 0));
+        modelData.put("loadout.customState", PlayerProgressClient.customLoadoutUnlocked()
+            ? tr("arcadia.player.loadout.custom_unlocked")
+            : tr("arcadia.player.loadout.locked"));
+        modelData.put("loadout.points", String.valueOf(PlayerProgressClient.loadoutPoints()));
+        modelData.put("loadout.pointsLabel", tr("arcadia.player.points", PlayerProgressClient.loadoutPoints()));
     }
 
     private void fillClassRows(Map<String, String> modelData,
@@ -351,6 +359,8 @@ public final class PlayerHubScreen extends TesseraScreen {
         int safeIndex = Math.max(0, Math.min(index, classes.size() - 1));
         selectedClassId = classes.get(safeIndex).id();
         PlayerHubPreferences.selectedClassId(selectedClassId);
+        PacketDistributor.sendToServer(new SelectLoadoutClassPayload(selectedClassId));
+        TesseraToast.show(tr("arcadia.player.toast.class_selected", classes.get(safeIndex).name()));
         panelDirty = true;
     }
 

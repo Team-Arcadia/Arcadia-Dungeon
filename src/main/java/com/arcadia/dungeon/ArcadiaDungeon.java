@@ -30,6 +30,7 @@ import com.arcadia.dungeon.network.RequestRunResyncPayload;
 import com.arcadia.dungeon.network.SaveDungeonConfigPayload;
 import com.arcadia.dungeon.network.SaveGlobalClassesPayload;
 import com.arcadia.dungeon.network.SaveZonePayload;
+import com.arcadia.dungeon.network.SelectLoadoutClassPayload;
 import com.arcadia.dungeon.network.RunStatePayload;
 import com.arcadia.dungeon.network.ServerPayloadHandler;
 import com.arcadia.dungeon.network.StartRunPayload;
@@ -39,6 +40,7 @@ import com.arcadia.dungeon.persistence.GlobalClassRegistry;
 import com.arcadia.dungeon.persistence.PlacementRegistry;
 import com.arcadia.dungeon.services.StructurePlacer;
 import com.arcadia.dungeon.client.hud.RunOverlayHud;
+import com.arcadia.dungeon.services.ArcadiaDatabaseService;
 import com.arcadia.dungeon.services.ArchetypeService;
 import com.arcadia.dungeon.services.BossPhaseService;
 import com.arcadia.dungeon.services.DungeonInstanceService;
@@ -88,6 +90,7 @@ public class ArcadiaDungeon {
      */
     private static volatile DungeonRegistry         dungeonRegistry;
     private static volatile GlobalClassRegistry     globalClassRegistry;
+    private static volatile ArcadiaDatabaseService  databaseService;
     private static volatile RunLifecycleService     runLifecycleService;
     private static volatile PlayerProgressService   playerProgressService;
     private static volatile RewardDistributionService rewardDistributionService;
@@ -113,6 +116,12 @@ public class ArcadiaDungeon {
         GlobalClassRegistry r = globalClassRegistry;
         if (r == null) throw new IllegalStateException("GlobalClassRegistry not initialized - call after ServerStartingEvent");
         return r;
+    }
+
+    public static ArcadiaDatabaseService databaseService() {
+        ArcadiaDatabaseService s = databaseService;
+        if (s == null) throw new IllegalStateException("ArcadiaDatabaseService not initialized - call after ServerStartingEvent");
+        return s;
     }
 
     public static RunLifecycleService runLifecycleService() {
@@ -241,6 +250,8 @@ public class ArcadiaDungeon {
             ServerPayloadHandler::handleSaveDungeonConfig);
         registrar.playToServer(SaveGlobalClassesPayload.TYPE, SaveGlobalClassesPayload.CODEC,
             ServerPayloadHandler::handleSaveGlobalClasses);
+        registrar.playToServer(SelectLoadoutClassPayload.TYPE, SelectLoadoutClassPayload.CODEC,
+            ServerPayloadHandler::handleSelectLoadoutClass);
         registrar.playToServer(SaveZonePayload.TYPE, SaveZonePayload.CODEC,
             ServerPayloadHandler::handleSaveZone);
         registrar.playToServer(CaptureSpawnPayload.TYPE, CaptureSpawnPayload.CODEC,
@@ -269,11 +280,16 @@ public class ArcadiaDungeon {
             if (globalClassRegistry == null) globalClassRegistry = new GlobalClassRegistry();
             globalClassRegistry.bootstrap();
 
+            if (databaseService == null) {
+                databaseService = new ArcadiaDatabaseService();
+                databaseService.bootstrap();
+            }
+
             if (runLifecycleService == null)
                 runLifecycleService = new RunLifecycleService(dungeonRegistry);
 
             if (playerProgressService == null)
-                playerProgressService = new PlayerProgressService();
+                playerProgressService = new PlayerProgressService(databaseService);
 
             if (rewardDistributionService == null)
                 rewardDistributionService = new RewardDistributionService(playerProgressService, dungeonRegistry);
@@ -294,7 +310,8 @@ public class ArcadiaDungeon {
             }
 
             if (archetypeService == null) {
-                archetypeService = new ArchetypeService(dungeonRegistry, globalClassRegistry);
+                archetypeService = new ArchetypeService(dungeonRegistry, globalClassRegistry, databaseService);
+                NeoForge.EVENT_BUS.register(archetypeService);
                 runLifecycleService.setArchetypeService(archetypeService);
             }
 
@@ -349,10 +366,11 @@ public class ArcadiaDungeon {
             if (roomProgressionService != null) { NeoForge.EVENT_BUS.unregister(roomProgressionService); roomProgressionService = null; }
             if (playerProgressService != null) { playerProgressService.save(); playerProgressService.shutdown(); playerProgressService = null; }
             if (runLifecycleService != null)  { runLifecycleService.shutdownAll(); runLifecycleService = null; }
+            if (databaseService != null) { databaseService.close(); databaseService = null; }
             dungeonRegistry        = null;
             placementRegistry      = null;
             structurePlacer        = null;
-            archetypeService       = null;
+            if (archetypeService != null) { NeoForge.EVENT_BUS.unregister(archetypeService); archetypeService = null; }
             rewardDistributionService = null;
         }
 

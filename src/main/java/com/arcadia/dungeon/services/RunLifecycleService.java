@@ -112,6 +112,14 @@ public final class RunLifecycleService {
             .findFirst();
     }
 
+    public Optional<Run> findOpenLobby(String dungeonId, int maxPlayers) {
+        return activeRuns.values().stream()
+            .filter(r -> r.dungeonId().equals(dungeonId))
+            .filter(r -> r.phase() == com.arcadia.dungeon.domain.run.RunPhase.STARTING)
+            .filter(r -> r.playerIds().size() < maxPlayers)
+            .findFirst();
+    }
+
     public Optional<Run> findById(RunId id) {
         return Optional.ofNullable(activeRuns.get(id));
     }
@@ -126,7 +134,7 @@ public final class RunLifecycleService {
         activeRuns.values().forEach(run -> {
             try {
                 run.completeRun(RunResult.SERVER_SHUTDOWN);
-                // Pas de restore inventaire au shutdown : serveur s'arrête, joueurs déjà déconnectés
+                // Inventory backups are persistent; players are restored on the next login if shutdown interrupts a run.
             } catch (IllegalStateException ignored) {
                 // Peut arriver hors SGT si le shutdown est rapide — acceptable
             }

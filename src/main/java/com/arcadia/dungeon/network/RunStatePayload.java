@@ -6,6 +6,13 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * Payload S2C — état complet d'une run, envoyé à tous les joueurs de la run
@@ -27,6 +34,7 @@ public record RunStatePayload(
     int bossHpCurrent,
     int bossHpMax,
     int bossPhaseIndex,
+    List<String> playerNames,
     long serverTimestampMs
 ) implements CustomPacketPayload {
 
@@ -50,6 +58,10 @@ public record RunStatePayload(
                 buf.writeInt(p.bossHpMax());
                 buf.writeInt(p.bossPhaseIndex());
             }
+            buf.writeInt(p.playerNames().size());
+            for (String playerName : p.playerNames()) {
+                buf.writeUtf(playerName);
+            }
             buf.writeLong(p.serverTimestampMs());
         },
         buf -> {
@@ -69,9 +81,14 @@ public record RunStatePayload(
                 bossHpMax = buf.readInt();
                 bossPhaseIdx = buf.readInt();
             }
+            int playerNameCount = buf.readInt();
+            List<String> playerNames = new ArrayList<>(playerNameCount);
+            for (int i = 0; i < playerNameCount; i++) {
+                playerNames.add(buf.readUtf());
+            }
             long serverMs = buf.readLong();
             return new RunStatePayload(runId, phase, roomIndex, waveIndex,
-                lives, totalRooms, startMs, hasBoss, bossType, bossHpCur, bossHpMax, bossPhaseIdx, serverMs);
+                lives, totalRooms, startMs, hasBoss, bossType, bossHpCur, bossHpMax, bossPhaseIdx, playerNames, serverMs);
         }
     );
 
@@ -91,8 +108,19 @@ public record RunStatePayload(
             hasBoss ? run.bossState().hpCurrent() : 0,
             hasBoss ? run.bossState().hpMax() : 0,
             hasBoss ? run.bossState().currentPhaseIndex() : 0,
+            resolvePlayerNames(run),
             System.currentTimeMillis()
         );
+    }
+
+    private static List<String> resolvePlayerNames(Run run) {
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        List<String> names = new ArrayList<>();
+        for (UUID playerId : run.playerIds()) {
+            ServerPlayer player = server != null ? server.getPlayerList().getPlayer(playerId) : null;
+            names.add(player != null ? player.getGameProfile().getName() : playerId.toString().substring(0, 8));
+        }
+        return List.copyOf(names);
     }
 
     @Override

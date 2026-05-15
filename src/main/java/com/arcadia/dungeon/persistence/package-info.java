@@ -1,11 +1,8 @@
 /**
- * Persistence — file-based JSON (MVP) avec dette tracée vers SQLite v1.1.
+ * File-based configuration persistence.
  *
- * <p>À implémenter :
- * <ul>
- *   <li>DungeonConfigLoader → {@code config/arcadia/dungeon/<id>.json} (S1.2)</li>
- *   <li>PlayerProgressRepo → {@code config/arcadia/dungeon/playerdata/<uuid>.json} (S5.1)</li>
- *   <li>DungeonExampleSeeder → copy from JAR au premier boot (S1.3)</li>
- * </ul>
+ * <p>Dungeon definitions, placement slots and admin-authored free classes stay
+ * as editable config files. Player-owned runtime state lives in SQLite via
+ * {@link com.arcadia.dungeon.services.ArcadiaDatabaseService}.
  */
 package com.arcadia.dungeon.persistence;

@@ -1,7 +1,7 @@
 <col class="lobby-screen">
   <row class="lobby-header">
     <col class="lobby-title-block">
-      <label class="lobby-kicker" data-i18n="arcadia.client.lobby.kicker">LOBBY SOLO</label>
+      <label class="lobby-kicker" data-i18n="arcadia.client.lobby.kicker">LOBBY MULTI</label>
       <label class="lobby-title">{{ dungeon.name }}</label>
     </col>
     <label class="lobby-state" data-i18n="arcadia.client.ready">Pret</label>
@@ -23,11 +23,11 @@
       <label class="ready-badge" data-i18n="arcadia.client.ready">Pret</label>
     </row>
 
-    <row class="player-card empty-slot">
+    <row class="player-card">
       <label class="player-mark">2</label>
       <col class="player-main">
-        <label class="player-name muted" data-i18n="arcadia.client.lobby.slot_closed">(slot ferme)</label>
-        <label class="player-sub" data-i18n="arcadia.client.lobby.mvp_solo">MVP solo</label>
+        <label class="player-name muted">{{ player.two.name }}</label>
+        <label class="player-sub">{{ player.two.sub }}</label>
       </col>
     </row>
 

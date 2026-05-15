@@ -13,6 +13,9 @@ public final class PlayerProgressClient {
     private static volatile long currency = 0L;
     private static volatile int totalRuns = 0;
     private static volatile long bestTimeSeconds = 0L;
+    private static volatile String selectedClassId = "";
+    private static volatile boolean customLoadoutUnlocked = false;
+    private static volatile int loadoutPoints = 0;
     private static volatile long version = 0L;
     private static final Map<String, PlayerProgressPayload.DungeonStat> dungeonStats = new ConcurrentHashMap<>();
 
@@ -22,6 +25,9 @@ public final class PlayerProgressClient {
         currency = payload.currency();
         totalRuns = payload.totalRuns();
         bestTimeSeconds = payload.bestTimeSeconds();
+        selectedClassId = payload.selectedClassId() != null ? payload.selectedClassId() : "";
+        customLoadoutUnlocked = payload.customLoadoutUnlocked();
+        loadoutPoints = payload.loadoutPoints();
         dungeonStats.clear();
         for (PlayerProgressPayload.DungeonStat stat : payload.dungeons()) {
             dungeonStats.put(stat.dungeonId(), stat);
@@ -39,6 +45,18 @@ public final class PlayerProgressClient {
 
     public static long bestTimeSeconds() {
         return bestTimeSeconds;
+    }
+
+    public static String selectedClassId() {
+        return selectedClassId;
+    }
+
+    public static boolean customLoadoutUnlocked() {
+        return customLoadoutUnlocked;
+    }
+
+    public static int loadoutPoints() {
+        return loadoutPoints;
     }
 
     public static long bestTimeFor(String dungeonId) {

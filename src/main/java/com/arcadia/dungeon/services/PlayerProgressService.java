@@ -2,17 +2,7 @@ package com.arcadia.dungeon.services;
 
 import com.arcadia.dungeon.ArcadiaDungeon;
 import com.arcadia.dungeon.domain.player.PlayerProgress;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import net.neoforged.fml.loading.FMLPaths;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.io.Writer;
-import java.lang.reflect.Type;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -21,16 +11,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
- * Service progression joueur — currency + PB par donjon (Stories S5.1, S4.3).
- *
- * <p>Persistance JSON dans {@code config/arcadia/player_progress.json}.
- * Chargé au {@code ServerStartingEvent}, sauvegardé après chaque mise à jour PB/currency.
+ * Player progress service: currency, global loadout selection and per-dungeon PBs.
  */
 public final class PlayerProgressService {
 
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final String DATA_FILE = "config/arcadia/player_progress.json";
-
+    private final ArcadiaDatabaseService databaseService;
     private final Map<UUID, PlayerProgress> progressMap = new ConcurrentHashMap<>();
 
     private final ScheduledExecutorService saveExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
@@ -40,12 +25,28 @@ public final class PlayerProgressService {
     });
     private volatile boolean savePending = false;
 
+    public PlayerProgressService(ArcadiaDatabaseService databaseService) {
+        this.databaseService = databaseService;
+    }
+
     public PlayerProgress getOrCreate(UUID playerId, String playerName) {
-        return progressMap.computeIfAbsent(playerId, id -> new PlayerProgress(id, playerName));
+        return progressMap.compute(playerId, (id, current) -> {
+            if (current == null) return new PlayerProgress(id, playerName);
+            current.setPlayerName(playerName);
+            return current;
+        });
     }
 
     public Optional<PlayerProgress> get(UUID playerId) {
         return Optional.ofNullable(progressMap.get(playerId));
+    }
+
+    public boolean selectClass(UUID playerId, String playerName, String classId) {
+        if (classId == null || classId.isBlank()) return false;
+        PlayerProgress p = getOrCreate(playerId, playerName);
+        p.selectClass(classId.trim());
+        saveAsync();
+        return true;
     }
 
     public void addCurrency(UUID playerId, String playerName, long amount) {
@@ -57,7 +58,7 @@ public final class PlayerProgressService {
     }
 
     /**
-     * Enregistre une complétion. Retourne {@code true} si c'est un nouveau PB.
+     * Records a completion. Returns true when this completion produces a new PB.
      */
     public boolean recordRunCompletion(UUID playerId, String playerName,
                                        String dungeonId, long timeSeconds) {
@@ -78,83 +79,30 @@ public final class PlayerProgressService {
         return Map.copyOf(progressMap);
     }
 
-    // ── Persistence ────────────────────────────────────────────────────────
-
-    /** Chargé au ServerStartingEvent. */
     public void load() {
-        Path path = FMLPaths.GAMEDIR.get().resolve(DATA_FILE);
-        if (!Files.exists(path)) return;
-        try (Reader r = Files.newBufferedReader(path)) {
-            Type type = new com.google.gson.reflect.TypeToken<Map<String, ProgressData>>() {}.getType();
-            Map<String, ProgressData> raw = GSON.fromJson(r, type);
-            if (raw == null) return;
-            raw.forEach((uuidStr, data) -> {
-                try {
-                    UUID id = UUID.fromString(uuidStr);
-                    PlayerProgress p = new PlayerProgress(id, data.playerName != null ? data.playerName : "unknown");
-                    p.addCurrency(data.currency);
-                    if (data.dungeons != null) {
-                        data.dungeons.forEach((dungeonId, dp) -> {
-                            p.restoreDungeonProgress(dungeonId, dp.completions, dp.bestTimeSeconds, dp.lastCompletionMs);
-                        });
-                    }
-                    progressMap.put(id, p);
-                } catch (IllegalArgumentException ignored) {}
-            });
-            ArcadiaDungeon.LOGGER.info("[Arcadia][PROGRESS] event=loaded count={}", progressMap.size());
-        } catch (IOException e) {
-            ArcadiaDungeon.LOGGER.error("[Arcadia][PROGRESS] load_failed: {}", e.getMessage());
-        }
+        progressMap.clear();
+        progressMap.putAll(databaseService.loadPlayerProgress());
+        ArcadiaDungeon.LOGGER.info("[Arcadia][PROGRESS] event=loaded source=sqlite count={}", progressMap.size());
     }
 
     public void save() {
-        Path path = FMLPaths.GAMEDIR.get().resolve(DATA_FILE);
         try {
-            Files.createDirectories(path.getParent());
-            Map<String, ProgressData> raw = new HashMap<>();
-            progressMap.forEach((id, p) -> {
-                ProgressData data = new ProgressData();
-                data.playerName = p.playerName();
-                data.currency = p.currency();
-                p.dungeons().forEach((dungeonId, dp) -> {
-                    DungeonData dd = new DungeonData();
-                    dd.completions = dp.completions;
-                    dd.bestTimeSeconds = dp.bestTimeSeconds;
-                    dd.lastCompletionMs = dp.lastCompletionMs;
-                    data.dungeons.put(dungeonId, dd);
-                });
-                raw.put(id.toString(), data);
-            });
-            try (Writer w = Files.newBufferedWriter(path)) {
-                GSON.toJson(raw, w);
-            }
-        } catch (IOException e) {
-            ArcadiaDungeon.LOGGER.error("[Arcadia][PROGRESS] save_failed: {}", e.getMessage());
+            databaseService.saveAllPlayerProgress(progressMap.values());
+        } catch (RuntimeException e) {
+            ArcadiaDungeon.LOGGER.error("[Arcadia][PROGRESS] sqlite_save_failed: {}", e.getMessage());
         }
     }
 
     private void saveAsync() {
         if (savePending) return;
         savePending = true;
-        saveExecutor.execute(() -> { savePending = false; save(); });
+        saveExecutor.execute(() -> {
+            savePending = false;
+            save();
+        });
     }
 
-    /** Appelé depuis ArcadiaDungeon.onServerStopping pour terminer le thread proprement. */
     public void shutdown() {
         saveExecutor.shutdownNow();
-    }
-
-    // ── DTOs sérialisables ─────────────────────────────────────────────────
-
-    private static class ProgressData {
-        String playerName = "";
-        long currency = 0L;
-        Map<String, DungeonData> dungeons = new HashMap<>();
-    }
-
-    private static class DungeonData {
-        int completions = 0;
-        long bestTimeSeconds = 0L;
-        long lastCompletionMs = 0L;
     }
 }
