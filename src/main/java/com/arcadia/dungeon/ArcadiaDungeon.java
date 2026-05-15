@@ -7,7 +7,7 @@ import com.arcadia.dungeon.event.DungeonAreaWandEventHandler;
 import com.arcadia.dungeon.network.AbandonRunPayload;
 import com.arcadia.dungeon.network.AreaWandStatusPayload;
 import com.arcadia.dungeon.network.ArcadiaToastPayload;
-import com.arcadia.dungeon.network.ClientPayloadHandler;
+import com.arcadia.dungeon.network.ClientPayloadDispatcher;
 import com.arcadia.dungeon.network.DungeonListPayload;
 import com.arcadia.dungeon.network.JoinRunPayload;
 import com.arcadia.dungeon.network.OpenDebugScreenPayload;
@@ -41,7 +41,6 @@ import com.arcadia.dungeon.persistence.DungeonRegistry;
 import com.arcadia.dungeon.persistence.GlobalClassRegistry;
 import com.arcadia.dungeon.persistence.PlacementRegistry;
 import com.arcadia.dungeon.services.StructurePlacer;
-import com.arcadia.dungeon.client.hud.RunOverlayHud;
 import com.arcadia.dungeon.services.ArcadiaDatabaseService;
 import com.arcadia.dungeon.services.ArchetypeService;
 import com.arcadia.dungeon.services.BossPhaseService;
@@ -58,7 +57,6 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
@@ -195,40 +193,30 @@ public class ArcadiaDungeon {
     public ArcadiaDungeon(IEventBus modEventBus) {
         LOGGER.info("[Arcadia][BOOT] Mod loading — v1.0 fresh start");
         modEventBus.addListener(this::registerPayloads);
-        // HUD overlay (S6.5) — enregistré sur le mod event bus, ne s'exécute que côté client
-        modEventBus.addListener(ArcadiaDungeon::onRegisterGuiLayers);
-    }
-
-    private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
-        event.registerAboveAll(
-            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MODID, "run_hud"),
-            RunOverlayHud.INSTANCE
-        );
-        LOGGER.info("[Arcadia][BOOT] HUD layer registered: run_hud");
     }
 
     private void registerPayloads(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(MODID);
         registrar.playToClient(ArcadiaToastPayload.TYPE, ArcadiaToastPayload.CODEC,
-            ClientPayloadHandler::handleToast);
+            ClientPayloadDispatcher::handleToast);
         registrar.playToClient(RunStatePayload.TYPE, RunStatePayload.CODEC,
-            ClientPayloadHandler::handleRunState);
+            ClientPayloadDispatcher::handleRunState);
         registrar.playToServer(StartRunPayload.TYPE, StartRunPayload.CODEC,
             ServerPayloadHandler::handleStartRun);
         registrar.playToServer(AbandonRunPayload.TYPE, AbandonRunPayload.CODEC,
             ServerPayloadHandler::handleAbandonRun);
         registrar.playToClient(OpenDebugScreenPayload.TYPE, OpenDebugScreenPayload.CODEC,
-            ClientPayloadHandler::handleOpenDebugScreen);
+            ClientPayloadDispatcher::handleOpenDebugScreen);
         registrar.playToServer(JoinRunPayload.TYPE, JoinRunPayload.CODEC,
             ServerPayloadHandler::handleJoinRun);
         registrar.playToServer(RequestRunResyncPayload.TYPE, RequestRunResyncPayload.CODEC,
             ServerPayloadHandler::handleRequestResync);
         registrar.playToClient(DungeonListPayload.TYPE, DungeonListPayload.CODEC,
-            ClientPayloadHandler::handleDungeonList);
+            ClientPayloadDispatcher::handleDungeonList);
         registrar.playToClient(OpenResultScreenPayload.TYPE, OpenResultScreenPayload.CODEC,
-            ClientPayloadHandler::handleOpenResultScreen);
+            ClientPayloadDispatcher::handleOpenResultScreen);
         registrar.playToClient(PlayerProgressPayload.TYPE, PlayerProgressPayload.CODEC,
-            ClientPayloadHandler::handlePlayerProgress);
+            ClientPayloadDispatcher::handlePlayerProgress);
         registrar.playToServer(RequestDungeonListPayload.TYPE, RequestDungeonListPayload.CODEC,
             ServerPayloadHandler::handleRequestDungeonList);
         registrar.playToServer(ReloadRequestPayload.TYPE, ReloadRequestPayload.CODEC,
@@ -238,18 +226,18 @@ public class ArcadiaDungeon {
         registrar.playToServer(DeleteDungeonPayload.TYPE, DeleteDungeonPayload.CODEC,
             ServerPayloadHandler::handleDeleteDungeon);
         registrar.playToClient(OpenAdminHubPayload.TYPE, OpenAdminHubPayload.CODEC,
-            ClientPayloadHandler::handleOpenAdminHub);
+            ClientPayloadDispatcher::handleOpenAdminHub);
         registrar.playToServer(MonitorRefreshPayload.TYPE, MonitorRefreshPayload.CODEC,
             ServerPayloadHandler::handleMonitorRefresh);
         registrar.playToClient(MonitorDataPayload.TYPE, MonitorDataPayload.CODEC,
-            ClientPayloadHandler::handleMonitorData);
+            ClientPayloadDispatcher::handleMonitorData);
         registrar.playToServer(ForceEndRunPayload.TYPE, ForceEndRunPayload.CODEC,
             ServerPayloadHandler::handleForceEndRun);
         // ── Post-MVP — édition complète donjon ──
         registrar.playToServer(RequestDungeonEditPayload.TYPE, RequestDungeonEditPayload.CODEC,
             ServerPayloadHandler::handleRequestDungeonEdit);
         registrar.playToClient(DungeonEditDataPayload.TYPE, DungeonEditDataPayload.CODEC,
-            ClientPayloadHandler::handleDungeonEditData);
+            ClientPayloadDispatcher::handleDungeonEditData);
         registrar.playToServer(SaveDungeonConfigPayload.TYPE, SaveDungeonConfigPayload.CODEC,
             ServerPayloadHandler::handleSaveDungeonConfig);
         registrar.playToServer(SaveGlobalClassesPayload.TYPE, SaveGlobalClassesPayload.CODEC,
@@ -267,9 +255,9 @@ public class ArcadiaDungeon {
         registrar.playToServer(RequestAreaWandPayload.TYPE, RequestAreaWandPayload.CODEC,
             ServerPayloadHandler::handleRequestAreaWand);
         registrar.playToClient(AreaWandStatusPayload.TYPE, AreaWandStatusPayload.CODEC,
-            ClientPayloadHandler::handleAreaWandStatus);
+            ClientPayloadDispatcher::handleAreaWandStatus);
         registrar.playToClient(StructurePlacementStatusPayload.TYPE, StructurePlacementStatusPayload.CODEC,
-            ClientPayloadHandler::handleStructurePlacementStatus);
+            ClientPayloadDispatcher::handleStructurePlacementStatus);
         LOGGER.info("[Arcadia][BOOT] Payloads registered (S2C: RunState/DungeonList/OpenAdminHub/OpenResultScreen/OpenDebugScreen/MonitorData/DungeonEditData | C2S: StartRun/AbandonRun/JoinRun/RequestResync/RequestDungeonList/ReloadRequest/CreateDungeon/DeleteDungeon/MonitorRefresh/ForceEndRun/RequestDungeonEdit/SaveDungeonConfig/SaveGlobalClasses/SaveZone/CaptureSpawn/GenerateDungeonTemplate/RequestAreaWand)");
     }
 

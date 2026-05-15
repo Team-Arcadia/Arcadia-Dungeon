@@ -35,11 +35,18 @@ sourceSets {
     }
 }
 
+configurations {
+    nonMinecraftRuntime
+}
+
 runs {
     configureEach {
         systemProperty 'forge.logging.markers', 'REGISTRIES'
         systemProperty 'forge.logging.console.level', 'debug'
         modSource project.sourceSets.main
+        dependencies {
+            runtime project.configurations.nonMinecraftRuntime
+        }
     }
 
     client {
@@ -65,6 +72,7 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 configurations {
     runtimeClasspath.extendsFrom localRuntime
+    runtimeClasspath.extendsFrom nonMinecraftRuntime
     gametestImplementation.extendsFrom implementation
 }
 
@@ -88,9 +96,9 @@ dependencies {
         jarJar.ranged(it, "[3.45.3.0,4.0)")
     }
     // Rend les JiJ disponibles dans runClient/runServer (dev uniquement, pas dans le JAR)
-    localRuntime "com.zaxxer:HikariCP:5.1.0"
-    localRuntime "org.flywaydb:flyway-core:9.22.3"
-    localRuntime "org.xerial:sqlite-jdbc:3.45.3.0"
+    nonMinecraftRuntime "com.zaxxer:HikariCP:5.1.0"
+    nonMinecraftRuntime "org.flywaydb:flyway-core:9.22.3"
+    nonMinecraftRuntime "org.xerial:sqlite-jdbc:3.45.3.0"
 
     // GeckoLib — modèles 3D animés (Story 13.1-13.2)
     implementation "software.bernie.geckolib:geckolib-neoforge-1.21.1:4.8.4"

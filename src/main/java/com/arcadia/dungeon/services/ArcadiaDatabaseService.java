@@ -38,6 +38,7 @@ public final class ArcadiaDatabaseService implements AutoCloseable {
         Path path = FMLPaths.GAMEDIR.get().resolve(DATA_FILE);
         try {
             Files.createDirectories(path.getParent());
+            Class.forName("org.sqlite.JDBC");
             connection = DriverManager.getConnection("jdbc:sqlite:" + path.toAbsolutePath());
             try (Statement statement = connection.createStatement()) {
                 statement.execute("PRAGMA journal_mode=WAL");
@@ -86,7 +87,7 @@ public final class ArcadiaDatabaseService implements AutoCloseable {
                     """);
             }
             ArcadiaDungeon.LOGGER.info("[Arcadia][DB] event=ready path={}", path);
-        } catch (SQLException | IOException e) {
+        } catch (ClassNotFoundException | SQLException | IOException e) {
             throw new IllegalStateException("Unable to initialize Arcadia SQLite database", e);
         }
     }

@@ -1,16 +1,19 @@
 package com.arcadia.dungeon.client;
 
 import com.arcadia.dungeon.ArcadiaDungeon;
+import com.arcadia.dungeon.client.hud.RunOverlayHud;
 import com.arcadia.dungeon.client.screen.PlayerHubScreen;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.tesseraui.TesseraHotReload;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import org.lwjgl.glfw.GLFW;
 
@@ -34,6 +37,15 @@ public final class ClientSetup {
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
             TesseraHotReload.tryEnable(!net.neoforged.fml.loading.FMLEnvironment.production);
+        }
+
+        @SubscribeEvent
+        public static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
+            event.registerAboveAll(
+                ResourceLocation.fromNamespaceAndPath(ArcadiaDungeon.MODID, "run_hud"),
+                RunOverlayHud.INSTANCE
+            );
+            ArcadiaDungeon.LOGGER.info("[Arcadia][BOOT] HUD layer registered: run_hud");
         }
     }
 
