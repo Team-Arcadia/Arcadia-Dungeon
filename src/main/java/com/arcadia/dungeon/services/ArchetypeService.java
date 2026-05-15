@@ -2,6 +2,7 @@ package com.arcadia.dungeon.services;
 
 import com.arcadia.dungeon.ArcadiaDungeon;
 import com.arcadia.dungeon.domain.config.DungeonConfig;
+import com.arcadia.dungeon.domain.player.PlayerProgress;
 import com.arcadia.dungeon.domain.run.Run;
 import com.arcadia.dungeon.domain.run.RunId;
 import com.arcadia.dungeon.persistence.DungeonRegistry;
@@ -104,7 +105,7 @@ public final class ArchetypeService {
 
     private void giveKit(ServerPlayer player, String dungeonId, String archetypeId) {
         DungeonConfig config = dungeonRegistry.get(dungeonId).orElse(null);
-        List<String> items = resolveKit(config, archetypeId);
+        List<String> items = resolveKit(player, config, archetypeId);
         for (String itemId : items) {
             ResourceLocation rl = ResourceLocation.tryParse(itemId);
             if (rl == null) {
@@ -137,7 +138,20 @@ public final class ArchetypeService {
         giveKit(player, dungeonId, archetypeId);
     }
 
-    private List<String> resolveKit(DungeonConfig config, String archetypeId) {
+    private List<String> resolveKit(ServerPlayer player, DungeonConfig config, String archetypeId) {
+        if (PlayerProgress.CUSTOM_LOADOUT_ID.equals(archetypeId)) {
+            return ArcadiaDungeon.playerProgressService()
+                .get(player.getUUID())
+                .filter(PlayerProgress::customLoadoutUnlocked)
+                .map(progress -> List.of(
+                    progress.customMainItem(),
+                    progress.customOffItem(),
+                    progress.customUtilityItem()))
+                .orElse(List.of(
+                    PlayerProgress.DEFAULT_CUSTOM_MAIN,
+                    PlayerProgress.DEFAULT_CUSTOM_OFF,
+                    PlayerProgress.DEFAULT_CUSTOM_UTILITY));
+        }
         List<String> localKit = resolveLocalKit(config, archetypeId);
         if (!localKit.isEmpty()) {
             return localKit;

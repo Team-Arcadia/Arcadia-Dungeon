@@ -49,6 +49,15 @@ public final class PlayerProgressService {
         return true;
     }
 
+    public boolean saveCustomLoadout(UUID playerId, String playerName,
+                                     String mainItem, String offItem, String utilityItem) {
+        PlayerProgress p = getOrCreate(playerId, playerName);
+        if (!p.customLoadoutUnlocked()) return false;
+        p.saveCustomLoadout(mainItem, offItem, utilityItem);
+        saveAsync();
+        return true;
+    }
+
     public void addCurrency(UUID playerId, String playerName, long amount) {
         PlayerProgress p = getOrCreate(playerId, playerName);
         p.addCurrency(amount);

@@ -14,6 +14,7 @@ import com.arcadia.dungeon.services.RunLifecycleService;
 import com.arcadia.dungeon.services.StructurePlacementScheduler;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -52,6 +53,7 @@ public final class ServerPayloadHandler {
     private static final PacketRateLimiter SAVE_ZONE_LIMITER      = new PacketRateLimiter(2_000L);
     private static final PacketRateLimiter TEMPLATE_LIMITER       = new PacketRateLimiter(500L);
     private static final PacketRateLimiter LOADOUT_SELECT_LIMITER = new PacketRateLimiter(500L);
+    private static final PacketRateLimiter LOADOUT_SAVE_LIMITER   = new PacketRateLimiter(1_000L);
 
     private static final Gson GSON = new Gson();
 
@@ -528,7 +530,10 @@ public final class ServerPayloadHandler {
             ServerPlayer player = (ServerPlayer) context.player();
             if (!LOADOUT_SELECT_LIMITER.tryAcquire(player.getUUID())) return;
             String classId = payload.classId() != null ? payload.classId().trim() : "";
-            if (!ArcadiaDungeon.globalClassRegistry().isKnownClass(classId)) {
+            PlayerProgress progress = ArcadiaDungeon.playerProgressService()
+                .getOrCreate(player.getUUID(), player.getGameProfile().getName());
+            boolean customAllowed = PlayerProgress.CUSTOM_LOADOUT_ID.equals(classId) && progress.customLoadoutUnlocked();
+            if (!customAllowed && !ArcadiaDungeon.globalClassRegistry().isKnownClass(classId)) {
                 player.sendSystemMessage(Component.literal("[Arcadia] Classe inconnue : " + sanitize(classId)));
                 sendPlayerProgress(player);
                 return;
@@ -538,6 +543,32 @@ public final class ServerPayloadHandler {
             sendPlayerProgress(player);
             ArcadiaDungeon.LOGGER.info("[Arcadia][LOADOUT] event=class_selected player={} class={}",
                 player.getGameProfile().getName(), sanitize(classId));
+        });
+    }
+
+    public static void handleSaveCustomLoadout(SaveCustomLoadoutPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            ServerPlayer player = (ServerPlayer) context.player();
+            if (!LOADOUT_SAVE_LIMITER.tryAcquire(player.getUUID())) return;
+            String main = normalizeItemId(payload.mainItem(), PlayerProgress.DEFAULT_CUSTOM_MAIN);
+            String off = normalizeItemId(payload.offItem(), PlayerProgress.DEFAULT_CUSTOM_OFF);
+            String utility = normalizeItemId(payload.utilityItem(), PlayerProgress.DEFAULT_CUSTOM_UTILITY);
+            if (!isKnownItem(main) || !isKnownItem(off) || !isKnownItem(utility)) {
+                player.sendSystemMessage(Component.translatable("arcadia.server.loadout.invalid_item"));
+                sendPlayerProgress(player);
+                return;
+            }
+            boolean saved = ArcadiaDungeon.playerProgressService().saveCustomLoadout(
+                player.getUUID(), player.getGameProfile().getName(), main, off, utility);
+            if (!saved) {
+                player.sendSystemMessage(Component.translatable("arcadia.server.loadout.locked"));
+                sendPlayerProgress(player);
+                return;
+            }
+            player.sendSystemMessage(Component.translatable("arcadia.server.loadout.saved"));
+            sendPlayerProgress(player);
+            ArcadiaDungeon.LOGGER.info("[Arcadia][LOADOUT] event=custom_saved player={} main={} off={} utility={}",
+                player.getGameProfile().getName(), sanitize(main), sanitize(off), sanitize(utility));
         });
     }
 
@@ -698,6 +729,11 @@ public final class ServerPayloadHandler {
             .getOrCreate(player.getUUID(), player.getGameProfile().getName());
 
         String requested = requestedClassId != null ? requestedClassId.trim() : "";
+        if (PlayerProgress.CUSTOM_LOADOUT_ID.equals(requested) && progress.customLoadoutUnlocked()) {
+            ArcadiaDungeon.playerProgressService().selectClass(
+                player.getUUID(), player.getGameProfile().getName(), requested);
+            return requested;
+        }
         if (ArcadiaDungeon.globalClassRegistry().isKnownClass(requested)) {
             ArcadiaDungeon.playerProgressService().selectClass(
                 player.getUUID(), player.getGameProfile().getName(), requested);
@@ -705,6 +741,9 @@ public final class ServerPayloadHandler {
         }
 
         String persisted = progress.selectedClassId() != null ? progress.selectedClassId().trim() : "";
+        if (PlayerProgress.CUSTOM_LOADOUT_ID.equals(persisted) && progress.customLoadoutUnlocked()) {
+            return persisted;
+        }
         if (ArcadiaDungeon.globalClassRegistry().isKnownClass(persisted)) {
             return persisted;
         }
@@ -733,7 +772,19 @@ public final class ServerPayloadHandler {
                 entry.getKey(), dungeon.completions, dungeon.bestTimeSeconds));
         }
         player.connection.send(new PlayerProgressPayload(progress.currency(), totalRuns, bestTime,
-            progress.selectedClassId(), progress.customLoadoutUnlocked(), progress.loadoutPoints(), stats));
+            progress.selectedClassId(), progress.customLoadoutUnlocked(), progress.loadoutPoints(),
+            progress.customMainItem(), progress.customOffItem(), progress.customUtilityItem(), stats));
+    }
+
+    private static String normalizeItemId(String itemId, String fallback) {
+        String raw = itemId != null ? itemId.trim() : "";
+        if (raw.isEmpty()) return fallback;
+        return raw.contains(":") ? raw : "minecraft:" + raw;
+    }
+
+    private static boolean isKnownItem(String itemId) {
+        ResourceLocation id = ResourceLocation.tryParse(itemId);
+        return id != null && BuiltInRegistries.ITEM.getOptional(id).isPresent();
     }
 
     private static List<DungeonListPayload.DungeonSummary> buildDungeonSummaries() {

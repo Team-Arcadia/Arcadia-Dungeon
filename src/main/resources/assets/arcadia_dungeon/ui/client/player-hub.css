@@ -232,6 +232,10 @@
   height: 18px;
 }
 
+.save-loadout-btn {
+  width: 58px;
+}
+
 .dungeon-vlist {
   flex: 1;
   min-height: 0;
@@ -412,6 +416,49 @@
 .slot-value {
   color: #F3E7D3;
   font-size: 7;
+  overflow: hidden;
+}
+
+.custom-editor,
+.custom-locked {
+  background: #17100B;
+  border: 1;
+  border-color: #3E2916;
+  padding: 5px;
+  gap: 4px;
+}
+
+.custom-editor-head {
+  align-items: center;
+  gap: 6px;
+}
+
+.custom-editor-head .card-kicker {
+  flex: 1;
+  min-width: 0;
+}
+
+.custom-input-row {
+  gap: 5px;
+}
+
+.loadout-input {
+  flex: 1;
+  min-width: 0;
+  height: 17px;
+  background: #0F0B08;
+  border: 1;
+  border-color: #5A3518;
+  color: #F3E7D3;
+  font-size: 6;
+  padding: 2px 4px;
+  overflow: hidden;
+}
+
+.locked-copy {
+  color: #8A765E;
+  font-size: 6;
+  white-space: normal;
   overflow: hidden;
 }
 

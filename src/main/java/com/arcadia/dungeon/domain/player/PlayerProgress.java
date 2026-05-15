@@ -14,12 +14,20 @@ import java.util.UUID;
  */
 public final class PlayerProgress {
 
+    public static final String CUSTOM_LOADOUT_ID = "__custom__";
+    public static final String DEFAULT_CUSTOM_MAIN = "minecraft:iron_sword";
+    public static final String DEFAULT_CUSTOM_OFF = "minecraft:shield";
+    public static final String DEFAULT_CUSTOM_UTILITY = "minecraft:bread";
+
     private final UUID playerId;
     private String playerName;
     private long currency;
     private String selectedClassId;
     private boolean customLoadoutUnlocked;
     private int loadoutPoints;
+    private String customMainItem;
+    private String customOffItem;
+    private String customUtilityItem;
     private final Map<String, DungeonProgress> dungeons;
 
     public PlayerProgress(UUID playerId, String playerName) {
@@ -29,6 +37,9 @@ public final class PlayerProgress {
         this.selectedClassId = "";
         this.customLoadoutUnlocked = false;
         this.loadoutPoints = 0;
+        this.customMainItem = DEFAULT_CUSTOM_MAIN;
+        this.customOffItem = DEFAULT_CUSTOM_OFF;
+        this.customUtilityItem = DEFAULT_CUSTOM_UTILITY;
         this.dungeons = new HashMap<>();
     }
 
@@ -38,6 +49,9 @@ public final class PlayerProgress {
     public String selectedClassId() { return selectedClassId; }
     public boolean customLoadoutUnlocked() { return customLoadoutUnlocked; }
     public int loadoutPoints() { return loadoutPoints; }
+    public String customMainItem() { return customMainItem; }
+    public String customOffItem() { return customOffItem; }
+    public String customUtilityItem() { return customUtilityItem; }
     public Map<String, DungeonProgress> dungeons() { return Map.copyOf(dungeons); }
 
     public void setPlayerName(String name) { this.playerName = name; }
@@ -48,9 +62,25 @@ public final class PlayerProgress {
     }
 
     public void restoreLoadoutState(String selectedClassId, boolean customLoadoutUnlocked, int loadoutPoints) {
+        restoreLoadoutState(selectedClassId, customLoadoutUnlocked, loadoutPoints,
+            DEFAULT_CUSTOM_MAIN, DEFAULT_CUSTOM_OFF, DEFAULT_CUSTOM_UTILITY);
+    }
+
+    public void restoreLoadoutState(String selectedClassId, boolean customLoadoutUnlocked, int loadoutPoints,
+                                    String customMainItem, String customOffItem, String customUtilityItem) {
         this.selectedClassId = selectedClassId != null ? selectedClassId : "";
         this.customLoadoutUnlocked = customLoadoutUnlocked;
         this.loadoutPoints = Math.max(0, loadoutPoints);
+        this.customMainItem = safeItem(customMainItem, DEFAULT_CUSTOM_MAIN);
+        this.customOffItem = safeItem(customOffItem, DEFAULT_CUSTOM_OFF);
+        this.customUtilityItem = safeItem(customUtilityItem, DEFAULT_CUSTOM_UTILITY);
+    }
+
+    public void saveCustomLoadout(String mainItem, String offItem, String utilityItem) {
+        this.customMainItem = safeItem(mainItem, DEFAULT_CUSTOM_MAIN);
+        this.customOffItem = safeItem(offItem, DEFAULT_CUSTOM_OFF);
+        this.customUtilityItem = safeItem(utilityItem, DEFAULT_CUSTOM_UTILITY);
+        this.selectedClassId = CUSTOM_LOADOUT_ID;
     }
 
     public void recordRunCompletion(String dungeonId, long timeSeconds) {
@@ -71,6 +101,10 @@ public final class PlayerProgress {
         dp.completions = Math.max(0, completions);
         dp.bestTimeSeconds = Math.max(0L, bestTimeSeconds);
         dp.lastCompletionMs = Math.max(0L, lastCompletionMs);
+    }
+
+    private static String safeItem(String value, String fallback) {
+        return value != null && !value.isBlank() ? value.trim() : fallback;
     }
 
     /**

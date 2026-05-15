@@ -3,8 +3,10 @@ package com.arcadia.dungeon.client.screen;
 import com.arcadia.dungeon.client.state.DungeonListClient;
 import com.arcadia.dungeon.client.state.PlayerHubPreferences;
 import com.arcadia.dungeon.client.state.PlayerProgressClient;
+import com.arcadia.dungeon.domain.player.PlayerProgress;
 import com.arcadia.dungeon.network.DungeonListPayload;
 import com.arcadia.dungeon.network.RequestDungeonListPayload;
+import com.arcadia.dungeon.network.SaveCustomLoadoutPayload;
 import com.arcadia.dungeon.network.SelectLoadoutClassPayload;
 import com.tesseraui.TesseraModel;
 import com.tesseraui.TesseraPanel;
@@ -49,6 +51,9 @@ public final class PlayerHubScreen extends TesseraScreen {
     private boolean optionFeed = true;
     private boolean optionToasts = true;
     private boolean optionSpectator = false;
+    private String customMainItem = PlayerProgress.DEFAULT_CUSTOM_MAIN;
+    private String customOffItem = PlayerProgress.DEFAULT_CUSTOM_OFF;
+    private String customUtilityItem = PlayerProgress.DEFAULT_CUSTOM_UTILITY;
 
     public PlayerHubScreen() {
         super(Component.translatable("arcadia.player.screen.title"));
@@ -81,6 +86,9 @@ public final class PlayerHubScreen extends TesseraScreen {
                 selectedClassId = PlayerProgressClient.selectedClassId();
                 PlayerHubPreferences.selectedClassId(selectedClassId);
             }
+            customMainItem = PlayerProgressClient.customMainItem();
+            customOffItem = PlayerProgressClient.customOffItem();
+            customUtilityItem = PlayerProgressClient.customUtilityItem();
             panelDirty = true;
         }
         if (panelDirty) {
@@ -139,6 +147,7 @@ public final class PlayerHubScreen extends TesseraScreen {
         fillClassRows(modelData, handlers, dungeons);
         fillShopRows(modelData, handlers);
         fillProfileRows(modelData);
+        fillLoadoutInputs(modelData, inputHandlers);
         fillOptions(modelData, inputHandlers);
         fillHandlers(handlers, dungeons);
 
@@ -211,8 +220,13 @@ public final class PlayerHubScreen extends TesseraScreen {
         modelData.put("loadout.customState", PlayerProgressClient.customLoadoutUnlocked()
             ? tr("arcadia.player.loadout.custom_unlocked")
             : tr("arcadia.player.loadout.locked"));
+        modelData.put("loadout.customUnlocked", String.valueOf(PlayerProgressClient.customLoadoutUnlocked()));
+        modelData.put("loadout.customLocked", String.valueOf(!PlayerProgressClient.customLoadoutUnlocked()));
         modelData.put("loadout.points", String.valueOf(PlayerProgressClient.loadoutPoints()));
         modelData.put("loadout.pointsLabel", tr("arcadia.player.points", PlayerProgressClient.loadoutPoints()));
+        modelData.put("loadout.customMain", customMainItem);
+        modelData.put("loadout.customOff", customOffItem);
+        modelData.put("loadout.customUtility", customUtilityItem);
     }
 
     private void fillClassRows(Map<String, String> modelData,
@@ -317,6 +331,12 @@ public final class PlayerHubScreen extends TesseraScreen {
         inputHandlers.put("toggleSpectator", v -> toggleOption("spectator", v));
     }
 
+    private void fillLoadoutInputs(Map<String, String> modelData, Map<String, Consumer<String>> inputHandlers) {
+        inputHandlers.put("onCustomMain", v -> customMainItem = textOr(v, PlayerProgress.DEFAULT_CUSTOM_MAIN));
+        inputHandlers.put("onCustomOff", v -> customOffItem = textOr(v, PlayerProgress.DEFAULT_CUSTOM_OFF));
+        inputHandlers.put("onCustomUtility", v -> customUtilityItem = textOr(v, PlayerProgress.DEFAULT_CUSTOM_UTILITY));
+    }
+
     private void fillHandlers(Map<String, Runnable> handlers, List<DungeonListPayload.DungeonSummary> dungeons) {
         handlers.put("close", this::onClose);
         handlers.put("tabDungeons", () -> switchTab("dungeons"));
@@ -333,9 +353,9 @@ public final class PlayerHubScreen extends TesseraScreen {
             openDungeon(selected);
         });
         handlers.put("editLoadout", () -> {
-            TesseraToast.show(tr("arcadia.player.toast.edit_loadout"));
+            switchTab("loadout");
         });
-        handlers.put("customizeLoadout", () -> TesseraToast.show(tr("arcadia.player.toast.customize_loadout")));
+        handlers.put("customizeLoadout", this::saveCustomLoadout);
         handlers.put("quickQueue", () -> TesseraToast.show(tr("arcadia.player.toast.quick_queue")));
         handlers.put("refresh", () -> {
             PacketDistributor.sendToServer(new RequestDungeonListPayload());
@@ -361,6 +381,18 @@ public final class PlayerHubScreen extends TesseraScreen {
         PlayerHubPreferences.selectedClassId(selectedClassId);
         PacketDistributor.sendToServer(new SelectLoadoutClassPayload(selectedClassId));
         TesseraToast.show(tr("arcadia.player.toast.class_selected", classes.get(safeIndex).name()));
+        panelDirty = true;
+    }
+
+    private void saveCustomLoadout() {
+        if (!PlayerProgressClient.customLoadoutUnlocked()) {
+            TesseraToast.error(tr("arcadia.player.toast.custom_locked"));
+            return;
+        }
+        selectedClassId = PlayerProgress.CUSTOM_LOADOUT_ID;
+        PlayerHubPreferences.selectedClassId(selectedClassId);
+        PacketDistributor.sendToServer(new SaveCustomLoadoutPayload(customMainItem, customOffItem, customUtilityItem));
+        TesseraToast.show(tr("arcadia.player.toast.custom_saved"));
         panelDirty = true;
     }
 
@@ -451,6 +483,17 @@ public final class PlayerHubScreen extends TesseraScreen {
                 classPower(klass.id(), items.size()),
                 ""));
         }
+        if (PlayerProgressClient.customLoadoutUnlocked()) {
+            classes.add(new FreeClass(
+                PlayerProgress.CUSTOM_LOADOUT_ID,
+                tr("arcadia.player.loadout.custom_name"),
+                tr("arcadia.player.class.role.custom"),
+                customMainItem,
+                customOffItem,
+                customUtilityItem,
+                PlayerProgressClient.loadoutPoints(),
+                ""));
+        }
         if (classes.isEmpty()) {
             classes.add(new FreeClass("warrior", tr("arcadia.player.class.warrior"), tr("arcadia.player.class.role.frontline"),
                 "minecraft:iron_sword", "minecraft:shield", "minecraft:bread", 18,
@@ -478,6 +521,7 @@ public final class PlayerHubScreen extends TesseraScreen {
 
     private static String classRole(String id) {
         return switch (id) {
+            case PlayerProgress.CUSTOM_LOADOUT_ID -> tr("arcadia.player.class.role.custom");
             case "warrior" -> tr("arcadia.player.class.role.frontline");
             case "mage" -> tr("arcadia.player.class.role.burst");
             case "archer" -> tr("arcadia.player.class.role.distance");
@@ -505,6 +549,11 @@ public final class PlayerHubScreen extends TesseraScreen {
 
     private static String tr(String key, Object... args) {
         return I18n.get(key, args);
+    }
+
+    private static String textOr(String itemId, String fallback) {
+        String raw = itemId != null ? itemId.trim() : "";
+        return raw.isBlank() ? fallback : raw;
     }
 
     private record FreeClass(String id, String name, String role, String main, String off, String utility,

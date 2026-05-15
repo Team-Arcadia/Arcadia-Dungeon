@@ -19,6 +19,9 @@ public record PlayerProgressPayload(
     String selectedClassId,
     boolean customLoadoutUnlocked,
     int loadoutPoints,
+    String customMainItem,
+    String customOffItem,
+    String customUtilityItem,
     List<DungeonStat> dungeons
 ) implements CustomPacketPayload {
 
@@ -36,6 +39,9 @@ public record PlayerProgressPayload(
             buf.writeUtf(p.selectedClassId());
             buf.writeBoolean(p.customLoadoutUnlocked());
             buf.writeInt(p.loadoutPoints());
+            buf.writeUtf(p.customMainItem());
+            buf.writeUtf(p.customOffItem());
+            buf.writeUtf(p.customUtilityItem());
             buf.writeInt(p.dungeons().size());
             for (DungeonStat d : p.dungeons()) {
                 buf.writeUtf(d.dungeonId());
@@ -50,6 +56,9 @@ public record PlayerProgressPayload(
             String selectedClassId = buf.readUtf();
             boolean customLoadoutUnlocked = buf.readBoolean();
             int loadoutPoints = buf.readInt();
+            String customMainItem = buf.readUtf();
+            String customOffItem = buf.readUtf();
+            String customUtilityItem = buf.readUtf();
             int count = buf.readInt();
             if (count < 0 || count > 512) {
                 throw new io.netty.handler.codec.DecoderException("progress dungeon count out of bounds: " + count);
@@ -59,7 +68,8 @@ public record PlayerProgressPayload(
                 dungeons.add(new DungeonStat(buf.readUtf(), buf.readInt(), buf.readLong()));
             }
             return new PlayerProgressPayload(currency, totalRuns, bestTimeSeconds,
-                selectedClassId, customLoadoutUnlocked, loadoutPoints, dungeons);
+                selectedClassId, customLoadoutUnlocked, loadoutPoints,
+                customMainItem, customOffItem, customUtilityItem, dungeons);
         }
     );
 

@@ -102,6 +102,26 @@
               </row>
             </row>
 
+            <col class="custom-editor" v-if="loadout.customUnlocked">
+              <row class="custom-editor-head">
+                <label class="card-kicker" data-i18n="arcadia.player.loadout.custom_editor">Custom</label>
+                <button class="small-action save-loadout-btn" onclick="customizeLoadout" data-i18n="arcadia.player.action.save_loadout">Sauver</button>
+              </row>
+              <row class="custom-input-row">
+                <input id="customMain" class="loadout-input" value="{{ loadout.customMain }}" oninput="onCustomMain"
+                       placeholder="{{ t:arcadia.player.placeholder.item_main }}"/>
+                <input id="customOff" class="loadout-input" value="{{ loadout.customOff }}" oninput="onCustomOff"
+                       placeholder="{{ t:arcadia.player.placeholder.item_off }}"/>
+                <input id="customUtility" class="loadout-input" value="{{ loadout.customUtility }}" oninput="onCustomUtility"
+                       placeholder="{{ t:arcadia.player.placeholder.item_utility }}"/>
+              </row>
+            </col>
+
+            <col class="custom-locked" v-if="loadout.customLocked">
+              <label class="card-kicker" data-i18n="arcadia.player.loadout.custom_locked_title">Custom verrouille</label>
+              <p class="locked-copy" data-i18n="arcadia.player.loadout.custom_locked_desc">Termine 3 runs pour debloquer l'edition.</p>
+            </col>
+
           </col>
         </row>
       </col>

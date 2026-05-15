@@ -28,6 +28,7 @@ import com.arcadia.dungeon.network.RequestDungeonListPayload;
 import com.arcadia.dungeon.network.RequestAreaWandPayload;
 import com.arcadia.dungeon.network.RequestRunResyncPayload;
 import com.arcadia.dungeon.network.SaveDungeonConfigPayload;
+import com.arcadia.dungeon.network.SaveCustomLoadoutPayload;
 import com.arcadia.dungeon.network.SaveGlobalClassesPayload;
 import com.arcadia.dungeon.network.SaveZonePayload;
 import com.arcadia.dungeon.network.SelectLoadoutClassPayload;
@@ -252,6 +253,8 @@ public class ArcadiaDungeon {
             ServerPayloadHandler::handleSaveGlobalClasses);
         registrar.playToServer(SelectLoadoutClassPayload.TYPE, SelectLoadoutClassPayload.CODEC,
             ServerPayloadHandler::handleSelectLoadoutClass);
+        registrar.playToServer(SaveCustomLoadoutPayload.TYPE, SaveCustomLoadoutPayload.CODEC,
+            ServerPayloadHandler::handleSaveCustomLoadout);
         registrar.playToServer(SaveZonePayload.TYPE, SaveZonePayload.CODEC,
             ServerPayloadHandler::handleSaveZone);
         registrar.playToServer(CaptureSpawnPayload.TYPE, CaptureSpawnPayload.CODEC,

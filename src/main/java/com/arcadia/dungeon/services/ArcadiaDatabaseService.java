@@ -65,9 +65,15 @@ public final class ArcadiaDatabaseService implements AutoCloseable {
                         selected_class_id TEXT NOT NULL DEFAULT '',
                         custom_loadout_unlocked INTEGER NOT NULL DEFAULT 0,
                         loadout_points INTEGER NOT NULL DEFAULT 0,
+                        custom_main_item TEXT NOT NULL DEFAULT 'minecraft:iron_sword',
+                        custom_off_item TEXT NOT NULL DEFAULT 'minecraft:shield',
+                        custom_utility_item TEXT NOT NULL DEFAULT 'minecraft:bread',
                         updated_at_ms INTEGER NOT NULL
                     )
                     """);
+                ensureColumn("player_profile", "custom_main_item", "TEXT NOT NULL DEFAULT 'minecraft:iron_sword'");
+                ensureColumn("player_profile", "custom_off_item", "TEXT NOT NULL DEFAULT 'minecraft:shield'");
+                ensureColumn("player_profile", "custom_utility_item", "TEXT NOT NULL DEFAULT 'minecraft:bread'");
                 statement.executeUpdate("""
                     CREATE TABLE IF NOT EXISTS player_dungeon_stats (
                         player_id TEXT NOT NULL,
@@ -186,7 +192,8 @@ public final class ArcadiaDatabaseService implements AutoCloseable {
         ensureOpen();
         Map<UUID, PlayerProgress> progress = new HashMap<>();
         try (PreparedStatement statement = connection.prepareStatement("""
-            SELECT player_id, player_name, currency, selected_class_id, custom_loadout_unlocked, loadout_points
+            SELECT player_id, player_name, currency, selected_class_id, custom_loadout_unlocked,
+                   loadout_points, custom_main_item, custom_off_item, custom_utility_item
             FROM player_profile
             """);
              ResultSet result = statement.executeQuery()) {
@@ -204,7 +211,10 @@ public final class ArcadiaDatabaseService implements AutoCloseable {
                 player.restoreLoadoutState(
                     result.getString("selected_class_id"),
                     result.getInt("custom_loadout_unlocked") != 0,
-                    result.getInt("loadout_points"));
+                    result.getInt("loadout_points"),
+                    result.getString("custom_main_item"),
+                    result.getString("custom_off_item"),
+                    result.getString("custom_utility_item"));
                 progress.put(playerId, player);
             }
         } catch (SQLException e) {
@@ -283,15 +293,19 @@ public final class ArcadiaDatabaseService implements AutoCloseable {
         try (PreparedStatement statement = connection.prepareStatement("""
             INSERT INTO player_profile(
                 player_id, player_name, currency, selected_class_id,
-                custom_loadout_unlocked, loadout_points, updated_at_ms
+                custom_loadout_unlocked, loadout_points, custom_main_item,
+                custom_off_item, custom_utility_item, updated_at_ms
             )
-            VALUES(?, ?, ?, ?, ?, ?, ?)
+            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(player_id) DO UPDATE SET
                 player_name = excluded.player_name,
                 currency = excluded.currency,
                 selected_class_id = excluded.selected_class_id,
                 custom_loadout_unlocked = excluded.custom_loadout_unlocked,
                 loadout_points = excluded.loadout_points,
+                custom_main_item = excluded.custom_main_item,
+                custom_off_item = excluded.custom_off_item,
+                custom_utility_item = excluded.custom_utility_item,
                 updated_at_ms = excluded.updated_at_ms
             """)) {
             statement.setString(1, progress.playerId().toString());
@@ -300,8 +314,25 @@ public final class ArcadiaDatabaseService implements AutoCloseable {
             statement.setString(4, progress.selectedClassId());
             statement.setInt(5, progress.customLoadoutUnlocked() ? 1 : 0);
             statement.setInt(6, progress.loadoutPoints());
-            statement.setLong(7, System.currentTimeMillis());
+            statement.setString(7, progress.customMainItem());
+            statement.setString(8, progress.customOffItem());
+            statement.setString(9, progress.customUtilityItem());
+            statement.setLong(10, System.currentTimeMillis());
             statement.executeUpdate();
+        }
+    }
+
+    private void ensureColumn(String table, String column, String definition) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("PRAGMA table_info(" + table + ")");
+             ResultSet result = statement.executeQuery()) {
+            while (result.next()) {
+                if (column.equalsIgnoreCase(result.getString("name"))) {
+                    return;
+                }
+            }
+        }
+        try (Statement statement = connection.createStatement()) {
+            statement.executeUpdate("ALTER TABLE " + table + " ADD COLUMN " + column + " " + definition);
         }
     }
 
