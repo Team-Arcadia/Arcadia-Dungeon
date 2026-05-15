@@ -438,18 +438,19 @@
   min-width: 0;
 }
 
-.custom-input-row {
+.custom-preview-row {
   gap: 5px;
 }
 
-.loadout-input {
+.custom-preview-item {
   flex: 1;
   min-width: 0;
-  height: 17px;
+  height: 15px;
+  min-height: 15px;
   background: #0F0B08;
   border: 1;
-  border-color: #5A3518;
-  color: #F3E7D3;
+  border-color: #3E2916;
+  color: #8A765E;
   font-size: 6;
   padding: 2px 4px;
   overflow: hidden;

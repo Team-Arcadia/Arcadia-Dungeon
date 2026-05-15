@@ -6,7 +6,6 @@ import com.arcadia.dungeon.client.state.PlayerProgressClient;
 import com.arcadia.dungeon.domain.player.PlayerProgress;
 import com.arcadia.dungeon.network.DungeonListPayload;
 import com.arcadia.dungeon.network.RequestDungeonListPayload;
-import com.arcadia.dungeon.network.SaveCustomLoadoutPayload;
 import com.arcadia.dungeon.network.SelectLoadoutClassPayload;
 import com.tesseraui.TesseraModel;
 import com.tesseraui.TesseraPanel;
@@ -147,7 +146,6 @@ public final class PlayerHubScreen extends TesseraScreen {
         fillClassRows(modelData, handlers, dungeons);
         fillShopRows(modelData, handlers);
         fillProfileRows(modelData);
-        fillLoadoutInputs(modelData, inputHandlers);
         fillOptions(modelData, inputHandlers);
         fillHandlers(handlers, dungeons);
 
@@ -297,10 +295,11 @@ public final class PlayerHubScreen extends TesseraScreen {
     private void fillProfileRows(Map<String, String> modelData) {
         int totalRuns = PlayerProgressClient.totalRuns();
         long bestTime = PlayerProgressClient.bestTimeSeconds();
+        boolean customUnlocked = PlayerProgressClient.customLoadoutUnlocked();
         modelData.put("badge.count", "4");
         putBadge(modelData, 0, "arcadia.player.profile.badge.first_blood", totalRuns > 0, false);
         putBadge(modelData, 1, "arcadia.player.profile.badge.timer", bestTime > 0, false);
-        putBadge(modelData, 2, "arcadia.player.profile.badge.collector", false, true);
+        putBadge(modelData, 2, "arcadia.player.profile.badge.collector", customUnlocked, !customUnlocked);
         putBadge(modelData, 3, "arcadia.player.profile.badge.guardian", false, true);
     }
 
@@ -331,12 +330,6 @@ public final class PlayerHubScreen extends TesseraScreen {
         inputHandlers.put("toggleSpectator", v -> toggleOption("spectator", v));
     }
 
-    private void fillLoadoutInputs(Map<String, String> modelData, Map<String, Consumer<String>> inputHandlers) {
-        inputHandlers.put("onCustomMain", v -> customMainItem = textOr(v, PlayerProgress.DEFAULT_CUSTOM_MAIN));
-        inputHandlers.put("onCustomOff", v -> customOffItem = textOr(v, PlayerProgress.DEFAULT_CUSTOM_OFF));
-        inputHandlers.put("onCustomUtility", v -> customUtilityItem = textOr(v, PlayerProgress.DEFAULT_CUSTOM_UTILITY));
-    }
-
     private void fillHandlers(Map<String, Runnable> handlers, List<DungeonListPayload.DungeonSummary> dungeons) {
         handlers.put("close", this::onClose);
         handlers.put("tabDungeons", () -> switchTab("dungeons"));
@@ -355,7 +348,6 @@ public final class PlayerHubScreen extends TesseraScreen {
         handlers.put("editLoadout", () -> {
             switchTab("loadout");
         });
-        handlers.put("customizeLoadout", this::saveCustomLoadout);
         handlers.put("quickQueue", () -> TesseraToast.show(tr("arcadia.player.toast.quick_queue")));
         handlers.put("refresh", () -> {
             PacketDistributor.sendToServer(new RequestDungeonListPayload());
@@ -381,18 +373,6 @@ public final class PlayerHubScreen extends TesseraScreen {
         PlayerHubPreferences.selectedClassId(selectedClassId);
         PacketDistributor.sendToServer(new SelectLoadoutClassPayload(selectedClassId));
         TesseraToast.show(tr("arcadia.player.toast.class_selected", classes.get(safeIndex).name()));
-        panelDirty = true;
-    }
-
-    private void saveCustomLoadout() {
-        if (!PlayerProgressClient.customLoadoutUnlocked()) {
-            TesseraToast.error(tr("arcadia.player.toast.custom_locked"));
-            return;
-        }
-        selectedClassId = PlayerProgress.CUSTOM_LOADOUT_ID;
-        PlayerHubPreferences.selectedClassId(selectedClassId);
-        PacketDistributor.sendToServer(new SaveCustomLoadoutPayload(customMainItem, customOffItem, customUtilityItem));
-        TesseraToast.show(tr("arcadia.player.toast.custom_saved"));
         panelDirty = true;
     }
 
@@ -549,11 +529,6 @@ public final class PlayerHubScreen extends TesseraScreen {
 
     private static String tr(String key, Object... args) {
         return I18n.get(key, args);
-    }
-
-    private static String textOr(String itemId, String fallback) {
-        String raw = itemId != null ? itemId.trim() : "";
-        return raw.isBlank() ? fallback : raw;
     }
 
     private record FreeClass(String id, String name, String role, String main, String off, String utility,

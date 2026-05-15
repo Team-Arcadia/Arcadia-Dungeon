@@ -17,6 +17,10 @@ public final class PlayerHubPreferences {
     private static final Path FILE = FMLPaths.CONFIGDIR.get().resolve("arcadia").resolve("player_hub_client.json");
     private static Preferences prefs = new Preferences();
 
+    static {
+        load();
+    }
+
     private PlayerHubPreferences() {}
 
     public static void load() {

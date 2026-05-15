@@ -15,6 +15,8 @@ import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import org.lwjgl.glfw.GLFW;
 
 public final class ClientSetup {
@@ -58,6 +60,20 @@ public final class ClientSetup {
             if (mc.player == null || mc.screen != null) return;
             while (KEY_OPEN_HUB.consumeClick()) {
                 mc.setScreen(new PlayerHubScreen());
+            }
+        }
+
+        @SubscribeEvent
+        public static void onRenderGuiLayer(RenderGuiLayerEvent.Pre event) {
+            if (VanillaGuiLayers.HOTBAR.equals(event.getName()) && RunOverlayHud.shouldReplaceVanillaHotbar()) {
+                event.setCanceled(true);
+                return;
+            }
+            if (RunOverlayHud.shouldReplaceVanillaSurvivalBars()
+                && (VanillaGuiLayers.PLAYER_HEALTH.equals(event.getName())
+                    || VanillaGuiLayers.FOOD_LEVEL.equals(event.getName())
+                    || VanillaGuiLayers.ARMOR_LEVEL.equals(event.getName()))) {
+                event.setCanceled(true);
             }
         }
     }
