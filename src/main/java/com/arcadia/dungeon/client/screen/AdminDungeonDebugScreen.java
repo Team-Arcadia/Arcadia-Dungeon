@@ -181,12 +181,10 @@ public final class AdminDungeonDebugScreen extends com.tesseraui.TesseraScreen {
             PlayerHubPreferences.hud(true);
             RunOverlayHud.setPreviewEnabled(true);
             sendAction("PREVIEW_DUNGEON_INVENTORY", 0L, 0L);
-            TesseraToast.show(I18n.get("arcadia.admin.debug.toast.hud_inventory_on"));
             panelDirty = true;
         });
         handlers.put("restoreDebugInventory", () -> {
             sendAction("RESTORE_DEBUG_INVENTORY", 0L, 0L);
-            TesseraToast.show(I18n.get("arcadia.admin.debug.toast.inventory_restored"));
         });
         handlers.put("hideHud", () -> {
             RunOverlayHud.setPreviewEnabled(false);

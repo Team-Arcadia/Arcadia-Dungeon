@@ -73,26 +73,37 @@ public final class ArchetypeService {
     }
 
     public boolean prepareDebugInventory(ServerPlayer player, String dungeonId) {
-        if (ArcadiaDungeon.runLifecycleService().findActiveRunForPlayer(player.getUUID()).isPresent()
-            || hasBackup(player.getUUID())) {
-            ArcadiaDungeon.LOGGER.warn("[Arcadia][ARCHETYPE] debug inventory refused playerId={} reason=active_run_or_backup",
-                player.getUUID());
+        UUID playerId = player.getUUID();
+        if (ArcadiaDungeon.runLifecycleService().findActiveRunForPlayer(playerId).isPresent()) {
+            ArcadiaDungeon.LOGGER.warn("[Arcadia][ARCHETYPE] debug inventory refused playerId={} reason=active_run",
+                playerId);
+            return false;
+        }
+        if (hasBackup(playerId)) {
+            if (debugInventoryPreviews.contains(playerId) || hasDebugBackup(playerId)) {
+                debugInventoryPreviews.add(playerId);
+                ArcadiaDungeon.LOGGER.info("[Arcadia][ARCHETYPE] debug inventory already active playerId={}",
+                    playerId);
+                return true;
+            }
+            ArcadiaDungeon.LOGGER.warn("[Arcadia][ARCHETYPE] debug inventory refused playerId={} reason=normal_backup_exists",
+                playerId);
             return false;
         }
         String archetypeId = ArcadiaDungeon.playerProgressService()
-            .get(player.getUUID())
+            .get(playerId)
             .map(PlayerProgress::selectedClassId)
             .filter(id -> id != null && !id.isBlank())
             .orElseGet(this::fallbackArchetypeId);
-        debugInventoryPreviews.add(player.getUUID());
+        debugInventoryPreviews.add(playerId);
         try {
             preparePlayer(player, "debug:" + UUID.randomUUID(), dungeonId, archetypeId);
         } catch (RuntimeException e) {
-            debugInventoryPreviews.remove(player.getUUID());
+            debugInventoryPreviews.remove(playerId);
             throw e;
         }
         ArcadiaDungeon.LOGGER.info("[Arcadia][ARCHETYPE] event=debug_inventory_prepared playerId={} dungeon={} archetype={}",
-            player.getUUID(), dungeonId, archetypeId);
+            playerId, dungeonId, archetypeId);
         return true;
     }
 

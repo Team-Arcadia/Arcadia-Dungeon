@@ -502,14 +502,16 @@ public final class ServerPayloadHandler {
                         ArcadiaToast.error(admin, "arcadia.admin.debug.toast.inventory_unavailable", sanitize(targetName));
                         return;
                     }
-                    mutated = false;
+                    ArcadiaToast.success(admin, "arcadia.admin.debug.toast.hud_inventory_on");
+                    return;
                 }
                 case "RESTORE_DEBUG_INVENTORY" -> {
                     if (!ArcadiaDungeon.archetypeService().restoreDebugInventory(target)) {
                         ArcadiaToast.error(admin, "arcadia.admin.debug.toast.inventory_unavailable", sanitize(targetName));
                         return;
                     }
-                    mutated = false;
+                    ArcadiaToast.success(admin, "arcadia.admin.debug.toast.inventory_restored");
+                    return;
                 }
                 case "GRANT_COMPLETION" -> progress.recordRunCompletion(
                     targetId, targetName, debugDungeonId(payload.dungeonId()), Math.max(1L, payload.timeSeconds()));
