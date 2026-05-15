@@ -6,6 +6,7 @@ import com.arcadia.dungeon.command.ArcadiaSetupCommand;
 import com.arcadia.dungeon.event.DungeonAreaWandEventHandler;
 import com.arcadia.dungeon.network.AbandonRunPayload;
 import com.arcadia.dungeon.network.AreaWandStatusPayload;
+import com.arcadia.dungeon.network.ArcadiaToastPayload;
 import com.arcadia.dungeon.network.ClientPayloadHandler;
 import com.arcadia.dungeon.network.DungeonListPayload;
 import com.arcadia.dungeon.network.JoinRunPayload;
@@ -208,6 +209,8 @@ public class ArcadiaDungeon {
 
     private void registerPayloads(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(MODID);
+        registrar.playToClient(ArcadiaToastPayload.TYPE, ArcadiaToastPayload.CODEC,
+            ClientPayloadHandler::handleToast);
         registrar.playToClient(RunStatePayload.TYPE, RunStatePayload.CODEC,
             ClientPayloadHandler::handleRunState);
         registrar.playToServer(StartRunPayload.TYPE, StartRunPayload.CODEC,

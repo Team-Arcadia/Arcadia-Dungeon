@@ -1,6 +1,7 @@
 package com.arcadia.dungeon.client.hud;
 
 import com.arcadia.dungeon.client.state.RunStateClient;
+import com.tesseraui.TesseraToast;
 import com.tesseraui.TesseraPalette;
 import com.arcadia.dungeon.network.RunStatePayload;
 import net.minecraft.client.DeltaTracker;
@@ -29,11 +30,15 @@ public final class RunOverlayHud implements LayeredDraw.Layer {
 
     @Override
     public void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
-        if (Minecraft.getInstance().screen != null) return;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.screen != null) return;
+
+        TesseraToast.render(graphics, minecraft.getWindow().getGuiScaledWidth(), minecraft.getWindow().getGuiScaledHeight());
+
         RunStatePayload state = RunStateClient.getState().orElse(null);
         if (state == null || !"IN_PROGRESS".equals(state.phase())) return;
 
-        Font font = Minecraft.getInstance().font;
+        Font font = minecraft.font;
         long now = System.currentTimeMillis();
 
         long elapsed = (now - state.startTimestampMs()) / 1000L;

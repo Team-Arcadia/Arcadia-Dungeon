@@ -8,6 +8,7 @@ import com.arcadia.dungeon.domain.run.RunId;
 import com.arcadia.dungeon.domain.run.RunPhase;
 import com.arcadia.dungeon.domain.run.RunResult;
 import com.arcadia.dungeon.event.DungeonAreaWandEventHandler;
+import com.arcadia.dungeon.services.ArcadiaToast;
 import com.arcadia.dungeon.services.DungeonPlacementSlots;
 import com.arcadia.dungeon.services.RoomProgressionService;
 import com.arcadia.dungeon.services.RunLifecycleService;
@@ -82,17 +83,17 @@ public final class ServerPayloadHandler {
                     && isRunLeader(activeRun, player)) {
                     launchLobbyRun(lifecycle, progression, player, activeRun);
                 } else if (activeRun.phase() == RunPhase.STARTING) {
-                    player.sendSystemMessage(Component.translatable("arcadia.server.run.lobby_wait_leader"));
+                    ArcadiaToast.warn(player, "arcadia.server.run.lobby_wait_leader");
                     player.connection.send(RunStatePayload.from(activeRun));
                 } else {
-                    player.sendSystemMessage(Component.literal("§c✗ Tu es deja dans une run."));
+                    ArcadiaToast.error(player, "arcadia.toast.run.already_in_run");
                 }
                 return;
             }
 
             var dungeonOpt = ArcadiaDungeon.dungeonRegistry().get(payload.dungeonId());
             if (dungeonOpt.isEmpty()) {
-                player.sendSystemMessage(Component.literal("§c✗ Donjon inconnu : " + sanitize(payload.dungeonId())));
+                ArcadiaToast.error(player, "arcadia.toast.run.unknown_dungeon", sanitize(payload.dungeonId()));
                 return;
             }
 
@@ -101,7 +102,7 @@ public final class ServerPayloadHandler {
             if (activeClassId.isBlank()) {
                 ArcadiaDungeon.LOGGER.warn("[Arcadia][RUN] event=start_run_missing_class player={}",
                     player.getGameProfile().getName());
-                player.sendSystemMessage(Component.translatable("arcadia.server.run.no_free_class"));
+                ArcadiaToast.error(player, "arcadia.server.run.no_free_class");
                 return;
             }
 
@@ -112,7 +113,7 @@ public final class ServerPayloadHandler {
             if (openLobby != null) {
                 openLobby.addPlayer(player.getUUID());
                 openLobby.setArchetype(player.getUUID(), activeClassId);
-                player.sendSystemMessage(Component.translatable("arcadia.server.run.lobby_joined"));
+                ArcadiaToast.success(player, "arcadia.server.run.lobby_joined");
                 broadcastRunState(openLobby);
                 ArcadiaDungeon.LOGGER.info("[Arcadia][RUN] event=lobby_joined runId={} player={} totalPlayers={}",
                     openLobby.id(), player.getGameProfile().getName(), openLobby.playerIds().size());
@@ -122,7 +123,7 @@ public final class ServerPayloadHandler {
             Run run = lifecycle.startRun(dungeonConfig.id(), List.of(player.getUUID()));
             run.setArchetype(player.getUUID(), activeClassId);
             player.connection.send(RunStatePayload.from(run));
-            player.sendSystemMessage(Component.translatable("arcadia.server.run.lobby_created"));
+            ArcadiaToast.success(player, "arcadia.server.run.lobby_created");
             ArcadiaDungeon.LOGGER.info("[Arcadia][RUN] event=lobby_created runId={} player={} dungeon={}",
                 run.id(), player.getGameProfile().getName(), sanitize(payload.dungeonId()));
         });
@@ -134,7 +135,7 @@ public final class ServerPayloadHandler {
                                        Run run) {
         DungeonConfig dungeonConfig = ArcadiaDungeon.dungeonRegistry().get(run.dungeonId()).orElse(null);
         if (dungeonConfig == null) {
-            leader.sendSystemMessage(Component.translatable("arcadia.server.run.dungeon_missing", sanitize(run.dungeonId())));
+            ArcadiaToast.error(leader, "arcadia.server.run.dungeon_missing", sanitize(run.dungeonId()));
             lifecycle.completeRun(run, RunResult.ABANDONED);
             return;
         }
@@ -142,7 +143,7 @@ public final class ServerPayloadHandler {
         var instanceService = ArcadiaDungeon.dungeonInstanceService();
         if (instanceService.requiresRuntimeInstance(dungeonConfig)) {
             MinecraftServer server = leader.getServer();
-            leader.sendSystemMessage(Component.translatable("arcadia.server.run.instance_generating"));
+            ArcadiaToast.info(leader, "arcadia.server.run.instance_generating");
             instanceService.prepareRunInstance(server, run, dungeonConfig, prepared -> {
                 if (lifecycle.findById(run.id()).isEmpty()) {
                     instanceService.cleanupRun(run);
@@ -155,7 +156,7 @@ public final class ServerPayloadHandler {
                 if (lifecycle.findById(run.id()).isPresent()) {
                     lifecycle.completeRun(run, RunResult.ABANDONED);
                 }
-                leader.sendSystemMessage(Component.translatable("arcadia.server.run.instance_failed", message.getString()));
+                ArcadiaToast.error(leader, "arcadia.server.run.instance_failed", message.getString());
             });
             return;
         }
@@ -163,7 +164,7 @@ public final class ServerPayloadHandler {
         var registry = ArcadiaDungeon.placementRegistry();
         Vec3 spawnPos = registry.getSpawn(run.dungeonId()).orElse(null);
         if (spawnPos == null) {
-            leader.sendSystemMessage(Component.translatable("arcadia.server.run.dungeon_not_configured", sanitize(run.dungeonId())));
+            ArcadiaToast.error(leader, "arcadia.server.run.dungeon_not_configured", sanitize(run.dungeonId()));
             return;
         }
 
@@ -534,7 +535,7 @@ public final class ServerPayloadHandler {
                 .getOrCreate(player.getUUID(), player.getGameProfile().getName());
             boolean customAllowed = PlayerProgress.CUSTOM_LOADOUT_ID.equals(classId) && progress.customLoadoutUnlocked();
             if (!customAllowed && !ArcadiaDungeon.globalClassRegistry().isKnownClass(classId)) {
-                player.sendSystemMessage(Component.literal("[Arcadia] Classe inconnue : " + sanitize(classId)));
+                ArcadiaToast.error(player, "arcadia.toast.loadout.unknown_class", sanitize(classId));
                 sendPlayerProgress(player);
                 return;
             }
@@ -554,18 +555,18 @@ public final class ServerPayloadHandler {
             String off = normalizeItemId(payload.offItem(), PlayerProgress.DEFAULT_CUSTOM_OFF);
             String utility = normalizeItemId(payload.utilityItem(), PlayerProgress.DEFAULT_CUSTOM_UTILITY);
             if (!isKnownItem(main) || !isKnownItem(off) || !isKnownItem(utility)) {
-                player.sendSystemMessage(Component.translatable("arcadia.server.loadout.invalid_item"));
+                ArcadiaToast.error(player, "arcadia.server.loadout.invalid_item");
                 sendPlayerProgress(player);
                 return;
             }
             boolean saved = ArcadiaDungeon.playerProgressService().saveCustomLoadout(
                 player.getUUID(), player.getGameProfile().getName(), main, off, utility);
             if (!saved) {
-                player.sendSystemMessage(Component.translatable("arcadia.server.loadout.locked"));
+                ArcadiaToast.error(player, "arcadia.server.loadout.locked");
                 sendPlayerProgress(player);
                 return;
             }
-            player.sendSystemMessage(Component.translatable("arcadia.server.loadout.saved"));
+            ArcadiaToast.success(player, "arcadia.server.loadout.saved");
             sendPlayerProgress(player);
             ArcadiaDungeon.LOGGER.info("[Arcadia][LOADOUT] event=custom_saved player={} main={} off={} utility={}",
                 player.getGameProfile().getName(), sanitize(main), sanitize(off), sanitize(utility));

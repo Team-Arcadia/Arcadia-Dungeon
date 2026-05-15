@@ -8,6 +8,7 @@ import com.tesseraui.TesseraPanel;
 import com.tesseraui.TesseraScreen;
 import com.tesseraui.TesseraTemplate;
 import com.tesseraui.TesseraTemplateRenderer;
+import com.tesseraui.TesseraToast;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
@@ -67,6 +68,7 @@ public final class DungeonLobbyScreen extends TesseraScreen {
         super.render(g, mx, my, partialTick);
         if (panel != null) panel.render(g, mx, my);
         renderTesseraOverlays(g, mx, my);
+        TesseraToast.render(g, width, height);
     }
 
     @Override

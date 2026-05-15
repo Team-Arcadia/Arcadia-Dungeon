@@ -12,7 +12,9 @@ import com.arcadia.dungeon.client.state.DungeonListClient;
 import com.arcadia.dungeon.client.state.PlayerProgressClient;
 import com.arcadia.dungeon.client.state.RunStateClient;
 import com.arcadia.dungeon.client.state.StructurePlacementClient;
+import com.tesseraui.TesseraToast;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.language.I18n;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
@@ -26,6 +28,18 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 public final class ClientPayloadHandler {
 
     private ClientPayloadHandler() {}
+
+    public static void handleToast(ArcadiaToastPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            String message = I18n.get(payload.translationKey(), payload.args().toArray());
+            switch (payload.variant()) {
+                case "success" -> TesseraToast.show(message, 0xFF4ADE80, payload.durationMs());
+                case "error" -> TesseraToast.show(message, 0xFFF87171, payload.durationMs());
+                case "warn" -> TesseraToast.show(message, 0xFFF2B85C, payload.durationMs());
+                default -> TesseraToast.show(message, 0xFFFFFFFF, payload.durationMs());
+            }
+        });
+    }
 
     public static void handleRunState(RunStatePayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
