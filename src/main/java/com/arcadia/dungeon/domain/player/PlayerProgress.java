@@ -43,6 +43,20 @@ public final class PlayerProgress {
         this.dungeons = new HashMap<>();
     }
 
+    private PlayerProgress(PlayerProgress source) {
+        this.playerId = source.playerId;
+        this.playerName = source.playerName;
+        this.currency = source.currency;
+        this.selectedClassId = source.selectedClassId;
+        this.customLoadoutUnlocked = source.customLoadoutUnlocked;
+        this.loadoutPoints = source.loadoutPoints;
+        this.customMainItem = source.customMainItem;
+        this.customOffItem = source.customOffItem;
+        this.customUtilityItem = source.customUtilityItem;
+        this.dungeons = new HashMap<>();
+        source.dungeons.forEach((id, progress) -> this.dungeons.put(id, progress.copy()));
+    }
+
     public UUID playerId() { return playerId; }
     public String playerName() { return playerName; }
     public long currency() { return currency; }
@@ -54,22 +68,22 @@ public final class PlayerProgress {
     public String customUtilityItem() { return customUtilityItem; }
     public Map<String, DungeonProgress> dungeons() { return Map.copyOf(dungeons); }
 
-    public void setPlayerName(String name) { this.playerName = name; }
-    public void addCurrency(long amount) { this.currency = Math.max(0L, this.currency + amount); }
-    public void setCurrency(long amount) { this.currency = Math.max(0L, amount); }
-    public void addLoadoutPoints(int amount) { this.loadoutPoints = Math.max(0, this.loadoutPoints + amount); }
-    public void unlockCustomLoadout() { this.customLoadoutUnlocked = true; }
+    public synchronized void setPlayerName(String name) { this.playerName = name; }
+    public synchronized void addCurrency(long amount) { this.currency = Math.max(0L, this.currency + amount); }
+    public synchronized void setCurrency(long amount) { this.currency = Math.max(0L, amount); }
+    public synchronized void addLoadoutPoints(int amount) { this.loadoutPoints = Math.max(0, this.loadoutPoints + amount); }
+    public synchronized void unlockCustomLoadout() { this.customLoadoutUnlocked = true; }
 
-    public void selectClass(String classId) {
+    public synchronized void selectClass(String classId) {
         this.selectedClassId = classId != null ? classId : "";
     }
 
-    public void restoreLoadoutState(String selectedClassId, boolean customLoadoutUnlocked, int loadoutPoints) {
+    public synchronized void restoreLoadoutState(String selectedClassId, boolean customLoadoutUnlocked, int loadoutPoints) {
         restoreLoadoutState(selectedClassId, customLoadoutUnlocked, loadoutPoints,
             DEFAULT_CUSTOM_MAIN, DEFAULT_CUSTOM_OFF, DEFAULT_CUSTOM_UTILITY);
     }
 
-    public void restoreLoadoutState(String selectedClassId, boolean customLoadoutUnlocked, int loadoutPoints,
+    public synchronized void restoreLoadoutState(String selectedClassId, boolean customLoadoutUnlocked, int loadoutPoints,
                                     String customMainItem, String customOffItem, String customUtilityItem) {
         this.selectedClassId = selectedClassId != null ? selectedClassId : "";
         this.customLoadoutUnlocked = customLoadoutUnlocked;
@@ -79,14 +93,14 @@ public final class PlayerProgress {
         this.customUtilityItem = safeItem(customUtilityItem, DEFAULT_CUSTOM_UTILITY);
     }
 
-    public void saveCustomLoadout(String mainItem, String offItem, String utilityItem) {
+    public synchronized void saveCustomLoadout(String mainItem, String offItem, String utilityItem) {
         this.customMainItem = safeItem(mainItem, DEFAULT_CUSTOM_MAIN);
         this.customOffItem = safeItem(offItem, DEFAULT_CUSTOM_OFF);
         this.customUtilityItem = safeItem(utilityItem, DEFAULT_CUSTOM_UTILITY);
         this.selectedClassId = CUSTOM_LOADOUT_ID;
     }
 
-    public void recordRunCompletion(String dungeonId, long timeSeconds) {
+    public synchronized void recordRunCompletion(String dungeonId, long timeSeconds) {
         DungeonProgress dp = dungeons.computeIfAbsent(dungeonId, k -> new DungeonProgress());
         dp.completions++;
         dp.lastCompletionMs = System.currentTimeMillis();
@@ -98,12 +112,16 @@ public final class PlayerProgress {
         loadoutPoints = Math.max(loadoutPoints, totalCompletions);
     }
 
-    public void restoreDungeonProgress(String dungeonId, int completions, long bestTimeSeconds, long lastCompletionMs) {
+    public synchronized void restoreDungeonProgress(String dungeonId, int completions, long bestTimeSeconds, long lastCompletionMs) {
         if (dungeonId == null || dungeonId.isBlank()) return;
         DungeonProgress dp = dungeons.computeIfAbsent(dungeonId, k -> new DungeonProgress());
         dp.completions = Math.max(0, completions);
         dp.bestTimeSeconds = Math.max(0L, bestTimeSeconds);
         dp.lastCompletionMs = Math.max(0L, lastCompletionMs);
+    }
+
+    public synchronized PlayerProgress copy() {
+        return new PlayerProgress(this);
     }
 
     private static String safeItem(String value, String fallback) {
@@ -117,5 +135,13 @@ public final class PlayerProgress {
         public int completions = 0;
         public long bestTimeSeconds = 0L;   // 0 = pas de PB
         public long lastCompletionMs = 0L;
+
+        public DungeonProgress copy() {
+            DungeonProgress copy = new DungeonProgress();
+            copy.completions = completions;
+            copy.bestTimeSeconds = bestTimeSeconds;
+            copy.lastCompletionMs = lastCompletionMs;
+            return copy;
+        }
     }
 }

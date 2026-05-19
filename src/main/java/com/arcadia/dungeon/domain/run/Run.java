@@ -28,6 +28,7 @@ public final class Run {
     private int livesRemaining;
     private long startTimestampMs;
     private long endTimestampMs;
+    private long launchCountdownEndMs;
     private RunResult result;
 
     private int currentWaveIndex;
@@ -76,9 +77,14 @@ public final class Run {
     public int livesRemaining() { return livesRemaining; }
     public long startTimestampMs() { return startTimestampMs; }
     public long endTimestampMs() { return endTimestampMs; }
+    public long launchCountdownEndMs() { return launchCountdownEndMs; }
     public RunResult result() { return result; }
     public BossState bossState() { return bossState; }
     public Map<UUID, String> playerArchetypes() { return Map.copyOf(playerArchetypes); }
+
+    public boolean launchCountdownActive() {
+        return phase == RunPhase.STARTING && launchCountdownEndMs > 0L;
+    }
 
     public long elapsedSeconds() {
         long end = phase == RunPhase.ENDED ? endTimestampMs : System.currentTimeMillis();
@@ -113,12 +119,16 @@ public final class Run {
         if (this.phase == RunPhase.ENDED) return; // idempotent
         this.result = r;
         this.phase = RunPhase.ENDED;
+        this.launchCountdownEndMs = 0L;
+        this.bossState = null;
         this.endTimestampMs = System.currentTimeMillis();
     }
 
     public void startActivePhase() {
         requireSGT();
         this.phase = RunPhase.IN_PROGRESS;
+        this.launchCountdownEndMs = 0L;
+        this.startTimestampMs = System.currentTimeMillis();
     }
 
     public void setBossState(BossState bossState) {
@@ -129,5 +139,26 @@ public final class Run {
     public void addPlayer(UUID playerId) {
         requireSGT();
         if (!playerIds.contains(playerId)) playerIds.add(playerId);
+    }
+
+    public void removePlayer(UUID playerId) {
+        requireSGT();
+        playerIds.remove(playerId);
+        playerArchetypes.remove(playerId);
+    }
+
+    public boolean hasPlayers() {
+        return !playerIds.isEmpty();
+    }
+
+    public void scheduleLaunchCountdown(long endTimestampMs) {
+        requireSGT();
+        if (phase != RunPhase.STARTING) return;
+        this.launchCountdownEndMs = Math.max(System.currentTimeMillis(), endTimestampMs);
+    }
+
+    public void clearLaunchCountdown() {
+        requireSGT();
+        this.launchCountdownEndMs = 0L;
     }
 }

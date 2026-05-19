@@ -23,6 +23,7 @@ import java.util.UUID;
  */
 public record RunStatePayload(
     String runId,
+    String dungeonId,
     String phase,
     int currentRoomIndex,
     int currentWaveIndex,
@@ -35,6 +36,7 @@ public record RunStatePayload(
     int bossHpMax,
     int bossPhaseIndex,
     List<String> playerNames,
+    long launchCountdownEndMs,
     long serverTimestampMs
 ) implements CustomPacketPayload {
 
@@ -45,6 +47,7 @@ public record RunStatePayload(
     public static final StreamCodec<FriendlyByteBuf, RunStatePayload> CODEC = StreamCodec.of(
         (buf, p) -> {
             buf.writeUtf(p.runId());
+            buf.writeUtf(p.dungeonId());
             buf.writeUtf(p.phase());
             buf.writeInt(p.currentRoomIndex());
             buf.writeInt(p.currentWaveIndex());
@@ -62,10 +65,12 @@ public record RunStatePayload(
             for (String playerName : p.playerNames()) {
                 buf.writeUtf(playerName);
             }
+            buf.writeLong(p.launchCountdownEndMs());
             buf.writeLong(p.serverTimestampMs());
         },
         buf -> {
             String runId = buf.readUtf();
+            String dungeonId = buf.readUtf();
             String phase = buf.readUtf();
             int roomIndex = buf.readInt();
             int waveIndex = buf.readInt();
@@ -86,9 +91,11 @@ public record RunStatePayload(
             for (int i = 0; i < playerNameCount; i++) {
                 playerNames.add(buf.readUtf());
             }
+            long launchCountdownEndMs = buf.readLong();
             long serverMs = buf.readLong();
-            return new RunStatePayload(runId, phase, roomIndex, waveIndex,
-                lives, totalRooms, startMs, hasBoss, bossType, bossHpCur, bossHpMax, bossPhaseIdx, playerNames, serverMs);
+            return new RunStatePayload(runId, dungeonId, phase, roomIndex, waveIndex,
+                lives, totalRooms, startMs, hasBoss, bossType, bossHpCur, bossHpMax, bossPhaseIdx, playerNames,
+                launchCountdownEndMs, serverMs);
         }
     );
 
@@ -97,6 +104,7 @@ public record RunStatePayload(
         boolean hasBoss = run.bossState() != null;
         return new RunStatePayload(
             run.id().toString(),
+            run.dungeonId(),
             run.phase().name(),
             run.currentRoomIndex(),
             run.currentWaveIndex(),
@@ -109,6 +117,7 @@ public record RunStatePayload(
             hasBoss ? run.bossState().hpMax() : 0,
             hasBoss ? run.bossState().currentPhaseIndex() : 0,
             resolvePlayerNames(run),
+            run.launchCountdownEndMs(),
             System.currentTimeMillis()
         );
     }

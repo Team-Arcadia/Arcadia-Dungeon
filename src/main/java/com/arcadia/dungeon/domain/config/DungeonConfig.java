@@ -38,11 +38,17 @@ public record DungeonConfig(
     String victoryMessage, // nullable - victory chat message
     String failMessage,    // nullable - defeat chat message
     Integer requiredLevel, // nullable - minimum Arcadia level required to join
-    Double xpMultiplier    // nullable - Arcadia XP multiplier for this dungeon (1.0 = normal)
+    Double xpMultiplier,   // nullable - Arcadia XP multiplier for this dungeon (1.0 = normal)
+    Integer lobbyCountdownSeconds, // nullable - lobby launch countdown, instance regen can extend this wait
+    Integer minPlayers, // nullable - minimum players required before the leader can launch
+    Integer maxPlayers // nullable - maximum players in a shared lobby/run
 ) {
 
     /** Schema version supported by the current development config format. */
     public static final int CURRENT_SCHEMA_VERSION = 2;
+    public static final int DEFAULT_LOBBY_COUNTDOWN_SECONDS = 3;
+    public static final int DEFAULT_MIN_PLAYERS = 1;
+    public static final int DEFAULT_MAX_PLAYERS = 2;
 
     public List<BossDefinition> configuredBosses() {
         return bosses != null ? bosses : List.of();
@@ -65,11 +71,27 @@ public record DungeonConfig(
         return isInsideArea(areaPos1, areaPos2, dimension, px, py, pz);
     }
 
+    public int lobbyCountdownSecondsOrDefault() {
+        if (lobbyCountdownSeconds == null) return DEFAULT_LOBBY_COUNTDOWN_SECONDS;
+        return Math.max(0, Math.min(120, lobbyCountdownSeconds));
+    }
+
+    public int minPlayersOrDefault() {
+        int max = maxPlayersOrDefault();
+        int value = minPlayers == null ? DEFAULT_MIN_PLAYERS : minPlayers;
+        return Math.max(1, Math.min(max, value));
+    }
+
+    public int maxPlayersOrDefault() {
+        int value = maxPlayers == null ? DEFAULT_MAX_PLAYERS : maxPlayers;
+        return Math.max(1, Math.min(8, value));
+    }
+
     public DungeonConfig withArea(AreaPos pos1, AreaPos pos2) {
         return new DungeonConfig(schemaVersion, id, nameKey, currency, lives, rooms, waves, bosses, rewards,
             archetypes, structureRef, dimension, placementY, pos1, pos2, generationMode, generatedOrigin,
             generatedSize, generatedSlot, startMessage, victoryMessage,
-            failMessage, requiredLevel, xpMultiplier);
+            failMessage, requiredLevel, xpMultiplier, lobbyCountdownSeconds, minPlayers, maxPlayers);
     }
 
     public DungeonConfig withGeneration(String structureRef,
@@ -82,7 +104,8 @@ public record DungeonConfig(
                                         Integer generatedSlot) {
         return new DungeonConfig(schemaVersion, id, nameKey, currency, lives, rooms, waves, bosses, rewards,
             archetypes, structureRef, dimension, placementY, areaPos1, areaPos2, "template", generatedOrigin,
-            generatedSize, generatedSlot, startMessage, victoryMessage, failMessage, requiredLevel, xpMultiplier);
+            generatedSize, generatedSlot, startMessage, victoryMessage, failMessage, requiredLevel,
+            xpMultiplier, lobbyCountdownSeconds, minPlayers, maxPlayers);
     }
 
     public static boolean isInsideArea(AreaPos areaPos1, AreaPos areaPos2, String dimension,
@@ -318,12 +341,17 @@ public record DungeonConfig(
     public record Rewards(long currency, List<LootEntry> loot) {}
 
     /**
-     * Item de loot avec range min-max.
-     * @param item  resourceLocation item (ex: "minecraft:diamond")
-     * @param min   minimum quantity
-     * @param max   maximum quantity (inclusive)
+     * Item de loot avec range min-max et chance de drop.
+     * @param item    resourceLocation item (ex: "minecraft:diamond")
+     * @param min     minimum quantity
+     * @param max     maximum quantity (inclusive)
+     * @param chance  chance par joueur, entre 0.0 et 1.0. Null = 1.0 pour les configs de dev plus anciennes.
      */
-    public record LootEntry(String item, int min, int max) {}
+    public record LootEntry(String item, int min, int max, Double chance) {
+        public double chanceOrDefault() {
+            return chance == null ? 1.0 : Math.max(0.0, Math.min(1.0, chance));
+        }
+    }
 
     /**
      * Archetype = starting item kit.

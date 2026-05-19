@@ -86,6 +86,7 @@ public final class RewardDistributionService {
 
                 if (rewards != null && rewards.loot() != null) {
                     for (DungeonConfig.LootEntry entry : rewards.loot()) {
+                        if (random.nextDouble() > entry.chanceOrDefault()) continue;
                         int count = giveItem(player, entry);
                         if (count > 0) {
                             ResourceLocation rl = ResourceLocation.tryParse(entry.item());

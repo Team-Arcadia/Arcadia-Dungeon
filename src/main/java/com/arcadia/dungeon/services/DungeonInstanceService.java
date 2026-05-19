@@ -30,6 +30,7 @@ public final class DungeonInstanceService {
     private final Map<RunId, Instance> activeInstances = new ConcurrentHashMap<>();
     private final Set<RunId> pendingRuns = ConcurrentHashMap.newKeySet();
     private final Set<String> pendingSlots = ConcurrentHashMap.newKeySet();
+    private final Map<RunId, String> pendingRunSlots = new ConcurrentHashMap<>();
 
     public DungeonInstanceService(DungeonRegistry dungeonRegistry, StructurePlacementScheduler scheduler) {
         this.dungeonRegistry = dungeonRegistry;
@@ -48,6 +49,16 @@ public final class DungeonInstanceService {
                                    DungeonConfig config,
                                    Consumer<PreparedInstance> onReady,
                                    Consumer<Component> onError) {
+        prepareRunInstance(server, run, config, onReady, onError, progress -> {});
+    }
+
+    public void prepareRunInstance(MinecraftServer server,
+                                   Run run,
+                                   DungeonConfig config,
+                                   Consumer<PreparedInstance> onReady,
+                                   Consumer<Component> onError,
+                                   Consumer<StructurePlacementScheduler.Progress> onProgress) {
+        pruneInactiveInstances();
         ResourceLocation structureRef;
         try {
             structureRef = ResourceLocation.parse(config.structureRef());
@@ -90,10 +101,11 @@ public final class DungeonInstanceService {
         PlacementTarget placement = target;
         String label = "run-instance:" + run.id();
         pendingRuns.add(run.id());
+        pendingRunSlots.put(run.id(), slotKey(dimensionId, placement.slot()));
 
         boolean queued = scheduler.enqueueTemplate(level, structureRef, placement.origin(), placement.clearArea(), label, result -> {
             pendingRuns.remove(run.id());
-            releaseSlot(dimensionId, placement.slot());
+            releaseRunReservation(run.id());
             Vec3 spawnPos = ArcadiaDungeon.placementRegistry()
                 .getSpawn(config.id())
                 .orElse(result.spawnPos());
@@ -103,22 +115,25 @@ public final class DungeonInstanceService {
             onReady.accept(new PreparedInstance(level, spawnPos, placement.origin(), result.size(), placement.slot()));
         }, message -> {
             pendingRuns.remove(run.id());
-            releaseSlot(dimensionId, placement.slot());
+            releaseRunReservation(run.id());
             onError.accept(message);
-        });
+        }, onProgress);
 
         if (queued) {
             ArcadiaDungeon.LOGGER.info("[Arcadia][INSTANCE] event=queued runId={} dungeon={} slot={} origin={}",
                 run.id(), config.id(), placement.slot(), placement.origin());
         } else {
             pendingRuns.remove(run.id());
-            releaseSlot(dimensionId, placement.slot());
+            releaseRunReservation(run.id());
         }
     }
 
     public void cleanupRun(Run run) {
+        pendingRuns.remove(run.id());
+        releaseRunReservation(run.id());
         Instance instance = activeInstances.remove(run.id());
         if (instance == null) return;
+        releaseSlot(instance.dimensionId(), instance.slot());
         if (instance.adminConfigured()) {
             ArcadiaDungeon.LOGGER.info("[Arcadia][INSTANCE] event=retained runId={} dungeon={} slot={}",
                 run.id(), instance.dungeonId(), instance.slot());
@@ -150,6 +165,7 @@ public final class DungeonInstanceService {
         activeInstances.clear();
         pendingRuns.clear();
         pendingSlots.clear();
+        pendingRunSlots.clear();
     }
 
     private Optional<Integer> allocateSlot(String dimensionId) {
@@ -197,6 +213,7 @@ public final class DungeonInstanceService {
     }
 
     private boolean isSlotActive(String dimensionId, int slot) {
+        pruneInactiveInstances();
         for (Instance instance : activeInstances.values()) {
             if (dimensionId.equals(instance.dimensionId()) && instance.slot() == slot) {
                 return true;
@@ -209,8 +226,31 @@ public final class DungeonInstanceService {
         pendingSlots.remove(slotKey(dimensionId, slot));
     }
 
+    private void releaseRunReservation(RunId runId) {
+        String slotKey = pendingRunSlots.remove(runId);
+        if (slotKey != null) {
+            pendingSlots.remove(slotKey);
+        }
+    }
+
     private static String slotKey(String dimensionId, int slot) {
         return dimensionId + "#" + slot;
+    }
+
+    private void pruneInactiveInstances() {
+        try {
+            RunLifecycleService lifecycle = ArcadiaDungeon.runLifecycleService();
+            activeInstances.entrySet().removeIf(entry -> {
+                if (lifecycle.findById(entry.getKey()).isPresent()) return false;
+                Instance instance = entry.getValue();
+                releaseSlot(instance.dimensionId(), instance.slot());
+                ArcadiaDungeon.LOGGER.info("[Arcadia][INSTANCE] event=pruned_stale runId={} dungeon={} slot={}",
+                    entry.getKey(), instance.dungeonId(), instance.slot());
+                return true;
+            });
+        } catch (IllegalStateException ignored) {
+            // Service can be queried during bootstrap/shutdown; stale entries are harmless there.
+        }
     }
 
     public record PreparedInstance(ServerLevel level, Vec3 spawnPos, BlockPos origin, BlockPos size, int slot) {}

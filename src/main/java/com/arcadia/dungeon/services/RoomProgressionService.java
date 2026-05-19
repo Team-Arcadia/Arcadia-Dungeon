@@ -19,12 +19,14 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
+import net.neoforged.neoforge.event.entity.living.LivingExperienceDropEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
@@ -49,6 +51,7 @@ public final class RoomProgressionService {
     private final DungeonRegistry dungeonRegistry;
     private final RunLifecycleService runLifecycleService;
     private final BossPhaseService bossPhaseService;
+    private final RewardDistributionService rewardDistributionService;
 
     /** runId → UUIDs des mobs vivants dans la wave courante. */
     private final Map<RunId, Set<UUID>> livingMobs = new ConcurrentHashMap<>();
@@ -62,10 +65,12 @@ public final class RoomProgressionService {
 
     public RoomProgressionService(DungeonRegistry dungeonRegistry,
                                   RunLifecycleService runLifecycleService,
-                                  BossPhaseService bossPhaseService) {
+                                  BossPhaseService bossPhaseService,
+                                  RewardDistributionService rewardDistributionService) {
         this.dungeonRegistry = dungeonRegistry;
         this.runLifecycleService = runLifecycleService;
         this.bossPhaseService = bossPhaseService;
+        this.rewardDistributionService = rewardDistributionService;
     }
 
     /**
@@ -127,6 +132,13 @@ public final class RoomProgressionService {
     public void onMobDrops(LivingDropsEvent event) {
         if (mobToRun.containsKey(event.getEntity().getUUID())) {
             event.setCanceled(true);
+        }
+    }
+
+    @SubscribeEvent
+    public void onMobExperience(LivingExperienceDropEvent event) {
+        if (mobToRun.containsKey(event.getEntity().getUUID())) {
+            event.setDroppedExperience(0);
         }
     }
 
@@ -215,6 +227,9 @@ public final class RoomProgressionService {
                 if (entity instanceof Mob mob) {
                     mob.finalizeSpawn(spawnLevel, spawnLevel.getCurrentDifficultyAt(entity.blockPosition()),
                         MobSpawnType.COMMAND, null);
+                    if (mob instanceof Zombie zombie) {
+                        zombie.setBaby(false);
+                    }
                     applyMobConfig(mob, mobSpawn);
                 }
                 if (Boolean.TRUE.equals(wave.glowingAfterDelay())) {
@@ -266,6 +281,7 @@ public final class RoomProgressionService {
             ArcadiaDungeon.LOGGER.info("[Arcadia][ROOM] event=all_rooms_cleared runId={}", run.id());
             if (config.configuredBosses().isEmpty()) {
                 runLifecycleService.completeRun(run, RunResult.VICTORY);
+                rewardDistributionService.distribute(run, RunResult.VICTORY);
             } else {
                 bossPhaseService.spawnBoss(run, level, spawnPos);
             }

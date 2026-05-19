@@ -23,6 +23,7 @@ public record DungeonListPayload(List<DungeonSummary> dungeons, List<ClassSummar
     );
 
     public record DungeonSummary(String id, String name, int schemaVersion,
+                                 int minPlayers, int maxPlayers,
                                  List<ArchetypeSummary> archetypes) {}
 
     public record ArchetypeSummary(String id, String nameKey) {}
@@ -45,6 +46,8 @@ public record DungeonListPayload(List<DungeonSummary> dungeons, List<ClassSummar
                 buf.writeUtf(d.id());
                 buf.writeUtf(d.name());
                 buf.writeInt(d.schemaVersion());
+                buf.writeInt(d.minPlayers());
+                buf.writeInt(d.maxPlayers());
                 buf.writeInt(d.archetypes().size());
                 for (ArchetypeSummary a : d.archetypes()) {
                     buf.writeUtf(a.id());
@@ -77,6 +80,8 @@ public record DungeonListPayload(List<DungeonSummary> dungeons, List<ClassSummar
                 String id = buf.readUtf();
                 String name = buf.readUtf();
                 int schemaVersion = buf.readInt();
+                int minPlayers = buf.readInt();
+                int maxPlayers = buf.readInt();
                 int archCount = buf.readInt();
                 if (archCount < 0 || archCount > 32)
                     throw new io.netty.handler.codec.DecoderException("archCount hors limites: " + archCount);
@@ -84,7 +89,7 @@ public record DungeonListPayload(List<DungeonSummary> dungeons, List<ClassSummar
                 for (int j = 0; j < archCount; j++) {
                     archetypes.add(new ArchetypeSummary(buf.readUtf(), buf.readUtf()));
                 }
-                dungeons.add(new DungeonSummary(id, name, schemaVersion, archetypes));
+                dungeons.add(new DungeonSummary(id, name, schemaVersion, minPlayers, maxPlayers, archetypes));
             }
             return new DungeonListPayload(dungeons, classes);
         }

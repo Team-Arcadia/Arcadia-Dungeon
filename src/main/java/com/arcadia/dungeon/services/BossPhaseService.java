@@ -60,6 +60,9 @@ public final class BossPhaseService {
     private final Map<UUID, BossRuntime> bossToRun = new ConcurrentHashMap<>();
     private final Map<RunId, Set<UUID>> runBosses = new ConcurrentHashMap<>();
     private final Map<UUID, ServerBossEvent> bossBars = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> bossHudBroadcastAt = new ConcurrentHashMap<>();
+    private final Map<RunId, Set<Integer>> defeatedBosses = new ConcurrentHashMap<>();
+    private final Map<RunId, Set<Integer>> skippedBosses = new ConcurrentHashMap<>();
 
     public BossPhaseService(RunLifecycleService runLifecycleService,
                             RewardDistributionService rewardService,
@@ -73,7 +76,9 @@ public final class BossPhaseService {
      * Spawn les boss finaux configures pour la run.
      */
     public void spawnBoss(Run run, ServerLevel level, Vec3 spawnPos) {
-        spawnConfiguredBosses(run, level, spawnPos, this::isFinalBoss, true, true);
+        spawnConfiguredBosses(run, level, spawnPos,
+            bossDef -> isFinalBoss(bossDef) || bossBlocksCompletion(bossDef),
+            true, true);
     }
 
     public void spawnStartBosses(Run run, ServerLevel level, Vec3 spawnPos) {
@@ -99,7 +104,7 @@ public final class BossPhaseService {
         List<DungeonConfig.BossDefinition> bossDefs = config.configuredBosses();
         if (bossDefs.stream().noneMatch(selector)) {
             if (completeIfNone) {
-                completeVictory(run);
+                completeVictoryIfNoRequiredBosses(run, config);
             }
             return;
         }
@@ -115,8 +120,12 @@ public final class BossPhaseService {
             if (!selector.test(bossDef)) {
                 continue;
             }
+            if (isBossResolved(run.id(), i) || isBossIndexActive(run.id(), i)) {
+                continue;
+            }
             if (bossDef.optionalOrDefault()
                 && ThreadLocalRandom.current().nextDouble() > bossDef.spawnChanceOrDefault()) {
+                markSkipped(run.id(), i);
                 if (bossDef.skipMessage() != null && !bossDef.skipMessage().isBlank()) {
                     broadcastRunMessage(run, level.getServer(), bossDef.skipMessage());
                 }
@@ -135,7 +144,7 @@ public final class BossPhaseService {
 
         if (spawned.isEmpty()) {
             if (completeIfNone) {
-                completeVictory(run);
+                completeVictoryIfNoRequiredBosses(run, config);
             }
             return;
         }
@@ -146,7 +155,7 @@ public final class BossPhaseService {
             return tracked;
         });
 
-        if (completesRun && !hasRequiredCompletionBossAlive(spawned)) {
+        if (completesRun && !hasBlockingBossAlive(run.id()) && !hasBlockingBossPending(run, config)) {
             discardBosses(spawned, level.getServer());
             removeTrackedBosses(run.id(), spawned);
             completeVictory(run);
@@ -166,15 +175,29 @@ public final class BossPhaseService {
                 }
             }
         }
+        defeatedBosses.remove(runId);
+        skippedBosses.remove(runId);
+        bossHudBroadcastAt.keySet().removeAll(entityIds);
 
         if (entityIds.isEmpty()) {
             return;
         }
 
+        MinecraftServer server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
         for (UUID entityId : entityIds) {
             bossToRun.remove(entityId);
+            bossHudBroadcastAt.remove(entityId);
             ServerBossEvent bar = bossBars.remove(entityId);
             if (bar != null) bar.removeAllPlayers();
+            if (server != null) {
+                for (ServerLevel level : server.getAllLevels()) {
+                    Entity entity = level.getEntity(entityId);
+                    if (entity != null) {
+                        entity.discard();
+                        break;
+                    }
+                }
+            }
         }
     }
 
@@ -204,15 +227,13 @@ public final class BossPhaseService {
         if (runtime == null) return;
 
         Run run = runLifecycleService.findById(runtime.runId()).orElse(null);
-        if (run == null || run.bossState() == null) return;
+        if (run == null) return;
 
         DungeonConfig config = dungeonRegistry.get(run.dungeonId()).orElse(null);
         if (config == null) return;
         List<DungeonConfig.BossDefinition> bosses = config.configuredBosses();
         if (runtime.bossIndex() < 0 || runtime.bossIndex() >= bosses.size()) return;
-
-        List<DungeonConfig.Phase> phases = bosses.get(runtime.bossIndex()).phasesOrEmpty();
-        if (phases.isEmpty()) return;
+        DungeonConfig.BossDefinition bossDef = bosses.get(runtime.bossIndex());
 
         float hpAfter = event.getEntity().getHealth() - event.getNewDamage();
         float hpMax = event.getEntity().getMaxHealth();
@@ -220,11 +241,18 @@ public final class BossPhaseService {
         int hpPercent = Math.max(0, (int) ((hpAfter / hpMax) * 100));
 
         BossState bossState = run.bossState();
-        bossState.setHpCurrent(Math.round(hpAfter));
+        int roundedMax = Math.max(1, Math.round(hpMax));
+        if (bossState == null || !bossDef.type().equals(bossState.type()) || bossState.hpMax() != roundedMax) {
+            bossState = new BossState(bossDef.type(), roundedMax);
+            run.setBossState(bossState);
+        }
+        bossState.setHpCurrent(Math.max(0, Math.round(hpAfter)));
 
         ServerBossEvent bar = bossBars.get(entityId);
         if (bar != null) bar.setProgress(Math.max(0f, Math.min(1f, hpAfter / hpMax)));
 
+        List<DungeonConfig.Phase> phases = bossDef.phasesOrEmpty();
+        boolean broadcasted = false;
         int currentIdx = bossState.currentPhaseIndex();
         if (currentIdx < phases.size()) {
             DungeonConfig.Phase nextPhase = phases.get(currentIdx);
@@ -236,10 +264,15 @@ public final class BossPhaseService {
                 }
                 bossState.setCurrentPhaseIndex(currentIdx + 1);
                 ServerPayloadHandler.broadcastRunState(run);
+                bossHudBroadcastAt.put(entityId, System.currentTimeMillis());
+                broadcasted = true;
                 ArcadiaDungeon.LOGGER.info(
                     "[Arcadia][BOSS] event=phase_transition bossIndex={} phase={} hp={}",
                     runtime.bossIndex(), currentIdx + 1, hpPercent);
             }
+        }
+        if (!broadcasted) {
+            broadcastBossHud(run, entityId);
         }
     }
 
@@ -257,7 +290,9 @@ public final class BossPhaseService {
         if (runtime == null) return;
 
         ServerBossEvent bar = bossBars.remove(entityId);
+        bossHudBroadcastAt.remove(entityId);
         if (bar != null) bar.removeAllPlayers();
+        markDefeated(runtime.runId(), runtime.bossIndex());
 
         Run run = runLifecycleService.findById(runtime.runId()).orElse(null);
         if (run == null) return;
@@ -270,16 +305,22 @@ public final class BossPhaseService {
         Set<UUID> alive = runBosses.get(runtime.runId());
         if (alive != null) {
             alive.remove(entityId);
+            if (alive.isEmpty()) {
+                runBosses.remove(runtime.runId());
+            }
+            refreshBossState(run, config, event.getEntity().level().getServer());
             if (!runtime.completesRun()) {
-                if (alive.isEmpty()) {
-                    runBosses.remove(runtime.runId());
+                if (config != null && shouldCompleteAfterBossDeath(run, config)) {
+                    completeVictory(run);
+                    ArcadiaDungeon.LOGGER.info("[Arcadia][BOSS] event=required_side_bosses_cleared runId={}", run.id());
+                    return;
                 }
                 ServerPayloadHandler.broadcastRunState(run);
                 ArcadiaDungeon.LOGGER.info("[Arcadia][BOSS] event=side_boss_killed runId={} remaining={}",
                     run.id(), alive.size());
                 return;
             }
-            if (!alive.isEmpty() && hasRequiredCompletionBossAlive(alive)) {
+            if (hasBlockingBossAlive(runtime.runId()) || (config != null && hasBlockingBossPending(run, config))) {
                 ServerPayloadHandler.broadcastRunState(run);
                 ArcadiaDungeon.LOGGER.info("[Arcadia][BOSS] event=boss_killed runId={} remaining={}",
                     run.id(), alive.size());
@@ -293,12 +334,112 @@ public final class BossPhaseService {
         ArcadiaDungeon.LOGGER.info("[Arcadia][BOSS] event=all_bosses_killed runId={}", run.id());
     }
 
-    private boolean hasRequiredCompletionBossAlive(Set<UUID> alive) {
+    private boolean hasBlockingBossAlive(RunId runId) {
+        Set<UUID> alive = runBosses.get(runId);
+        if (alive == null || alive.isEmpty()) return false;
         for (UUID bossId : alive) {
             BossRuntime runtime = bossToRun.get(bossId);
-            if (runtime != null && runtime.requiredKill() && runtime.completesRun()) return true;
+            if (runtime != null && runtime.blocksCompletion()) return true;
         }
         return false;
+    }
+
+    private boolean hasBlockingBossPending(Run run, DungeonConfig config) {
+        List<DungeonConfig.BossDefinition> bossDefs = config.configuredBosses();
+        for (int i = 0; i < bossDefs.size(); i++) {
+            DungeonConfig.BossDefinition bossDef = bossDefs.get(i);
+            if (!bossBlocksCompletion(bossDef)) continue;
+            if (!isBossResolved(run.id(), i) && !isBossIndexActive(run.id(), i)) return true;
+        }
+        return false;
+    }
+
+    private boolean shouldCompleteAfterBossDeath(Run run, DungeonConfig config) {
+        if (run.phase() != RunPhase.IN_PROGRESS) return false;
+        int waveCount = config.configuredWaves().size();
+        boolean wavesDone = waveCount == 0 || run.currentWaveIndex() >= waveCount - 1;
+        return wavesDone && !hasBlockingBossAlive(run.id()) && !hasBlockingBossPending(run, config);
+    }
+
+    private void completeVictoryIfNoRequiredBosses(Run run, DungeonConfig config) {
+        if (!hasBlockingBossAlive(run.id()) && !hasBlockingBossPending(run, config)) {
+            completeVictory(run);
+        } else {
+            ServerPayloadHandler.broadcastRunState(run);
+        }
+    }
+
+    private void broadcastBossHud(Run run, UUID entityId) {
+        long now = System.currentTimeMillis();
+        long last = bossHudBroadcastAt.getOrDefault(entityId, 0L);
+        if (now - last < 200L) return;
+        bossHudBroadcastAt.put(entityId, now);
+        ServerPayloadHandler.broadcastRunState(run);
+    }
+
+    private boolean isBossIndexActive(RunId runId, int bossIndex) {
+        Set<UUID> alive = runBosses.get(runId);
+        if (alive == null || alive.isEmpty()) return false;
+        for (UUID bossId : alive) {
+            BossRuntime runtime = bossToRun.get(bossId);
+            if (runtime != null && runtime.bossIndex() == bossIndex) return true;
+        }
+        return false;
+    }
+
+    private boolean isBossResolved(RunId runId, int bossIndex) {
+        Set<Integer> defeated = defeatedBosses.get(runId);
+        if (defeated != null && defeated.contains(bossIndex)) return true;
+        Set<Integer> skipped = skippedBosses.get(runId);
+        return skipped != null && skipped.contains(bossIndex);
+    }
+
+    private void markDefeated(RunId runId, int bossIndex) {
+        defeatedBosses.computeIfAbsent(runId, ignored -> ConcurrentHashMap.newKeySet()).add(bossIndex);
+    }
+
+    private void markSkipped(RunId runId, int bossIndex) {
+        skippedBosses.computeIfAbsent(runId, ignored -> ConcurrentHashMap.newKeySet()).add(bossIndex);
+    }
+
+    private void refreshBossState(Run run, DungeonConfig config, MinecraftServer server) {
+        if (config == null || server == null) {
+            run.setBossState(null);
+            return;
+        }
+        Set<UUID> alive = runBosses.get(run.id());
+        if (alive == null || alive.isEmpty()) {
+            run.setBossState(null);
+            return;
+        }
+        for (UUID bossId : alive) {
+            BossRuntime runtime = bossToRun.get(bossId);
+            if (runtime == null || runtime.bossIndex() < 0 || runtime.bossIndex() >= config.configuredBosses().size()) {
+                continue;
+            }
+            Entity entity = findEntity(server, bossId);
+            if (entity instanceof LivingEntity living && living.isAlive()) {
+                DungeonConfig.BossDefinition bossDef = config.configuredBosses().get(runtime.bossIndex());
+                BossState state = new BossState(bossDef.type(), Math.max(1, Math.round(living.getMaxHealth())));
+                state.setHpCurrent(Math.round(living.getHealth()));
+                BossState previous = run.bossState();
+                if (previous != null && previous.type().equals(bossDef.type())) {
+                    state.setCurrentPhaseIndex(previous.currentPhaseIndex());
+                }
+                run.setBossState(state);
+                return;
+            }
+        }
+        run.setBossState(null);
+    }
+
+    private static Entity findEntity(MinecraftServer server, UUID entityId) {
+        if (server == null) return null;
+        for (ServerLevel level : server.getAllLevels()) {
+            Entity entity = level.getEntity(entityId);
+            if (entity != null) return entity;
+        }
+        return null;
     }
 
     private void discardRemainingBosses(RunId runId, MinecraftServer server) {
@@ -307,6 +448,7 @@ public final class BossPhaseService {
 
         for (UUID bossId : remaining) {
             bossToRun.remove(bossId);
+            bossHudBroadcastAt.remove(bossId);
             ServerBossEvent bar = bossBars.remove(bossId);
             if (bar != null) bar.removeAllPlayers();
 
@@ -325,6 +467,7 @@ public final class BossPhaseService {
 
         for (UUID bossId : bossIds) {
             bossToRun.remove(bossId);
+            bossHudBroadcastAt.remove(bossId);
             ServerBossEvent bar = bossBars.remove(bossId);
             if (bar != null) bar.removeAllPlayers();
 
@@ -385,7 +528,8 @@ public final class BossPhaseService {
         }
 
         level.addFreshEntity(entity);
-        bossToRun.put(entity.getUUID(), new BossRuntime(run.id(), bossIndex, bossDef.requiredKillOrDefault(), completesRun));
+        bossToRun.put(entity.getUUID(), new BossRuntime(run.id(), bossIndex,
+            bossBlocksCompletion(bossDef), completesRun));
         run.setBossState(new BossState(bossDef.type(), bossDef.hp()));
 
         if (bossDef.spawnMessage() != null && !bossDef.spawnMessage().isBlank()) {
@@ -409,7 +553,17 @@ public final class BossPhaseService {
     }
 
     private void completeVictory(Run run) {
+        MinecraftServer server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+        if (server != null) {
+            discardRemainingBosses(run.id(), server);
+        }
+        Set<UUID> tracked = runBosses.remove(run.id());
+        if (tracked != null) {
+            bossHudBroadcastAt.keySet().removeAll(tracked);
+        }
         runLifecycleService.completeRun(run, RunResult.VICTORY);
+        defeatedBosses.remove(run.id());
+        skippedBosses.remove(run.id());
         rewardService.distribute(run, RunResult.VICTORY);
         ServerPayloadHandler.broadcastRunState(run);
     }
@@ -438,6 +592,10 @@ public final class BossPhaseService {
 
     private boolean isFinalBoss(DungeonConfig.BossDefinition bossDef) {
         return !bossDef.spawnAtStartOrDefault() && bossDef.spawnAfterWaveOrDefault() == 0;
+    }
+
+    private boolean bossBlocksCompletion(DungeonConfig.BossDefinition bossDef) {
+        return bossDef.requiredKillOrDefault() || !bossDef.optionalOrDefault();
     }
 
     private void applyPhase(LivingEntity entity, DungeonConfig.Phase phase, Run run, ServerLevel level) {
@@ -586,5 +744,5 @@ public final class BossPhaseService {
         catch (IllegalArgumentException ignored) { return BossEvent.BossBarColor.RED; }
     }
 
-    private record BossRuntime(RunId runId, int bossIndex, boolean requiredKill, boolean completesRun) {}
+    private record BossRuntime(RunId runId, int bossIndex, boolean blocksCompletion, boolean completesRun) {}
 }

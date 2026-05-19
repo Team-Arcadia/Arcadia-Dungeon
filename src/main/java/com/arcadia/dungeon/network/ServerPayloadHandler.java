@@ -9,6 +9,7 @@ import com.arcadia.dungeon.domain.run.RunPhase;
 import com.arcadia.dungeon.domain.run.RunResult;
 import com.arcadia.dungeon.event.DungeonAreaWandEventHandler;
 import com.arcadia.dungeon.services.ArcadiaToast;
+import com.arcadia.dungeon.services.DungeonInstanceService;
 import com.arcadia.dungeon.services.DungeonPlacementSlots;
 import com.arcadia.dungeon.services.RoomProgressionService;
 import com.arcadia.dungeon.services.RunLifecycleService;
@@ -43,7 +44,7 @@ import java.util.UUID;
 public final class ServerPayloadHandler {
 
     private static final PacketRateLimiter RESYNC_LIMITER         = new PacketRateLimiter(5_000L);
-    private static final PacketRateLimiter START_RUN_LIMITER      = new PacketRateLimiter(3_000L);
+    private static final PacketRateLimiter START_RUN_LIMITER      = new PacketRateLimiter(500L);
     private static final PacketRateLimiter RELOAD_LIMITER         = new PacketRateLimiter(10_000L);
     private static final PacketRateLimiter CREATE_DUNGEON_LIMITER = new PacketRateLimiter(5_000L);
     private static final PacketRateLimiter DELETE_DUNGEON_LIMITER = new PacketRateLimiter(3_000L);
@@ -58,8 +59,6 @@ public final class ServerPayloadHandler {
     private static final PacketRateLimiter ADMIN_DEBUG_LIMITER    = new PacketRateLimiter(300L);
 
     private static final Gson GSON = new Gson();
-
-    private static final int MAX_PLAYERS_PER_RUN = 2;
 
     private ServerPayloadHandler() {}
 
@@ -76,13 +75,17 @@ public final class ServerPayloadHandler {
 
         context.enqueueWork(() -> {
             RunLifecycleService lifecycle = ArcadiaDungeon.runLifecycleService();
-            RoomProgressionService progression = ArcadiaDungeon.roomProgressionService();
 
             Run activeRun = lifecycle.findActiveRunForPlayer(player.getUUID()).orElse(null);
             if (activeRun != null) {
+                if (ArcadiaDungeon.dungeonInstanceService().isPreparing(activeRun)) {
+                    ArcadiaToast.info(player, "arcadia.server.run.instance_generating");
+                    player.connection.send(RunStatePayload.from(activeRun));
+                    return;
+                }
                 if (activeRun.phase() == RunPhase.STARTING && activeRun.dungeonId().equals(payload.dungeonId())
                     && isRunLeader(activeRun, player)) {
-                    launchLobbyRun(lifecycle, progression, player, activeRun);
+                    ArcadiaDungeon.lobbyCountdownService().requestLaunch(player, activeRun);
                 } else if (activeRun.phase() == RunPhase.STARTING) {
                     ArcadiaToast.warn(player, "arcadia.server.run.lobby_wait_leader");
                     player.connection.send(RunStatePayload.from(activeRun));
@@ -107,9 +110,8 @@ public final class ServerPayloadHandler {
                 return;
             }
 
-            var instanceService = ArcadiaDungeon.dungeonInstanceService();
-            Run openLobby = lifecycle.findOpenLobby(payload.dungeonId(), MAX_PLAYERS_PER_RUN)
-                .filter(run -> !instanceService.isPreparing(run))
+            int maxPlayers = dungeonConfig.maxPlayersOrDefault();
+            Run openLobby = lifecycle.findOpenLobby(payload.dungeonId(), maxPlayers)
                 .orElse(null);
             if (openLobby != null) {
                 openLobby.addPlayer(player.getUUID());
@@ -130,10 +132,12 @@ public final class ServerPayloadHandler {
         });
     }
 
-    private static void launchLobbyRun(RunLifecycleService lifecycle,
-                                       RoomProgressionService progression,
-                                       ServerPlayer leader,
-                                       Run run) {
+    public static void launchLobbyRun(RunLifecycleService lifecycle,
+                                      RoomProgressionService progression,
+                                      ServerPlayer leader,
+                                      Run run) {
+        run.clearLaunchCountdown();
+        broadcastRunState(run);
         DungeonConfig dungeonConfig = ArcadiaDungeon.dungeonRegistry().get(run.dungeonId()).orElse(null);
         if (dungeonConfig == null) {
             ArcadiaToast.error(leader, "arcadia.server.run.dungeon_missing", sanitize(run.dungeonId()));
@@ -183,6 +187,17 @@ public final class ServerPayloadHandler {
             run.id(), sanitize(run.dungeonId()), run.playerIds().size());
     }
 
+    public static void activatePreparedLobbyRun(RunLifecycleService lifecycle,
+                                                RoomProgressionService progression,
+                                                Run run,
+                                                DungeonInstanceService.PreparedInstance prepared) {
+        run.clearLaunchCountdown();
+        broadcastRunState(run);
+        activateRunPlayers(lifecycle, progression, run, prepared.level(), prepared.spawnPos());
+        ArcadiaDungeon.LOGGER.info("[Arcadia][RUN] event=multiplayer_run_started runId={} dungeon={} players={} instanceSlot={}",
+            run.id(), sanitize(run.dungeonId()), run.playerIds().size(), prepared.slot());
+    }
+
     private static void activateRunPlayers(RunLifecycleService lifecycle,
                                            RoomProgressionService progression,
                                            Run run,
@@ -224,9 +239,9 @@ public final class ServerPayloadHandler {
                 ArcadiaDungeon.playerDeathService().cancelPendingRespawn(player.getUUID());
                 ArcadiaDungeon.roomProgressionService().cleanupRun(run.id());
                 lifecycle.abandonRun(run, player.getUUID());
-                player.sendSystemMessage(Component.literal("§7Run abandonnée."));
+                ArcadiaToast.info(player, "arcadia.server.run.abandoned");
             }, () -> {
-                player.sendSystemMessage(Component.literal("§c✗ Pas de run active."));
+                ArcadiaToast.warn(player, "arcadia.server.run.no_active");
             });
         });
     }
@@ -240,7 +255,7 @@ public final class ServerPayloadHandler {
 
             // Joueur pas déjà en run
             if (lifecycle.findActiveRunForPlayer(player.getUUID()).isPresent()) {
-                player.sendSystemMessage(Component.literal("§c✗ Tu es déjà dans une run."));
+                ArcadiaToast.error(player, "arcadia.toast.run.already_in_run");
                 return;
             }
 
@@ -249,30 +264,28 @@ public final class ServerPayloadHandler {
             try {
                 targetId = new RunId(UUID.fromString(payload.runId()));
             } catch (IllegalArgumentException e) {
-                player.sendSystemMessage(Component.literal("§c✗ runId invalide."));
+                ArcadiaToast.error(player, "arcadia.server.run.invalid_run_id");
                 return;
             }
 
             Run run = lifecycle.findById(targetId).orElse(null);
             if (run == null) {
-                player.sendSystemMessage(Component.literal("§c✗ Run introuvable."));
-                return;
-            }
-
-            if (ArcadiaDungeon.dungeonInstanceService().isPreparing(run)) {
-                player.sendSystemMessage(Component.literal("§c✗ Instance en generation, rejoins dans quelques secondes."));
+                ArcadiaToast.error(player, "arcadia.server.run.not_found");
                 return;
             }
 
             // Run en phase STARTING
             if (run.phase() != RunPhase.STARTING) {
-                player.sendSystemMessage(Component.literal("§c✗ La run a déjà commencé."));
+                ArcadiaToast.error(player, "arcadia.server.run.already_started");
                 return;
             }
 
             // Capacité max
-            if (run.playerIds().size() >= MAX_PLAYERS_PER_RUN) {
-                player.sendSystemMessage(Component.literal("§c✗ Run complète (" + MAX_PLAYERS_PER_RUN + " joueurs max)."));
+            int maxPlayers = ArcadiaDungeon.dungeonRegistry().get(run.dungeonId())
+                .map(DungeonConfig::maxPlayersOrDefault)
+                .orElse(DungeonConfig.DEFAULT_MAX_PLAYERS);
+            if (run.playerIds().size() >= maxPlayers) {
+                ArcadiaToast.error(player, "arcadia.server.run.full", maxPlayers);
                 return;
             }
 
@@ -286,17 +299,12 @@ public final class ServerPayloadHandler {
             run.addPlayer(player.getUUID());
             run.setArchetype(player.getUUID(), activeClassId);
 
-            // Sauvegarder l'origine avant téléport (comme handleStartRun)
-            lifecycle.savePlayerOrigin(player.getUUID(), player);
-
-            // S6.6 — strip inventaire + kit archétype pour le joueur qui rejoint
-            ArcadiaDungeon.archetypeService().preparePlayer(player, run.id(), run.dungeonId(), activeClassId);
-
             // S3.3 — resync complet au joueur qui rejoint
             player.connection.send(RunStatePayload.from(run));
 
             // Broadcast aux autres joueurs de la run
             broadcastRunState(run);
+            ArcadiaToast.success(player, "arcadia.server.run.lobby_joined");
 
             ArcadiaDungeon.LOGGER.info("[Arcadia][RUN] event=join runId={} player={} totalPlayers={}",
                 run.id(), player.getGameProfile().getName(), run.playerIds().size());
@@ -356,6 +364,10 @@ public final class ServerPayloadHandler {
                 player.sendSystemMessage(Component.literal("§c✗ Permissions insuffisantes (op2 requis)."));
                 return;
             }
+            if (!ArcadiaDungeon.runLifecycleService().activeRuns().isEmpty()) {
+                ArcadiaToast.error(player, "arcadia.server.admin.reload_blocked_active_runs");
+                return;
+            }
             ArcadiaDungeon.dungeonRegistry().reload();
             player.sendSystemMessage(Component.literal("§aDonjons rechargés."));
             ArcadiaDungeon.LOGGER.info("[Arcadia][ADMIN] event=reload requestedBy={}", player.getGameProfile().getName());
@@ -395,7 +407,8 @@ public final class ServerPayloadHandler {
                 DungeonConfig.CURRENT_SCHEMA_VERSION, id, nameKey, null, lives,
                 List.of(), List.of(), List.of(defaultBoss), new DungeonConfig.Rewards(0L, List.of()), List.of(),
                 null, ArcadiaDungeon.DUNGEON_DIMENSION_ID, null, null, null, "custom", null, null,
-                null, null, null, null, null, null);
+                null, null, null, null, null, null, DungeonConfig.DEFAULT_LOBBY_COUNTDOWN_SECONDS,
+                DungeonConfig.DEFAULT_MIN_PLAYERS, DungeonConfig.DEFAULT_MAX_PLAYERS);
 
             ArcadiaDungeon.dungeonRegistry().save(cfg);
             sendDungeonList(player);
@@ -513,6 +526,13 @@ public final class ServerPayloadHandler {
                     ArcadiaToast.success(admin, "arcadia.admin.debug.toast.inventory_restored");
                     return;
                 }
+                case "TELEPORT_DUNGEON_ZONE" -> {
+                    if (!teleportDebugTargetToDungeon(admin, target, debugDungeonId(payload.dungeonId()))) {
+                        return;
+                    }
+                    ArcadiaToast.success(admin, "arcadia.admin.debug.toast.teleported", sanitize(targetName));
+                    return;
+                }
                 case "GRANT_COMPLETION" -> progress.recordRunCompletion(
                     targetId, targetName, debugDungeonId(payload.dungeonId()), Math.max(1L, payload.timeSeconds()));
                 case "UNLOCK_PROFILE_BADGES" -> {
@@ -566,9 +586,18 @@ public final class ServerPayloadHandler {
             String id = payload.dungeonId() != null ? payload.dungeonId().trim() : "";
             String json = payload.configJson() != null ? payload.configJson() : "";
             if (!isValidDungeonResourceId(id) || json.isEmpty() || json.length() > 65536) return;
+            if (ArcadiaDungeon.runLifecycleService().hasActiveRunForDungeon(id)) {
+                ArcadiaToast.error(player, "arcadia.server.admin.save_blocked_active_run", sanitize(id));
+                return;
+            }
             try {
                 DungeonConfig cfg = GSON.fromJson(json, DungeonConfig.class);
                 if (cfg == null || cfg.id() == null || !cfg.id().equals(id)) return;
+                String validationError = validateDungeonConfig(player.getServer(), cfg);
+                if (validationError != null) {
+                    ArcadiaToast.error(player, "arcadia.server.admin.config_invalid", validationError);
+                    return;
+                }
                 ArcadiaDungeon.dungeonRegistry().save(cfg);
                 player.sendSystemMessage(Component.literal("�a? Config sauvegardee : " + sanitize(id)));
                 sendDungeonList(player);
@@ -586,7 +615,13 @@ public final class ServerPayloadHandler {
             try {
                 DungeonConfig.ArchetypeDefinition[] parsed =
                     GSON.fromJson(payload.classesJson(), DungeonConfig.ArchetypeDefinition[].class);
-                ArcadiaDungeon.globalClassRegistry().save(parsed != null ? Arrays.asList(parsed) : List.of());
+                List<DungeonConfig.ArchetypeDefinition> classes = parsed != null ? Arrays.asList(parsed) : List.of();
+                String validationError = validateGlobalClasses(classes);
+                if (validationError != null) {
+                    player.sendSystemMessage(Component.literal("Classes gratuites non sauvegardees : " + validationError));
+                    return;
+                }
+                ArcadiaDungeon.globalClassRegistry().save(classes);
                 player.sendSystemMessage(Component.literal("�a? Classes gratuites sauvegardees."));
                 sendDungeonList(player);
             } catch (JsonSyntaxException e) {
@@ -883,7 +918,8 @@ public final class ServerPayloadHandler {
                 }
             }
             summaries.add(new DungeonListPayload.DungeonSummary(
-                config.id(), config.nameKey(), config.schemaVersion(), archetypes));
+                config.id(), config.nameKey(), config.schemaVersion(), config.minPlayersOrDefault(),
+                config.maxPlayersOrDefault(), archetypes));
         });
         return summaries;
     }
@@ -894,6 +930,150 @@ public final class ServerPayloadHandler {
             classes.add(new DungeonListPayload.ClassSummary(c.id(), c.nameKey(), c.items()));
         }
         return classes;
+    }
+
+    private static String validateGlobalClasses(List<DungeonConfig.ArchetypeDefinition> classes) {
+        if (classes == null || classes.isEmpty()) {
+            return "ajoute au moins une classe valide";
+        }
+        for (DungeonConfig.ArchetypeDefinition klass : classes) {
+            if (klass == null) return "une entree de classe est vide";
+            String id = klass.id() != null ? klass.id().trim() : "";
+            if (!id.matches("[a-z0-9_:-]{1,64}")) {
+                return "id invalide: " + sanitize(id);
+            }
+            boolean hasValidItem = klass.items() != null && klass.items().stream()
+                .filter(item -> item != null && ResourceLocation.tryParse(item.trim()) != null)
+                .findAny()
+                .isPresent();
+            if (!hasValidItem) {
+                return "la classe " + sanitize(id) + " doit contenir au moins un item valide";
+            }
+        }
+        return null;
+    }
+
+    private static String validateDungeonConfig(MinecraftServer server, DungeonConfig cfg) {
+        if (cfg.lives() < 1 || cfg.lives() > 99) {
+            return "lives doit etre entre 1 et 99";
+        }
+        if (cfg.minPlayers() != null && cfg.minPlayers() < 1) {
+            return "minPlayers doit etre superieur ou egal a 1";
+        }
+        if (cfg.maxPlayers() != null && (cfg.maxPlayers() < 1 || cfg.maxPlayers() > 8)) {
+            return "maxPlayers doit etre entre 1 et 8";
+        }
+        if (cfg.minPlayersOrDefault() > cfg.maxPlayersOrDefault()) {
+            return "minPlayers ne peut pas depasser maxPlayers";
+        }
+        if (cfg.lobbyCountdownSeconds() != null && (cfg.lobbyCountdownSeconds() < 0 || cfg.lobbyCountdownSeconds() > 120)) {
+            return "countdown lobby doit etre entre 0 et 120 secondes";
+        }
+        String dimError = validateDimension(server, cfg.dimension(), "dimension template");
+        if (dimError != null) return dimError;
+        dimError = validateArea(server, cfg.areaPos1(), "zone pos1");
+        if (dimError != null) return dimError;
+        dimError = validateArea(server, cfg.areaPos2(), "zone pos2");
+        if (dimError != null) return dimError;
+        dimError = validateArea(server, cfg.generatedOrigin(), "origine generee");
+        if (dimError != null) return dimError;
+
+        for (DungeonConfig.Wave wave : cfg.configuredWaves()) {
+            if (wave == null || wave.mobs() == null) continue;
+            for (DungeonConfig.MobSpawn mob : wave.mobs()) {
+                if (mob == null) continue;
+                ResourceLocation type = ResourceLocation.tryParse(mob.mobType());
+                if (type == null || BuiltInRegistries.ENTITY_TYPE.getOptional(type).isEmpty()) {
+                    return "mob inconnu: " + sanitize(mob.mobType());
+                }
+                if (mob.count() < 1 || mob.count() > 256) {
+                    return "quantite mob invalide pour " + sanitize(mob.mobType());
+                }
+                dimError = validateSpawnPoint(server, mob.spawnPoint(), "spawn mob " + sanitize(mob.mobType()));
+                if (dimError != null) return dimError;
+                dimError = validateArea(server, mob.areaPos1(), "zone mob pos1");
+                if (dimError != null) return dimError;
+                dimError = validateArea(server, mob.areaPos2(), "zone mob pos2");
+                if (dimError != null) return dimError;
+                String equipmentError = validateEquipment(mob.equipment(), "equipement mob " + sanitize(mob.mobType()));
+                if (equipmentError != null) return equipmentError;
+            }
+        }
+
+        for (DungeonConfig.BossDefinition boss : cfg.configuredBosses()) {
+            if (boss == null) continue;
+            ResourceLocation type = ResourceLocation.tryParse(boss.type());
+            if (type == null || BuiltInRegistries.ENTITY_TYPE.getOptional(type).isEmpty()) {
+                return "boss inconnu: " + sanitize(boss.type());
+            }
+            if (boss.hp() < 1 || boss.hp() > 100000) {
+                return "HP boss invalide pour " + sanitize(boss.id());
+            }
+            dimError = validateSpawnPoint(server, boss.spawnPoint(), "spawn boss " + sanitize(boss.id()));
+            if (dimError != null) return dimError;
+            String equipmentError = validateEquipment(boss.equipment(), "equipement boss " + sanitize(boss.id()));
+            if (equipmentError != null) return equipmentError;
+            for (DungeonConfig.BossReward reward : boss.rewardsOrEmpty()) {
+                String rewardError = validateItem(reward.item(), "drop boss " + sanitize(boss.id()));
+                if (rewardError != null) return rewardError;
+                if (reward.min() < 0 || reward.max() < 0) return "quantite drop boss invalide";
+            }
+        }
+
+        DungeonConfig.Rewards rewards = cfg.rewards();
+        if (rewards != null && rewards.loot() != null) {
+            for (DungeonConfig.LootEntry loot : rewards.loot()) {
+                if (loot == null) continue;
+                String itemError = validateItem(loot.item(), "recompense");
+                if (itemError != null) return itemError;
+                if (loot.min() < 0 || loot.max() < 0) return "quantite recompense invalide";
+            }
+        }
+        return null;
+    }
+
+    private static String validateSpawnPoint(MinecraftServer server, DungeonConfig.SpawnPoint point, String label) {
+        if (point == null) return null;
+        return validateDimension(server, point.dimension(), label);
+    }
+
+    private static String validateArea(MinecraftServer server, DungeonConfig.AreaPos pos, String label) {
+        if (pos == null) return null;
+        return validateDimension(server, pos.dimension(), label);
+    }
+
+    private static String validateDimension(MinecraftServer server, String dimension, String label) {
+        if (dimension == null || dimension.isBlank()) return null;
+        ResourceLocation id = ResourceLocation.tryParse(dimension.trim());
+        if (id == null) return label + " dimension invalide: " + sanitize(dimension);
+        if (server.getLevel(ResourceKey.create(Registries.DIMENSION, id)) == null) {
+            return label + " dimension introuvable: " + sanitize(dimension);
+        }
+        return null;
+    }
+
+    private static String validateEquipment(DungeonConfig.Equipment equipment, String label) {
+        if (equipment == null) return null;
+        String error = validateItem(equipment.mainHand(), label + " main");
+        if (error != null) return error;
+        error = validateItem(equipment.offHand(), label + " off");
+        if (error != null) return error;
+        error = validateItem(equipment.helmet(), label + " casque");
+        if (error != null) return error;
+        error = validateItem(equipment.chestplate(), label + " plastron");
+        if (error != null) return error;
+        error = validateItem(equipment.leggings(), label + " jambieres");
+        if (error != null) return error;
+        return validateItem(equipment.boots(), label + " bottes");
+    }
+
+    private static String validateItem(String itemId, String label) {
+        if (itemId == null || itemId.isBlank()) return null;
+        ResourceLocation id = ResourceLocation.tryParse(itemId.trim());
+        if (id == null || BuiltInRegistries.ITEM.getOptional(id).isEmpty()) {
+            return label + " item inconnu: " + sanitize(itemId);
+        }
+        return null;
     }
 
     private static String sanitize(String s) {
@@ -920,6 +1100,47 @@ public final class ServerPayloadHandler {
             }
         }
         return null;
+    }
+
+    private static boolean teleportDebugTargetToDungeon(ServerPlayer admin, ServerPlayer target, String dungeonId) {
+        DungeonConfig config = ArcadiaDungeon.dungeonRegistry().get(dungeonId).orElse(null);
+        if (config == null) {
+            ArcadiaToast.error(admin, "arcadia.toast.run.unknown_dungeon", sanitize(dungeonId));
+            return false;
+        }
+
+        String dimension = ArcadiaDungeon.placementRegistry().getDimension(dungeonId)
+            .orElse(config.dimension() != null && !config.dimension().isBlank()
+                ? config.dimension()
+                : ArcadiaDungeon.DUNGEON_DIMENSION_ID);
+        Vec3 spawn = ArcadiaDungeon.placementRegistry().getSpawn(dungeonId).orElse(null);
+        if (spawn == null && config.areaPos1() != null) {
+            DungeonConfig.AreaPos pos = config.areaPos1();
+            dimension = pos.dimension();
+            spawn = new Vec3(pos.x() + 0.5, pos.y() + 1.0, pos.z() + 0.5);
+        }
+        if (spawn == null && config.generatedOrigin() != null) {
+            DungeonConfig.AreaPos pos = config.generatedOrigin();
+            dimension = pos.dimension();
+            spawn = new Vec3(pos.x() + 0.5, pos.y() + 1.0, pos.z() + 0.5);
+        }
+        if (spawn == null) {
+            ArcadiaToast.error(admin, "arcadia.server.run.dungeon_not_configured", sanitize(dungeonId));
+            return false;
+        }
+
+        ResourceLocation dim = ResourceLocation.tryParse(dimension);
+        if (dim == null) {
+            ArcadiaToast.error(admin, "arcadia.server.admin.config_invalid", "dimension invalide: " + sanitize(dimension));
+            return false;
+        }
+        ServerLevel level = target.getServer().getLevel(ResourceKey.create(Registries.DIMENSION, dim));
+        if (level == null) {
+            ArcadiaToast.error(admin, "arcadia.server.admin.config_invalid", "dimension introuvable: " + sanitize(dimension));
+            return false;
+        }
+        target.teleportTo(level, spawn.x, spawn.y, spawn.z, target.getYRot(), target.getXRot());
+        return true;
     }
 
     private static String debugDungeonId(String dungeonId) {

@@ -10,6 +10,7 @@ import com.arcadia.dungeon.persistence.DungeonRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
@@ -101,6 +102,11 @@ public final class RunLifecycleService {
             run.id(), requestingPlayerId);
     }
 
+    public void removePlayerFromRun(Run run, UUID playerId) {
+        run.removePlayer(playerId);
+        ServerPayloadHandler.broadcastRunState(run);
+    }
+
     /** Sauvegarde la position du joueur avant le téléport dans le donjon. */
     public void savePlayerOrigin(UUID playerId, ServerPlayer player) {
         String dimId = player.serverLevel().dimension().location().toString();
@@ -121,6 +127,12 @@ public final class RunLifecycleService {
             .filter(r -> r.phase() == com.arcadia.dungeon.domain.run.RunPhase.STARTING)
             .filter(r -> r.playerIds().size() < maxPlayers)
             .findFirst();
+    }
+
+    public boolean hasActiveRunForDungeon(String dungeonId) {
+        return activeRuns.values().stream()
+            .anyMatch(r -> r.dungeonId().equals(dungeonId)
+                && r.phase() != com.arcadia.dungeon.domain.run.RunPhase.ENDED);
     }
 
     public Optional<Run> findById(RunId id) {
@@ -152,7 +164,7 @@ public final class RunLifecycleService {
         var server = ServerLifecycleHooks.getCurrentServer();
         if (server == null) return;
         for (UUID playerId : run.playerIds()) {
-            OriginPos origin = playerOrigins.remove(playerId);
+            OriginPos origin = playerOrigins.get(playerId);
             if (origin == null) continue;
             ServerPlayer player = server.getPlayerList().getPlayer(playerId);
             if (player == null) continue;
@@ -162,9 +174,27 @@ public final class RunLifecycleService {
             if (targetLevel == null) targetLevel = server.overworld();
             player.teleportTo(targetLevel, origin.x(), origin.y(), origin.z(),
                 origin.yaw(), origin.pitch());
+            playerOrigins.remove(playerId);
             ArcadiaDungeon.LOGGER.info("[Arcadia][RUN] event=origin_restored playerId={} dim={} pos={},{},{}",
                 playerId, origin.dimensionId(), origin.x(), origin.y(), origin.z());
         }
+    }
+
+    public boolean restorePlayerOriginIfPresent(UUID playerId, ServerPlayer player) {
+        OriginPos origin = playerOrigins.get(playerId);
+        if (origin == null) return false;
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        if (server == null) return false;
+        ResourceKey<Level> dimKey = ResourceKey.create(Registries.DIMENSION,
+            ResourceLocation.parse(origin.dimensionId()));
+        ServerLevel targetLevel = server.getLevel(dimKey);
+        if (targetLevel == null) targetLevel = server.overworld();
+        player.teleportTo(targetLevel, origin.x(), origin.y(), origin.z(),
+            origin.yaw(), origin.pitch());
+        playerOrigins.remove(playerId);
+        ArcadiaDungeon.LOGGER.info("[Arcadia][RUN] event=origin_restored_late playerId={} dim={} pos={},{},{}",
+            playerId, origin.dimensionId(), origin.x(), origin.y(), origin.z());
+        return true;
     }
 
     private void tryRestoreInventories(Run run) {

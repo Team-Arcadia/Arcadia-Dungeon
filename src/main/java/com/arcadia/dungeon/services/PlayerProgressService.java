@@ -9,6 +9,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Player progress service: currency, global loadout selection and per-dungeon PBs.
@@ -23,7 +24,8 @@ public final class PlayerProgressService {
         t.setDaemon(true);
         return t;
     });
-    private volatile boolean savePending = false;
+    private final AtomicBoolean savePending = new AtomicBoolean(false);
+    private final AtomicBoolean saveAgain = new AtomicBoolean(false);
 
     public PlayerProgressService(ArcadiaDatabaseService databaseService) {
         this.databaseService = databaseService;
@@ -115,7 +117,7 @@ public final class PlayerProgressService {
     }
 
     public Map<UUID, PlayerProgress> snapshot() {
-        return Map.copyOf(progressMap);
+        return snapshotForPersistence();
     }
 
     public void load() {
@@ -125,20 +127,40 @@ public final class PlayerProgressService {
     }
 
     public void save() {
+        Map<UUID, PlayerProgress> snapshot = snapshotForPersistence();
+        save(snapshot);
+    }
+
+    private void save(Map<UUID, PlayerProgress> snapshot) {
         try {
-            databaseService.saveAllPlayerProgress(progressMap.values());
+            databaseService.saveAllPlayerProgress(snapshot.values());
         } catch (RuntimeException e) {
             ArcadiaDungeon.LOGGER.error("[Arcadia][PROGRESS] sqlite_save_failed: {}", e.getMessage());
         }
     }
 
     private void saveAsync() {
-        if (savePending) return;
-        savePending = true;
+        Map<UUID, PlayerProgress> snapshot = snapshotForPersistence();
+        if (!savePending.compareAndSet(false, true)) {
+            saveAgain.set(true);
+            return;
+        }
         saveExecutor.execute(() -> {
-            savePending = false;
-            save();
+            try {
+                save(snapshot);
+            } finally {
+                savePending.set(false);
+                if (saveAgain.getAndSet(false)) {
+                    saveAsync();
+                }
+            }
         });
+    }
+
+    private Map<UUID, PlayerProgress> snapshotForPersistence() {
+        Map<UUID, PlayerProgress> snapshot = new java.util.HashMap<>();
+        progressMap.forEach((id, progress) -> snapshot.put(id, progress.copy()));
+        return Map.copyOf(snapshot);
     }
 
     public void shutdown() {

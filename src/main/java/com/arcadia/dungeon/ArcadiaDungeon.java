@@ -47,6 +47,7 @@ import com.arcadia.dungeon.services.ArchetypeService;
 import com.arcadia.dungeon.services.BossPhaseService;
 import com.arcadia.dungeon.services.DungeonInstanceService;
 import com.arcadia.dungeon.services.DungeonZoneProtectionService;
+import com.arcadia.dungeon.services.LobbyCountdownService;
 import com.arcadia.dungeon.services.PlayerDeathService;
 import com.arcadia.dungeon.services.PlayerProgressService;
 import com.arcadia.dungeon.services.RewardDistributionService;
@@ -60,6 +61,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -97,6 +99,7 @@ public class ArcadiaDungeon {
     private static volatile RewardDistributionService rewardDistributionService;
     private static volatile BossPhaseService        bossPhaseService;
     private static volatile RoomProgressionService  roomProgressionService;
+    private static volatile LobbyCountdownService   lobbyCountdownService;
     private static volatile PlayerDeathService      playerDeathService;
     private static volatile ArchetypeService        archetypeService;
     private static volatile RunCleanupService       runCleanupService;
@@ -188,6 +191,12 @@ public class ArcadiaDungeon {
     public static DungeonInstanceService dungeonInstanceService() {
         DungeonInstanceService s = dungeonInstanceService;
         if (s == null) throw new IllegalStateException("DungeonInstanceService not initialized - call after ServerStartingEvent");
+        return s;
+    }
+
+    public static LobbyCountdownService lobbyCountdownService() {
+        LobbyCountdownService s = lobbyCountdownService;
+        if (s == null) throw new IllegalStateException("LobbyCountdownService not initialized - call after ServerStartingEvent");
         return s;
     }
 
@@ -297,8 +306,13 @@ public class ArcadiaDungeon {
             }
 
             if (roomProgressionService == null) {
-                roomProgressionService = new RoomProgressionService(dungeonRegistry, runLifecycleService, bossPhaseService);
+                roomProgressionService = new RoomProgressionService(dungeonRegistry, runLifecycleService, bossPhaseService, rewardDistributionService);
                 NeoForge.EVENT_BUS.register(roomProgressionService);
+            }
+
+            if (lobbyCountdownService == null) {
+                lobbyCountdownService = new LobbyCountdownService(runLifecycleService, roomProgressionService);
+                NeoForge.EVENT_BUS.register(lobbyCountdownService);
             }
 
             if (playerDeathService == null) {
@@ -361,6 +375,7 @@ public class ArcadiaDungeon {
             if (playerDeathService != null)   { playerDeathService.shutdown(); NeoForge.EVENT_BUS.unregister(playerDeathService); playerDeathService = null; }
             if (bossPhaseService != null)     { NeoForge.EVENT_BUS.unregister(bossPhaseService); bossPhaseService = null; }
             if (roomProgressionService != null) { NeoForge.EVENT_BUS.unregister(roomProgressionService); roomProgressionService = null; }
+            if (lobbyCountdownService != null) { NeoForge.EVENT_BUS.unregister(lobbyCountdownService); lobbyCountdownService = null; }
             if (playerProgressService != null) { playerProgressService.save(); playerProgressService.shutdown(); playerProgressService = null; }
             if (runLifecycleService != null)  { runLifecycleService.shutdownAll(); runLifecycleService = null; }
             if (databaseService != null) { databaseService.close(); databaseService = null; }
@@ -369,6 +384,43 @@ public class ArcadiaDungeon {
             structurePlacer        = null;
             if (archetypeService != null) { NeoForge.EVENT_BUS.unregister(archetypeService); archetypeService = null; }
             rewardDistributionService = null;
+        }
+
+        @SubscribeEvent
+        public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
+            if (runLifecycleService == null || roomProgressionService == null) return;
+            if (!(event.getEntity() instanceof net.minecraft.server.level.ServerPlayer player)) return;
+
+            runLifecycleService.findActiveRunForPlayer(player.getUUID()).ifPresent(run -> {
+                if (playerDeathService != null) {
+                    playerDeathService.cancelPendingRespawn(player.getUUID());
+                }
+                if (archetypeService != null) {
+                    archetypeService.saveDungeonInventoryForLogout(player);
+                }
+                runLifecycleService.removePlayerFromRun(run, player.getUUID());
+                if (!run.hasPlayers()) {
+                    roomProgressionService.cleanupRun(run.id());
+                    runLifecycleService.abandonRun(run, player.getUUID());
+                    LOGGER.info("[Arcadia][RUN] event=logout_abandon_empty runId={} player={}",
+                        run.id(), player.getGameProfile().getName());
+                    return;
+                }
+                if (run.phase() == com.arcadia.dungeon.domain.run.RunPhase.STARTING) {
+                    int minPlayers = dungeonRegistry != null
+                        ? dungeonRegistry.get(run.dungeonId())
+                            .map(com.arcadia.dungeon.domain.config.DungeonConfig::minPlayersOrDefault)
+                            .orElse(com.arcadia.dungeon.domain.config.DungeonConfig.DEFAULT_MIN_PLAYERS)
+                        : com.arcadia.dungeon.domain.config.DungeonConfig.DEFAULT_MIN_PLAYERS;
+                    if (run.playerIds().size() < minPlayers) {
+                        run.clearLaunchCountdown();
+                        if (lobbyCountdownService != null) lobbyCountdownService.clear(run);
+                        com.arcadia.dungeon.network.ServerPayloadHandler.broadcastRunState(run);
+                    }
+                }
+                LOGGER.info("[Arcadia][RUN] event=logout_removed_player runId={} player={} remaining={}",
+                    run.id(), player.getGameProfile().getName(), run.playerIds().size());
+            });
         }
 
         @SubscribeEvent

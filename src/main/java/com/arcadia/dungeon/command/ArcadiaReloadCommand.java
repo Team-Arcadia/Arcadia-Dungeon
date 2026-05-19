@@ -37,6 +37,15 @@ public final class ArcadiaReloadCommand {
         // Sortie : Story S2.2 quand RunRegistry existera. Si MVP shippé sans, ajout en v1.0.1.
         // Date : 2026-05-07
 
+        try {
+            if (!ArcadiaDungeon.runLifecycleService().activeRuns().isEmpty()) {
+                ctx.getSource().sendFailure(Component.translatable("arcadia.server.admin.reload_blocked_active_runs"));
+                return 0;
+            }
+        } catch (IllegalStateException ignored) {
+            // Command registration can happen before runtime services are ready.
+        }
+
         Map<String, DungeonConfig> reloaded = registry.reload();
         ArcadiaDungeon.LOGGER.info("[Arcadia][CONFIG] event=reload count={} fallback={}",
             reloaded.size(), registry.isFallbackActive());

@@ -138,7 +138,9 @@ public final class ArchetypeService {
         if (hasBackup(player.getUUID())) {
             boolean debugBackup = debugInventoryPreviews.remove(player.getUUID()) || hasDebugBackup(player.getUUID());
             boolean saveDungeonInventory = !debugBackup;
-            restoreInventory(player.getUUID(), player.getServer(), saveDungeonInventory);
+            if (restoreInventory(player.getUUID(), player.getServer(), saveDungeonInventory)) {
+                ArcadiaDungeon.runLifecycleService().restorePlayerOriginIfPresent(player.getUUID(), player);
+            }
         }
     }
 
@@ -235,17 +237,17 @@ public final class ArchetypeService {
             .orElse(List.of());
     }
 
-    private void restoreInventory(UUID playerId, MinecraftServer server, boolean saveDungeonInventory) {
+    private boolean restoreInventory(UUID playerId, MinecraftServer server, boolean saveDungeonInventory) {
         ListTag saved = inventoryBackups.get(playerId);
         if (saved == null) {
             saved = loadInventoryBackup(playerId);
         }
-        if (saved == null) return;
+        if (saved == null) return false;
 
         ServerPlayer player = server.getPlayerList().getPlayer(playerId);
         if (player == null) {
             ArcadiaDungeon.LOGGER.warn("[Arcadia][ARCHETYPE] player absent - backup kept playerId={}", playerId);
-            return;
+            return false;
         }
 
         if (saveDungeonInventory) {
@@ -257,6 +259,7 @@ public final class ArchetypeService {
         inventoryBackups.remove(playerId);
         deleteInventoryBackup(playerId);
         ArcadiaDungeon.LOGGER.info("[Arcadia][ARCHETYPE] event=inventory_restored playerId={}", playerId);
+        return true;
     }
 
     @SubscribeEvent
@@ -276,6 +279,10 @@ public final class ArchetypeService {
         databaseService.saveDungeonInventory(player.getUUID(), current);
         ArcadiaDungeon.LOGGER.info("[Arcadia][ARCHETYPE] event=dungeon_inventory_saved playerId={}",
             player.getUUID());
+    }
+
+    public void saveDungeonInventoryForLogout(ServerPlayer player) {
+        saveDungeonInventory(player);
     }
 
     private static void syncInventory(ServerPlayer player) {

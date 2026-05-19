@@ -58,7 +58,7 @@ class DungeonConfigGsonTest {
             new DungeonConfig.Rewards(
                 50,
                 List.of(
-                    new DungeonConfig.LootEntry("minecraft:diamond", 1, 3)
+                    new DungeonConfig.LootEntry("minecraft:diamond", 1, 3, 0.5)
                 )
             ),
             List.of(
@@ -91,7 +91,10 @@ class DungeonConfigGsonTest {
             null,
             null,
             null,
-            null
+            null,
+            DungeonConfig.DEFAULT_LOBBY_COUNTDOWN_SECONDS,
+            DungeonConfig.DEFAULT_MIN_PLAYERS,
+            DungeonConfig.DEFAULT_MAX_PLAYERS
         );
 
         // When : serialize → deserialize
@@ -103,6 +106,8 @@ class DungeonConfigGsonTest {
         assertEquals(2, roundtrip.schemaVersion());
         assertEquals("arcadia_dungeon:example", roundtrip.id());
         assertEquals(3, roundtrip.lives());
+        assertEquals(1, roundtrip.minPlayersOrDefault());
+        assertEquals(2, roundtrip.maxPlayersOrDefault());
         assertEquals(0, roundtrip.rooms().size());
         assertEquals(2, roundtrip.configuredWaves().size());
         assertEquals("ticks", roundtrip.configuredWaves().get(1).triggerMode());
