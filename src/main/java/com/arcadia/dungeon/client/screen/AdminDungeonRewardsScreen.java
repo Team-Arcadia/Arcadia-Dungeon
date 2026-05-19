@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 public final class AdminDungeonRewardsScreen extends com.tesseraui.TesseraScreen {
 
     private static final int MARGIN = 8;
-    private static final int MAX_W  = 360;
+    private static final int MAX_W  = 430;
     private static final int MAX_H  = 270;
 
     private final String dungeonId;
@@ -99,6 +99,7 @@ public final class AdminDungeonRewardsScreen extends com.tesseraui.TesseraScreen
             entry.addProperty("item", "minecraft:diamond");
             entry.addProperty("min", 1);
             entry.addProperty("max", 1);
+            entry.addProperty("chance", 1.0);
             loot.add(entry);
             rewards.add("loot", loot);
             renderContext.clearInputsWithPrefix("loot");
@@ -118,18 +119,22 @@ public final class AdminDungeonRewardsScreen extends com.tesseraui.TesseraScreen
             modelData.put("l.lootItem."   + i, strOr(entry, "item", ""));
             modelData.put("l.lootMin."    + i, intOr(entry, "min", 1));
             modelData.put("l.lootMax."    + i, intOr(entry, "max", 1));
+            modelData.put("l.lootChance." + i, doubleOr(entry, "chance", 1.0));
             modelData.put("l.itemSuggestions." + i, AdminUiSuggestions.ITEMS);
             modelData.put("l.lootItemId." + i, "lootItem_"  + i);
             modelData.put("l.lootMinId."  + i, "lootMin_"   + i);
             modelData.put("l.lootMaxId."  + i, "lootMax_"   + i);
+            modelData.put("l.lootChanceId." + i, "lootChance_" + i);
             modelData.put("l.lootItemKey."+ i, "onLootItem." + i);
             modelData.put("l.lootMinKey." + i, "onLootMin."  + i);
             modelData.put("l.lootMaxKey." + i, "onLootMax."  + i);
+            modelData.put("l.lootChanceKey." + i, "onLootChance." + i);
             modelData.put("l.lootDelKey." + i, "delLoot."    + i);
 
             inputHandlers.put("onLootItem." + i, v -> entry.addProperty("item", v != null ? v : ""));
             inputHandlers.put("onLootMin."  + i, v -> { try { entry.addProperty("min", Integer.parseInt(v.trim())); } catch (Exception ignored) {} });
             inputHandlers.put("onLootMax."  + i, v -> { try { entry.addProperty("max", Integer.parseInt(v.trim())); } catch (Exception ignored) {} });
+            inputHandlers.put("onLootChance." + i, v -> { try { entry.addProperty("chance", clamp01(Double.parseDouble(v.trim()))); } catch (Exception ignored) {} });
             handlers.put("delLoot." + i, () -> {
                 if (idx < loot.size()) {
                     loot.remove(idx);
@@ -167,5 +172,20 @@ public final class AdminDungeonRewardsScreen extends com.tesseraui.TesseraScreen
 
     private static String longOr(JsonObject o, String k, long def) {
         try { return String.valueOf(o.get(k).getAsLong()); } catch (Exception e) { return String.valueOf(def); }
+    }
+
+    private static String doubleOr(JsonObject o, String k, double def) {
+        try {
+            double value = o.get(k).getAsDouble();
+            if (value == Math.floor(value)) return String.valueOf((long) value);
+            return String.valueOf(value);
+        } catch (Exception e) {
+            return String.valueOf(def);
+        }
+    }
+
+    private static double clamp01(double value) {
+        if (!Double.isFinite(value)) return 1.0;
+        return Math.max(0.0, Math.min(1.0, value));
     }
 }

@@ -19,6 +19,38 @@
              tooltip-i18n="arcadia.admin.core.tooltip.lives" />
     </col>
 
+    <row class="field-row">
+      <col class="field-group">
+        <label class="field-label" data-i18n="arcadia.admin.core.min_players">Joueurs min</label>
+        <input id="minPlayers"
+               class="field-input"
+               placeholder="{{ t:arcadia.admin.placeholder.min_players }}"
+               value="{{ v.minPlayers }}"
+               oninput="onMinPlayers"
+               tooltip-i18n="arcadia.admin.core.tooltip.min_players" />
+      </col>
+      <col class="field-group">
+        <label class="field-label" data-i18n="arcadia.admin.core.max_players">Joueurs max</label>
+        <input id="maxPlayers"
+               class="field-input"
+               placeholder="{{ t:arcadia.admin.placeholder.max_players }}"
+               value="{{ v.maxPlayers }}"
+               oninput="onMaxPlayers"
+               tooltip-i18n="arcadia.admin.core.tooltip.max_players" />
+      </col>
+    </row>
+
+    <!-- Lobby countdown -->
+    <col class="field-group">
+      <label class="field-label" data-i18n="arcadia.admin.core.lobby_countdown">Countdown lobby</label>
+      <input id="lobbyCountdown"
+             class="field-input"
+             placeholder="{{ t:arcadia.admin.placeholder.seconds }}"
+             value="{{ v.lobbyCountdown }}"
+             oninput="onLobbyCountdown"
+             tooltip-i18n="arcadia.admin.core.tooltip.lobby_countdown" />
+    </col>
+
     <!-- Structure -->
     <col class="field-group">
       <label class="field-label" data-i18n="arcadia.admin.core.structure">RÃ©f. structure</label>

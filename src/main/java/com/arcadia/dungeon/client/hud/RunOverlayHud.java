@@ -108,6 +108,7 @@ public final class RunOverlayHud implements LayeredDraw.Layer {
         int hp = 65 + (int) (20 * Math.sin(now / 450.0D));
         return new RunStatePayload(
             "debug-preview",
+            "arcadia_dungeon:debug",
             "IN_PROGRESS",
             0,
             2,
@@ -120,6 +121,7 @@ public final class RunOverlayHud implements LayeredDraw.Layer {
             100,
             1,
             List.of("Admin"),
+            0L,
             now
         );
     }
@@ -255,7 +257,7 @@ public final class RunOverlayHud implements LayeredDraw.Layer {
             0xFF9C6D18);
         if (saturationRatio > 0.0F) {
             int satW = Math.round(barW * saturationRatio);
-            graphics.fill(x + 10, y + 27, x + 10 + satW, y + 28, TesseraPalette.CREAM_DIM);
+            graphics.fill(x + 10, y + 33, x + 10 + satW, y + 34, TesseraPalette.CREAM_DIM);
         }
     }
 

@@ -3,7 +3,9 @@ package com.arcadia.dungeon.client.screen;
 import com.arcadia.dungeon.client.state.DungeonListClient;
 import com.arcadia.dungeon.client.state.PlayerHubPreferences;
 import com.arcadia.dungeon.client.state.PlayerProgressClient;
+import com.arcadia.dungeon.client.state.RunStateClient;
 import com.arcadia.dungeon.domain.player.PlayerProgress;
+import com.arcadia.dungeon.network.AbandonRunPayload;
 import com.arcadia.dungeon.network.DungeonListPayload;
 import com.arcadia.dungeon.network.RequestDungeonListPayload;
 import com.arcadia.dungeon.network.SelectLoadoutClassPayload;
@@ -189,6 +191,7 @@ public final class PlayerHubScreen extends TesseraScreen {
         modelData.put("hub.status", dungeons.isEmpty()
             ? tr("arcadia.player.status.waiting")
             : tr("arcadia.player.status.loaded", dungeons.size()));
+        modelData.put("run.active", String.valueOf(RunStateClient.isInRun()));
 
         boolean hasSelected = selected != null;
         modelData.put("selected.exists", String.valueOf(hasSelected));
@@ -258,7 +261,8 @@ public final class PlayerHubScreen extends TesseraScreen {
             modelData.put("d.index." + i, String.valueOf(i + 1));
             modelData.put("d.name." + i, dungeonName(dungeon));
             modelData.put("d.id." + i, dungeon.id());
-            modelData.put("d.meta." + i, tr("arcadia.player.dungeon.meta", dungeon.id(), formatTime(PlayerProgressClient.bestTimeFor(dungeon.id()))));
+            modelData.put("d.meta." + i, tr("arcadia.player.dungeon.meta", dungeon.id(),
+                dungeon.minPlayers(), dungeon.maxPlayers(), formatTime(PlayerProgressClient.bestTimeFor(dungeon.id()))));
             modelData.put("d.state." + i, tr("arcadia.player.status.ready"));
             modelData.put("d.stateClass." + i, "state-ready");
             modelData.put("d.rowClass." + i, idx == selectedDungeonIndex ? "dungeon-row selected" : "dungeon-row");
@@ -332,6 +336,11 @@ public final class PlayerHubScreen extends TesseraScreen {
 
     private void fillHandlers(Map<String, Runnable> handlers, List<DungeonListPayload.DungeonSummary> dungeons) {
         handlers.put("close", this::onClose);
+        handlers.put("leaveRun", () -> {
+            PacketDistributor.sendToServer(new AbandonRunPayload());
+            TesseraToast.show(tr("arcadia.player.toast.leave_requested"));
+            panelDirty = true;
+        });
         handlers.put("tabDungeons", () -> switchTab("dungeons"));
         handlers.put("tabLoadout", () -> switchTab("loadout"));
         handlers.put("tabShop", () -> switchTab("shop"));
@@ -382,7 +391,9 @@ public final class PlayerHubScreen extends TesseraScreen {
             dungeon.id(),
             dungeonName(dungeon),
             selected.id(),
-            selected.name()));
+            selected.name(),
+            dungeon.minPlayers(),
+            dungeon.maxPlayers()));
     }
 
     private void toggleOption(String option, String value) {

@@ -22,4 +22,9 @@ public final class StructurePlacementClient {
         if (dungeonId == null || dungeonId.isBlank()) return Optional.empty();
         return Optional.ofNullable(STATUSES.get(dungeonId));
     }
+
+    public static void clear(String dungeonId) {
+        if (dungeonId == null || dungeonId.isBlank()) return;
+        STATUSES.remove(dungeonId);
+    }
 }

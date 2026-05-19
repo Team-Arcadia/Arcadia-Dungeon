@@ -37,6 +37,12 @@
                  value="{{ l.lootMax }}" oninput="{{ l.lootMaxKey }}"
                  placeholder="{{ t:arcadia.admin.placeholder.lives }}" />
         </col>
+        <col class="field-group w-50">
+          <input id="{{ l.lootChanceId }}" class="field-input wide"
+                 value="{{ l.lootChance }}" oninput="{{ l.lootChanceKey }}"
+                 placeholder="{{ t:arcadia.admin.placeholder.one_decimal }}"
+                 tooltip-i18n="arcadia.admin.rewards.tooltip.chance" />
+        </col>
         <button class="btn-del" onclick="{{ l.lootDelKey }}" data-i18n="arcadia.admin.common.delete.short">X</button>
       </row>
     </virtual-list>

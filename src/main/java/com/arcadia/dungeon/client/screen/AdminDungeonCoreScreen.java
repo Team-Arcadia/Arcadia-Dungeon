@@ -27,8 +27,8 @@ import java.util.function.Consumer;
 public final class AdminDungeonCoreScreen extends com.tesseraui.TesseraScreen {
 
     private static final int MARGIN = 8;
-    private static final int MAX_W  = 300;
-    private static final int MAX_H  = 240;
+    private static final int MAX_W  = 330;
+    private static final int MAX_H  = 300;
 
     private final String dungeonId;
     private final String dungeonName;
@@ -94,6 +94,9 @@ public final class AdminDungeonCoreScreen extends com.tesseraui.TesseraScreen {
         Map<String, String> modelData = new HashMap<>();
         modelData.put("cfg.title", I18n.get("arcadia.admin.core.title", dungeonName));
         modelData.put("v.lives",      str(cfg, "lives", "3"));
+        modelData.put("v.lobbyCountdown", str(cfg, "lobbyCountdownSeconds", "3"));
+        modelData.put("v.minPlayers", str(cfg, "minPlayers", "1"));
+        modelData.put("v.maxPlayers", str(cfg, "maxPlayers", "2"));
         modelData.put("v.structure",  str(cfg, "structureRef", ""));
         modelData.put("v.dimension",  str(cfg, "dimension", AdminUiSuggestions.DEFAULT_DIMENSION));
         modelData.put("v.placementY", str(cfg, "placementY", ""));
@@ -105,6 +108,19 @@ public final class AdminDungeonCoreScreen extends com.tesseraui.TesseraScreen {
 
         Map<String, Consumer<String>> inputHandlers = new HashMap<>();
         inputHandlers.put("onLives",      v -> set(cfg, "lives", intOr(v, 3)));
+        inputHandlers.put("onLobbyCountdown", v -> set(cfg, "lobbyCountdownSeconds", clamp(intOr(v, 3), 0, 120)));
+        inputHandlers.put("onMinPlayers", v -> {
+            int minPlayers = clamp(intOr(v, 1), 1, 8);
+            int maxPlayers = clamp(jsonIntOr(cfg, "maxPlayers", 2), 1, 8);
+            set(cfg, "minPlayers", minPlayers);
+            if (maxPlayers < minPlayers) set(cfg, "maxPlayers", minPlayers);
+        });
+        inputHandlers.put("onMaxPlayers", v -> {
+            int maxPlayers = clamp(intOr(v, 2), 1, 8);
+            int minPlayers = clamp(jsonIntOr(cfg, "minPlayers", 1), 1, 8);
+            set(cfg, "maxPlayers", maxPlayers);
+            if (minPlayers > maxPlayers) set(cfg, "minPlayers", maxPlayers);
+        });
         inputHandlers.put("onStructure",  v -> setStr(cfg, "structureRef", v));
         inputHandlers.put("onDimension",  v -> setStr(cfg, "dimension", v));
         inputHandlers.put("onPlacementY", v -> setNullableInt(cfg, "placementY", v));
@@ -141,5 +157,13 @@ public final class AdminDungeonCoreScreen extends com.tesseraui.TesseraScreen {
 
     private static int intOr(String s, int def) {
         try { return Integer.parseInt(s.trim()); } catch (Exception e) { return def; }
+    }
+
+    private static int jsonIntOr(JsonObject o, String key, int def) {
+        try { return o.get(key).getAsInt(); } catch (Exception e) { return def; }
+    }
+
+    private static int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
     }
 }

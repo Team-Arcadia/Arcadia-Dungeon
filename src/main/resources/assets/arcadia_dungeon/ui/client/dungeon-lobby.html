@@ -4,7 +4,7 @@
       <label class="lobby-kicker" data-i18n="arcadia.client.lobby.kicker">LOBBY MULTI</label>
       <label class="lobby-title">{{ dungeon.name }}</label>
     </col>
-    <label class="lobby-state" data-i18n="arcadia.client.ready">Pret</label>
+    <label class="lobby-state">{{ lobby.state }}</label>
   </row>
 
   <row class="lobby-progress">
@@ -14,22 +14,21 @@
   </row>
 
   <col class="lobby-content">
-    <row class="player-card">
-      <label class="player-mark">1</label>
-      <col class="player-main">
-        <label class="player-name">{{ player.name }}</label>
-        <label class="player-sub" data-i18n="arcadia.client.lobby.leader">Leader de la run</label>
-      </col>
-      <label class="ready-badge" data-i18n="arcadia.client.ready">Pret</label>
+    <row class="lobby-player-head">
+      <label class="lobby-player-title" data-i18n="arcadia.client.lobby.group">Groupe</label>
+      <label class="lobby-player-count">{{ lobby.players }}</label>
     </row>
 
-    <row class="player-card">
-      <label class="player-mark">2</label>
-      <col class="player-main">
-        <label class="player-name muted">{{ player.two.name }}</label>
-        <label class="player-sub">{{ player.two.sub }}</label>
-      </col>
-    </row>
+    <col class="player-list">
+      <row class="player-card" v-for="p in player.count">
+        <label class="player-mark">{{ p.mark }}</label>
+        <col class="player-main">
+          <label class="{{ p.nameClass }}">{{ p.name }}</label>
+          <label class="player-sub">{{ p.sub }}</label>
+        </col>
+        <label class="ready-badge" v-if="p.readyVisible" data-i18n="arcadia.client.ready">Pret</label>
+      </row>
+    </col>
 
     <row class="loadout-card">
       <col class="loadout-main">
@@ -38,10 +37,39 @@
       </col>
       <label class="loadout-status">{{ launch.status }}</label>
     </row>
+
+    <col class="countdown-card" v-if="countdown.visible">
+      <label class="countdown-label">{{ countdown.label }}</label>
+      <label class="countdown-number">{{ countdown.number }}</label>
+      <row class="countdown-bars">
+        <label class="countdown-bar"></label>
+        <label class="countdown-bar"></label>
+        <label class="countdown-bar"></label>
+      </row>
+    </col>
+
+    <col class="generation-card" v-if="generation.visible">
+      <row class="generation-head">
+        <label class="generation-label">{{ generation.status }}</label>
+        <label class="generation-percent">{{ generation.percent }}</label>
+      </row>
+      <row class="generation-bar">
+        <label class="{{ generation.seg1 }}"></label>
+        <label class="{{ generation.seg2 }}"></label>
+        <label class="{{ generation.seg3 }}"></label>
+        <label class="{{ generation.seg4 }}"></label>
+        <label class="{{ generation.seg5 }}"></label>
+        <label class="{{ generation.seg6 }}"></label>
+        <label class="{{ generation.seg7 }}"></label>
+        <label class="{{ generation.seg8 }}"></label>
+        <label class="{{ generation.seg9 }}"></label>
+        <label class="{{ generation.seg10 }}"></label>
+      </row>
+    </col>
   </col>
 
   <row class="lobby-footer">
     <button class="secondary-btn" onclick="close" data-i18n="arcadia.client.cancel">Annuler</button>
-    <button class="primary-btn" onclick="launch" data-i18n="arcadia.client.launch">Lancer</button>
+    <button class="primary-btn" onclick="launch">{{ launch.label }}</button>
   </row>
 </col>

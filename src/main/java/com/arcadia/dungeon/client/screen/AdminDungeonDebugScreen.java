@@ -171,6 +171,7 @@ public final class AdminDungeonDebugScreen extends com.tesseraui.TesseraScreen {
         handlers.put("unlockBadges", () -> sendAction("UNLOCK_PROFILE_BADGES", 0L, parseLong(timeSeconds, 60L)));
         handlers.put("unlockCustom", () -> sendAction("UNLOCK_CUSTOM_LOADOUT", 0L, 0L));
         handlers.put("addLoadoutPoints", () -> sendAction("ADD_LOADOUT_POINTS", parseLong(loadoutPoints, 0L), 0L));
+        handlers.put("teleportDungeon", () -> sendAction("TELEPORT_DUNGEON_ZONE", 0L, 0L));
         handlers.put("showHud", () -> {
             PlayerHubPreferences.hud(true);
             RunOverlayHud.setPreviewEnabled(true);

@@ -17,11 +17,13 @@ import java.util.Optional;
 public final class RunStateClient {
 
     private static volatile RunStatePayload currentState = null;
+    private static volatile long serverTimeOffsetMs = 0L;
 
     private RunStateClient() {}
 
     public static void update(RunStatePayload payload) {
         currentState = payload;
+        serverTimeOffsetMs = payload.serverTimestampMs() - System.currentTimeMillis();
     }
 
     public static Optional<RunStatePayload> getState() {
@@ -36,5 +38,10 @@ public final class RunStateClient {
     /** Appelé quand le joueur quitte une run ou se déconnecte. */
     public static void clear() {
         currentState = null;
+        serverTimeOffsetMs = 0L;
+    }
+
+    public static long serverNowMs() {
+        return System.currentTimeMillis() + serverTimeOffsetMs;
     }
 }

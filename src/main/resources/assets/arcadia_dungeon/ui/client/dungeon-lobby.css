@@ -80,8 +80,38 @@
   gap: 6px;
 }
 
+.lobby-player-head {
+  align-items: center;
+  gap: 6px;
+  min-height: 12px;
+}
+
+.lobby-player-title {
+  flex: 1;
+  min-width: 0;
+  color: #F0B27A;
+  font-size: 7;
+  font-weight: 700;
+  overflow: hidden;
+}
+
+.lobby-player-count {
+  color: #8A765E;
+  font-size: 6;
+  text-align: right;
+  width: 92px;
+  overflow: hidden;
+}
+
+.player-list {
+  gap: 4px;
+  max-height: 138px;
+  overflow: auto;
+}
+
 .player-card,
-.loadout-card {
+.loadout-card,
+.countdown-card {
   align-items: center;
   gap: 8px;
   min-height: 40px;
@@ -92,7 +122,8 @@
 }
 
 .player-card:hover,
-.loadout-card:hover {
+.loadout-card:hover,
+.countdown-card:hover {
   background: #261B12;
   border-color: #5A3A1C;
 }
@@ -148,6 +179,89 @@
 .loadout-status {
   width: 82px;
   text-align: center;
+}
+
+.countdown-card {
+  min-height: 58px;
+  border-color: #D89255;
+  background: #21140C;
+  gap: 2px;
+  justify-content: center;
+}
+
+.countdown-label {
+  color: #F0B27A;
+  font-size: 6;
+  text-align: center;
+  overflow: hidden;
+}
+
+.countdown-number {
+  color: #F3E7D3;
+  font-size: 18;
+  font-weight: 700;
+  text-align: center;
+}
+
+.countdown-bars {
+  gap: 3px;
+  justify-content: center;
+}
+
+.countdown-bar {
+  width: 34px;
+  height: 3px;
+  background: #D89255;
+  border: 1;
+  border-color: #F0B27A;
+}
+
+.generation-card {
+  min-height: 42px;
+  padding: 6px 7px;
+  background: #17100B;
+  border: 1;
+  border-color: #5A3A1C;
+  gap: 5px;
+}
+
+.generation-head {
+  align-items: center;
+  gap: 6px;
+}
+
+.generation-label {
+  flex: 1;
+  min-width: 0;
+  color: #D9C2A1;
+  font-size: 6;
+  overflow: hidden;
+}
+
+.generation-percent {
+  width: 32px;
+  min-width: 32px;
+  color: #F0B27A;
+  font-size: 6;
+  text-align: right;
+  overflow: hidden;
+}
+
+.generation-bar {
+  gap: 2px;
+}
+
+.generation-segment {
+  flex: 1;
+  height: 4px;
+  background: #0F0B08;
+  border: 1;
+  border-color: #2A1E12;
+}
+
+.generation-segment.active {
+  background: #D89255;
+  border-color: #F0B27A;
 }
 
 .lobby-footer {

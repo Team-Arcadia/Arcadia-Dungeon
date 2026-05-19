@@ -189,14 +189,19 @@ public final class AdminDungeonWaveDetailScreen extends TesseraScreen {
         });
         handlers.put("captureSpawn", () -> {
             capturePlayerPosition(spawn);
+            syncSpawnInputs(spawn);
             panelDirty = true;
         });
         handlers.put("captureArea1", () -> {
-            capturePlayerBlockPosition(areaPoint(mob, "areaPos1", spawn));
+            JsonObject area = areaPoint(mob, "areaPos1", spawn);
+            capturePlayerBlockPosition(area);
+            syncAreaInputs("1", area);
             panelDirty = true;
         });
         handlers.put("captureArea2", () -> {
-            capturePlayerBlockPosition(areaPoint(mob, "areaPos2", spawn));
+            JsonObject area = areaPoint(mob, "areaPos2", spawn);
+            capturePlayerBlockPosition(area);
+            syncAreaInputs("2", area);
             panelDirty = true;
         });
         handlers.put("clearArea", () -> {
@@ -308,6 +313,20 @@ public final class AdminDungeonWaveDetailScreen extends TesseraScreen {
 
     private void clearDynamicInputStates() {
         renderContext.clearInputsWithPrefix("wave");
+    }
+
+    private void syncSpawnInputs(JsonObject spawn) {
+        renderContext.setInputText("waveSpawnX", doubleOr(spawn, "x", 0.0));
+        renderContext.setInputText("waveSpawnY", doubleOr(spawn, "y", 64.0));
+        renderContext.setInputText("waveSpawnZ", doubleOr(spawn, "z", 0.0));
+        renderContext.setInputText("waveSpawnDim", strOr(spawn, "dimension", AdminUiSuggestions.DEFAULT_DIMENSION));
+    }
+
+    private void syncAreaInputs(String suffix, JsonObject area) {
+        renderContext.setInputText("waveArea" + suffix + "X", intOr(area, "x", 0));
+        renderContext.setInputText("waveArea" + suffix + "Y", intOr(area, "y", 64));
+        renderContext.setInputText("waveArea" + suffix + "Z", intOr(area, "z", 0));
+        renderContext.setInputText("waveArea" + suffix + "Dim", strOr(area, "dimension", AdminUiSuggestions.DEFAULT_DIMENSION));
     }
 
     private void moveWaveFromInput(JsonArray waves, String value) {

@@ -123,6 +123,16 @@
   flex-shrink: 0;
 }
 
+.field-row {
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.field-row .field-group {
+  flex: 1;
+  min-width: 0;
+}
+
 .field-label {
   color: var(--text-mid);
   font-size: 6;
@@ -208,6 +218,7 @@
 .flex-1 { flex: 1; }
 .flex-2 { flex: 2; }
 .w-36 { width: 36px; }
+.w-50 { width: 50px; }
 .w-60 { width: 60px; }
 .w-80 { width: 80px; }
 .spacer { flex: 1; min-width: 0; }
@@ -451,17 +462,19 @@
 }
 
 .cfg-screen .btn-back {
-  color: var(--text-muted);
-  border-color: var(--border-mid);
+  background: var(--surface-2);
+  color: var(--text-mid);
+  border-color: var(--copper-dim);
   padding: 2px 8px;
   width: 64px;
   overflow: hidden;
-  transition: color 150ms ease-out, border-color 150ms ease-out;
+  transition: background 150ms ease-out, color 150ms ease-out, border-color 150ms ease-out;
 }
 
 .cfg-screen .btn-back:hover {
+  background: #362A20;
   color: var(--text-bright);
-  border-color: var(--text-mid);
+  border-color: var(--copper-glow);
 }
 
 .btn-save {
@@ -631,7 +644,7 @@
   flex: 1;
   min-width: 0;
   height: 10px;
-  color: var(--text);
+  color: #F3DFBD;
   font-size: 6;
   overflow: hidden;
 }
@@ -1275,16 +1288,18 @@
 
 .btn-reload,
 .btn-monitor {
-  color: var(--text-muted);
-  border-color: var(--border-mid);
+  background: var(--surface-1);
+  color: var(--copper);
+  border-color: var(--copper);
   padding: 2px 8px;
-  transition: color 150ms ease-out, border-color 150ms ease-out;
+  transition: background 150ms ease-out, color 150ms ease-out, border-color 150ms ease-out;
 }
 
 .btn-reload:hover,
 .btn-monitor:hover {
-  color: var(--copper);
-  border-color: var(--copper);
+  background: #3A2510;
+  color: var(--text-bright);
+  border-color: var(--copper-glow);
 }
 
 /* Monitor */

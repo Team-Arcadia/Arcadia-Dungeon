@@ -18,7 +18,7 @@
       <row class="debug-grid debug-player-grid">
         <col class="field-group debug-field-player">
           <label class="field-label" data-i18n="arcadia.admin.debug.player">Joueur cible</label>
-          <input class="field-input wide"
+          <input id="debugPlayerTarget" class="field-input wide"
                  value="{{ v.player }}"
                  oninput="onPlayer"
                  autocomplete="{{ s.players }}"
@@ -26,21 +26,21 @@
         </col>
         <col class="field-group debug-field-small">
           <label class="field-label" data-i18n="arcadia.admin.debug.amount">Montant</label>
-          <input class="field-input wide"
+          <input id="debugAmount" class="field-input wide"
                  value="{{ v.amount }}"
                  oninput="onAmount"
                  tooltip-i18n="arcadia.admin.debug.tooltip.amount" />
         </col>
         <col class="field-group debug-field-small">
           <label class="field-label" data-i18n="arcadia.admin.debug.points">Points</label>
-          <input class="field-input wide"
+          <input id="debugPoints" class="field-input wide"
                  value="{{ v.points }}"
                  oninput="onPoints"
                  tooltip-i18n="arcadia.admin.debug.tooltip.points" />
         </col>
         <col class="field-group debug-field-time">
           <label class="field-label" data-i18n="arcadia.admin.debug.time">Temps PB</label>
-          <input class="field-input wide"
+          <input id="debugTime" class="field-input wide"
                  value="{{ v.time }}"
                  oninput="onTime"
                  tooltip-i18n="arcadia.admin.debug.tooltip.time" />
@@ -50,7 +50,7 @@
       <row class="debug-grid debug-progress-grid">
         <col class="field-group debug-field-dungeon">
           <label class="field-label" data-i18n="arcadia.admin.debug.dungeon">Donjon progression</label>
-          <input class="field-input wide"
+          <input id="debugProgressDungeon" class="field-input wide"
                  value="{{ v.dungeon }}"
                  oninput="onDungeon"
                  autocomplete="{{ s.dungeons }}"
@@ -69,6 +69,9 @@
           <button class="debug-action-btn" onclick="unlockBadges" data-i18n="arcadia.admin.debug.unlock_badges">Unlock titres</button>
           <button class="debug-action-btn" onclick="unlockCustom" data-i18n="arcadia.admin.debug.unlock_custom">Unlock loadout</button>
           <button class="debug-action-btn" onclick="addLoadoutPoints" data-i18n="arcadia.admin.debug.add_points">+ Points</button>
+          <button class="debug-action-btn" onclick="teleportDungeon" data-i18n="arcadia.admin.debug.teleport_dungeon">TP donjon</button>
+        </row>
+        <row class="debug-action-row">
           <button class="btn-danger debug-action-btn" onclick="resetProgress"
                   tooltip-i18n="arcadia.admin.debug.tooltip.reset"
                   data-i18n="arcadia.admin.debug.reset_progress">Reset joueur</button>
@@ -81,7 +84,7 @@
       <row class="debug-grid">
         <col class="field-group debug-field-player">
           <label class="field-label" data-i18n="arcadia.admin.debug.player">Joueur cible</label>
-          <input class="field-input wide"
+          <input id="debugHudPlayerTarget" class="field-input wide"
                  value="{{ v.player }}"
                  oninput="onPlayer"
                  autocomplete="{{ s.players }}"
@@ -89,7 +92,7 @@
         </col>
         <col class="field-group debug-field-dungeon">
           <label class="field-label" data-i18n="arcadia.admin.debug.dungeon">Donjon progression</label>
-          <input class="field-input wide"
+          <input id="debugHudDungeon" class="field-input wide"
                  value="{{ v.dungeon }}"
                  oninput="onDungeon"
                  autocomplete="{{ s.dungeons }}"

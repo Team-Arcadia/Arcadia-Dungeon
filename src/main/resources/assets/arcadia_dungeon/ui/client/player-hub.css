@@ -636,9 +636,23 @@
   border-color: #5A3518;
   padding: 3px 8px;
   justify-content: flex-end;
+  gap: 5px;
 }
 
 .footer-btn {
   width: 62px;
   height: 17px;
+}
+
+.leave-btn {
+  width: 76px;
+  color: #FF7474;
+  background: #24100D;
+  border-color: #7A2A2A;
+}
+
+.leave-btn:hover {
+  color: #FFD0C6;
+  background: #361612;
+  border-color: #D04A3C;
 }

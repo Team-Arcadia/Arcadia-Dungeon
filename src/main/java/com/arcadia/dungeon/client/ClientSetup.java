@@ -72,7 +72,9 @@ public final class ClientSetup {
             if (RunOverlayHud.shouldReplaceVanillaSurvivalBars()
                 && (VanillaGuiLayers.PLAYER_HEALTH.equals(event.getName())
                     || VanillaGuiLayers.FOOD_LEVEL.equals(event.getName())
-                    || VanillaGuiLayers.ARMOR_LEVEL.equals(event.getName()))) {
+                    || VanillaGuiLayers.ARMOR_LEVEL.equals(event.getName())
+                    || VanillaGuiLayers.EXPERIENCE_BAR.equals(event.getName())
+                    || VanillaGuiLayers.EXPERIENCE_LEVEL.equals(event.getName()))) {
                 event.setCanceled(true);
             }
         }

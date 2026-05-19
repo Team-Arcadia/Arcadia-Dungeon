@@ -57,14 +57,14 @@
         <row class="loadout-workspace">
           <col class="class-panel">
             <label class="card-kicker" data-i18n="arcadia.player.loadout.classes">Classes gratuites</label>
-            <col class="class-list">
-              <row class="{{ c.rowClass }}" onclick="{{ c.onclick }}" v-for="c in class.count">
+            <virtual-list id="playerClassList" class="class-list" v-for="c in class.count" row-height="34">
+              <row class="{{ c.rowClass }}" onclick="{{ c.onclick }}">
                 <col class="class-main">
                   <label class="class-name">{{ c.name }}</label>
                   <label class="class-meta">{{ c.role }}</label>
                 </col>
               </row>
-            </col>
+            </virtual-list>
           </col>
 
           <col class="build-panel">
@@ -235,6 +235,7 @@
   </col>
 
   <row class="footer-row">
+    <button class="footer-btn leave-btn" v-if="run.active" onclick="leaveRun" data-i18n="arcadia.player.leave">Quitter run</button>
     <button class="footer-btn" onclick="close" data-i18n="arcadia.player.close">Fermer</button>
   </row>
 </col>
