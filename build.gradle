@@ -82,8 +82,8 @@ dependencies {
     implementation "net.neoforged:neoforge:${neo_version}"
 
     // TesseraUI — lib UI locale (builder: cd ../TesseraUI && gradlew jar)
-    implementation files('../TesseraUI/build/libs/tesseraui-1.0.jar')
-    localRuntime files('../TesseraUI/build/libs/tesseraui-1.0.jar')
+    implementation files('../TesseraUI/build/libs/tesseraui-1.1.jar')
+    localRuntime files('../TesseraUI/build/libs/tesseraui-1.1.jar')
 
     // Bundled libraries — embarquées dans le JAR prod via JiJ, disponibles en dev via localRuntime
     jarJar(implementation("com.zaxxer:HikariCP:5.1.0")) {
@@ -202,11 +202,29 @@ publishing {
 }
 
 jar {
+    archiveClassifier = 'dev-thin-do-not-distribute'
     manifest {
         attributes([
             'Arcadia-API-Version': api_version
         ])
     }
+}
+
+tasks.named('jarJar').configure {
+    archiveClassifier = ''
+    manifest {
+        attributes([
+            'Arcadia-API-Version': api_version
+    ])
+    }
+}
+
+tasks.named('assemble').configure {
+    dependsOn tasks.named('jarJar')
+}
+
+tasks.named('build').configure {
+    dependsOn tasks.named('jarJar')
 }
 
 tasks.withType(JavaCompile).configureEach {

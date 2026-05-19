@@ -1,0 +1,1633 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Arcadia Dungeon v1.1 - Recette de concordance admin et joueur</title>
+  <style>
+    :root {
+      --bg: #050403;
+      --panel: #120d09;
+      --panel-2: #1d140d;
+      --line: #6f4216;
+      --line-strong: #d18a22;
+      --text: #f3dfbd;
+      --muted: #b49a72;
+      --ok: #78d15f;
+      --warn: #f3bd4f;
+      --bad: #ff6b6b;
+      --blue: #78c7ff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Arial, sans-serif;
+      line-height: 1.5;
+    }
+
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px;
+    }
+
+    header {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, #1b120b, #0d0906);
+      padding: 24px;
+      margin-bottom: 18px;
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+      color: #ffc24b;
+      letter-spacing: .02em;
+    }
+
+    h1 { font-size: 30px; }
+    h2 { font-size: 22px; margin-bottom: 10px; }
+    h3 { font-size: 17px; margin-top: 18px; margin-bottom: 8px; color: #ffd37a; }
+
+    p { margin: 8px 0; }
+
+    code {
+      background: #070504;
+      border: 1px solid #4b2b10;
+      color: #ffe0a3;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+
+    input[type="text"], textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #060403;
+      color: var(--text);
+      padding: 10px;
+      font: inherit;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid var(--line);
+      background: rgba(10, 7, 5, .96);
+      padding: 10px 12px;
+      margin-bottom: 18px;
+      backdrop-filter: blur(6px);
+    }
+
+    .progress {
+      flex: 1;
+      height: 10px;
+      border: 1px solid var(--line);
+      background: #060403;
+      overflow: hidden;
+    }
+
+    .progress > div {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #74b85f, #ffc24b);
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: #241507;
+      color: var(--text);
+      padding: 8px 12px;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    button:hover {
+      border-color: var(--line-strong);
+      color: #fff0c6;
+    }
+
+    section {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      margin: 18px 0;
+      padding: 18px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .callout {
+      border-left: 4px solid var(--line-strong);
+      background: #0b0705;
+      padding: 12px 14px;
+      color: var(--muted);
+      margin: 12px 0;
+    }
+
+    .critical { border-left-color: var(--bad); }
+    .good { border-left-color: var(--ok); }
+
+    .case {
+      border: 1px solid #3b220d;
+      background: #0b0705;
+      margin-top: 12px;
+      padding: 12px;
+    }
+
+    .case-title {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      font-weight: 700;
+      color: #ffd37a;
+      margin-bottom: 6px;
+    }
+
+    .case-title input {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--line-strong);
+      margin-top: 2px;
+    }
+
+    .case-title input[data-check] {
+      display: none;
+    }
+
+    .steps {
+      margin: 8px 0 0 30px;
+      padding: 0;
+    }
+
+    .steps li {
+      margin: 5px 0;
+    }
+
+    .expected {
+      margin-top: 8px;
+      color: var(--ok);
+    }
+
+    .fail {
+      margin-top: 4px;
+      color: var(--bad);
+    }
+
+    .result-row {
+      display: grid;
+      grid-template-columns: auto auto minmax(260px, 1fr);
+      gap: 12px;
+      align-items: start;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #3b220d;
+    }
+
+    .result-choice {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+      color: var(--text);
+    }
+
+    .result-choice input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--line-strong);
+    }
+
+    .result-choice.fail-choice input {
+      accent-color: var(--bad);
+    }
+
+    .case-comment {
+      min-height: 42px;
+      padding: 8px;
+      font-size: 14px;
+    }
+
+    @media (max-width: 760px) {
+      .result-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .tag {
+      display: inline-block;
+      border: 1px solid var(--line);
+      background: #140c05;
+      color: var(--muted);
+      padding: 2px 6px;
+      font-size: 12px;
+      margin-left: 8px;
+    }
+
+    .severity-high { color: var(--bad); }
+    .severity-medium { color: var(--warn); }
+    .severity-low { color: var(--blue); }
+
+    .mini {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .export-status {
+      min-width: 220px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: right;
+    }
+
+    @media print {
+      body { background: #fff; color: #000; }
+      header, section, .toolbar, .case { background: #fff; color: #000; border-color: #777; }
+      h1, h2, h3, .case-title { color: #000; }
+      button, .progress { display: none; }
+      input[type="text"], textarea { border-color: #777; color: #000; background: #fff; }
+      .case-title input[data-check] { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>Arcadia Dungeon v1.1 - Recette de concordance admin et joueur</h1>
+      <p>Objectif : tester Arcadia Dungeon v1.1 candidate comme le ferait un admin non dev : UI, logique, sauvegarde, erreurs, run, HUD, inventaire et multi.</p>
+      <p>Les features marquees placeholder doivent annoncer clairement qu'elles ne sont pas disponibles et ne doivent pas modifier les donnees serveur.</p>
+      <p>Le testeur ne doit utiliser que le jeu. Il ne doit pas lire ou modifier les fichiers JSON/config/base de donnees.</p>
+      <p class="mini">Version cible : Arcadia Dungeon v1.1 candidate - Minecraft 1.21.1 - NeoForge 21.1.222 - TesseraUI 1.1 - JAR attendu : arcadia_dungeon-1.1.0.jar.</p>
+
+      <div class="meta">
+        <div class="field">
+          <label for="tester">Testeur</label>
+          <input id="tester" type="text" data-store="tester" placeholder="Nom">
+        </div>
+        <div class="field">
+          <label for="date">Date</label>
+          <input id="date" type="text" data-store="date" placeholder="AAAA-MM-JJ">
+        </div>
+        <div class="field">
+          <label for="build">Build / commit</label>
+          <input id="build" type="text" data-store="build" placeholder="ex: dev / commit">
+        </div>
+        <div class="field">
+          <label for="server">Mode</label>
+          <input id="server" type="text" data-store="server" placeholder="Solo integre / serveur">
+        </div>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <span id="counter">0 / 0 tests renseignes</span>
+      <div class="progress" aria-label="Progression"><div id="progress"></div></div>
+      <button type="button" id="reset">Reset statuts</button>
+      <button type="button" id="export-json">Exporter JSON</button>
+      <button type="button" id="copy-json">Copier JSON</button>
+      <button type="button" onclick="window.print()">Imprimer / PDF</button>
+      <span id="export-status" class="export-status"></span>
+    </div>
+
+    <section>
+      <h2>Regles de test</h2>
+      <div class="callout critical">
+        <strong>Important :</strong> le testeur ne doit pas ouvrir les dossiers du mod, les fichiers JSON, la base de donnees ou les logs pendant le test. Tout doit passer par le jeu.
+      </div>
+      <div class="grid-2">
+        <div>
+          <h3>Acces autorises</h3>
+          <ul>
+            <li>Commandes Minecraft si le testeur est OP.</li>
+            <li>Menu admin via <code>/arcadia admin</code>.</li>
+            <li>Hub joueur via la touche <code>H</code>.</li>
+            <li>Screenshots et notes de bug.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Bloquant release</h3>
+          <ul>
+            <li>Crash client ou serveur.</li>
+            <li>Crash SQLite au demarrage serveur : le JAR distribue doit embarquer le driver.</li>
+            <li>Impossible de creer, sauvegarder ou lancer un donjon.</li>
+            <li>Instance qui ne se reset pas ou qui bloque le relaunch.</li>
+            <li>Inventaire joueur perdu ou melange avec l'inventaire donjon.</li>
+            <li>Deux joueurs qui lancent le meme donjon se retrouvent dans des instances differentes.</li>
+            <li>UI inutilisable : texte coupe, bouton hors ecran, champ impossible a remplir.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Export du resultat</h3>
+      <ul>
+        <li>Utiliser <strong>Exporter JSON</strong> en haut de page a la fin du test.</li>
+        <li>Si le navigateur bloque le telechargement, utiliser <strong>Copier JSON</strong> puis coller le contenu dans Discord.</li>
+        <li>Le JSON contient les metadonnees, le statut de chaque etape, les commentaires, bugs et verdict.</li>
+      </ul>
+
+      <h3>Definition d'un test reussi</h3>
+      <ul>
+        <li>Chaque fonctionnalite visible dans l'UI a ete cliquee au moins une fois.</li>
+        <li>Chaque ecran admin et joueur a ete ouvert dans un etat vide puis avec des donnees.</li>
+        <li>Les valeurs sauvegardees sont encore presentes apres fermeture/reouverture du menu.</li>
+        <li>Les actions sensibles affichent un retour clair : toast, message, etat visible ou resultat en jeu.</li>
+        <li>Les erreurs utilisateur sont comprehensibles et ne cassent pas le menu.</li>
+        <li>Une run complete victoire, une defaite/abandon et un relaunch du meme donjon ont ete testes.</li>
+      </ul>
+
+      <h3>Ce qu'il faut noter comme bug</h3>
+      <ul>
+        <li>Texte coupe, superpose, hors ecran, trop sombre ou illisible.</li>
+        <li>Bouton sans effet visible.</li>
+        <li>Sauvegarde qui semble marcher mais ne persiste pas.</li>
+        <li>Champ qui refuse une valeur valide ou accepte une valeur dangereuse sans message.</li>
+        <li>Run fantome, slot bloque, HUD qui reste apres fin de run.</li>
+        <li>Inventaire normal perdu ou inventaire donjon incoherent.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>0. Smoke test demarrage</h2>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="smoke-launch"><span>Lancer le jeu et rejoindre le monde</span></label>
+        <ol class="steps">
+          <li>Lancer Minecraft avec Arcadia Dungeon installe.</li>
+          <li>Rejoindre le monde de test fourni.</li>
+          <li>Attendre 30 secondes sans ouvrir de menu.</li>
+        </ol>
+        <p class="expected">Attendu : aucun crash, aucun freeze long, le monde reste jouable.</p>
+        <p class="fail">Echec : crash, deconnexion, freeze de plus de 10 secondes, spam visible en chat.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="smoke-open-admin"><span>Ouvrir le panel admin</span></label>
+        <ol class="steps">
+          <li>Executer <code>/arcadia admin</code>.</li>
+          <li>Observer le hub admin.</li>
+          <li>Fermer puis rouvrir le panel.</li>
+        </ol>
+        <p class="expected">Attendu : le menu s'ouvre vite, les boutons sont lisibles, aucun element ne sort de l'ecran.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="smoke-open-player"><span>Ouvrir le hub joueur</span></label>
+        <ol class="steps">
+          <li>Fermer le menu admin.</li>
+          <li>Appuyer sur <code>H</code>.</li>
+          <li>Passer sur les onglets Donjons, Loadout, Boutique, Profil, Options.</li>
+        </ol>
+        <p class="expected">Attendu : tous les onglets sont accessibles, l'UI n'est pas sombre illisible, aucun texte ne se chevauche.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>0A. Revue visuelle globale avant configuration</h2>
+      <div class="callout">
+        Cette section sert a detecter les problemes UI avant meme de configurer le contenu. Tester comme un nouvel admin qui decouvre le mod.
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="visual-admin-empty-state"><span>Etat vide du hub admin</span><span class="tag severity-medium">UI</span></label>
+        <ol class="steps">
+          <li>Ouvrir <code>/arcadia admin</code>.</li>
+          <li>Observer la liste des donjons, le filtre, les boutons globaux et le footer.</li>
+          <li>Cliquer dans le filtre et taper un texte qui ne correspond a aucun donjon.</li>
+          <li>Effacer le filtre.</li>
+        </ol>
+        <p class="expected">Attendu : etat vide clair, filtre utilisable, aucun bouton ou texte coupe.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="visual-client-empty-state"><span>Etat initial du hub joueur</span><span class="tag severity-medium">UI</span></label>
+        <ol class="steps">
+          <li>Ouvrir le hub joueur avec <code>H</code>.</li>
+          <li>Passer tous les onglets sans rien configurer : Donjons, Loadout, Boutique, Profil, Options.</li>
+          <li>Observer les etats vides, locked, soon, unavailable.</li>
+        </ol>
+        <p class="expected">Attendu : l'utilisateur comprend ce qui est disponible, lock ou non configure. Rien ne ressemble a une feature fonctionnelle si elle ne l'est pas.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="visual-gui-scale"><span>Tester plusieurs GUI scales</span><span class="tag severity-high">UI critique</span></label>
+        <ol class="steps">
+          <li>Dans les options Minecraft, tester au moins GUI Scale 2, 3 et Auto si possible.</li>
+          <li>A chaque scale, ouvrir <code>/arcadia admin</code> puis le hub joueur.</li>
+          <li>Faire defiler les menus qui scrollent.</li>
+        </ol>
+        <p class="expected">Attendu : aucun champ important ne sort de l'ecran, le scroll reste utilisable, les boutons Save/Back/Close restent accessibles.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="visual-tooltips-toasts"><span>Tester tooltips et toasts de base</span></label>
+        <ol class="steps">
+          <li>Survoler les boutons et options non evidentes dans admin et hub joueur.</li>
+          <li>Cliquer sur une action non dangereuse qui affiche un toast.</li>
+          <li>Observer la position du toast, sa lisibilite et sa disparition.</li>
+        </ol>
+        <p class="expected">Attendu : les tooltips sont localises et utiles, les toasts ne masquent pas un bouton critique.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="permissions-admin"><span>Verifier permissions admin si possible</span></label>
+        <ol class="steps">
+          <li>Avec un compte non OP si disponible, essayer <code>/arcadia admin</code>.</li>
+          <li>Avec un compte OP, reessayer.</li>
+        </ol>
+        <p class="expected">Attendu : non OP ne peut pas ouvrir l'admin. OP peut l'ouvrir. Le message d'erreur est clair.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>0B. Revue ecran par ecran - Admin UI</h2>
+      <div class="callout critical">
+        Ici on ne teste pas seulement le parcours : chaque ecran doit etre ouvert, lu, clique, sauvegarde si possible, puis reouvert. Noter le moindre texte coupe, bouton sans effet, tooltip manquant ou champ ambigu.
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-admin-hub"><span>Screen Admin Hub</span><span class="tag severity-high">Ecran</span></label>
+        <ol class="steps">
+          <li>Ouvrir <code>/arcadia admin</code>.</li>
+          <li>Tester filtre vide, filtre avec resultat, filtre sans resultat.</li>
+          <li>Verifier les boutons globaux : Create, Classes gratuites, Debug, Reload, Monitor, Close.</li>
+          <li>Verifier une ligne de donjon existant : nom, id, bouton Gerer.</li>
+          <li>Tester le menu contextuel d'une ligne si disponible : copier, coller, supprimer.</li>
+          <li>Tester Back/Fermer puis rouvrir.</li>
+        </ol>
+        <p class="expected">Attendu : hub lisible, aucun bouton ambigu, filtre fluide, etats vides compréhensibles.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-admin-create"><span>Screen Create Dungeon</span><span class="tag severity-high">Ecran</span></label>
+        <ol class="steps">
+          <li>Ouvrir l'ecran de creation.</li>
+          <li>Verifier tous les placeholders, labels, tooltips et champs obligatoires.</li>
+          <li>Tester creation avec champs valides.</li>
+          <li>Tester creation avec id vide, id invalide, id deja existant.</li>
+          <li>Tester Back sans creer.</li>
+        </ol>
+        <p class="expected">Attendu : l'ecran guide l'admin sans demander d'editer un fichier, les erreurs sont visibles et non destructives.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-admin-detail"><span>Screen Dungeon Detail / menu d'edition</span></label>
+        <ol class="steps">
+          <li>Ouvrir un donjon depuis le hub.</li>
+          <li>Verifier les sous-menus exposes : Core, Boss, Waves, Rewards, Messages, Zone, Arcadia.</li>
+          <li>Verifier que le titre indique clairement le donjon edite.</li>
+          <li>Revenir au hub puis rouvrir le meme donjon.</li>
+        </ol>
+        <p class="expected">Attendu : navigation claire. Debug et Monitor restent globaux depuis le hub admin, pas rattaches au donjon.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-admin-core"><span>Screen Core</span><span class="tag severity-high">Ecran</span></label>
+        <ol class="steps">
+          <li>Verifier les champs Vies, Countdown lobby, Ref. structure, Dimension et Y placement.</li>
+          <li>Tester les champs numeriques et verifier que les valeurs affichees restent lisibles.</li>
+          <li>Tester Save, quitter, revenir.</li>
+          <li>Tester valeurs invalides puis corriger.</li>
+        </ol>
+        <p class="expected">Attendu : les valeurs core persistent, le countdown indique qu'il inclut le temps de regeneration.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-admin-messages"><span>Screen Messages</span></label>
+        <ol class="steps">
+          <li>Ouvrir Messages.</li>
+          <li>Verifier chaque champ : message de debut, victoire et defaite.</li>
+          <li>Entrer des messages courts puis longs.</li>
+          <li>Sauvegarder et revenir.</li>
+        </ol>
+        <p class="expected">Attendu : les champs longs restent utilisables, aucun placeholder ne deborde, messages sauvegardes.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-admin-zone"><span>Screen Zone</span><span class="tag severity-high">Ecran critique</span></label>
+        <ol class="steps">
+          <li>Tester chaque onglet ou mode : Template NBT, Custom existant, Zone globale, Spawn.</li>
+          <li>Verifier les champs dimension et coordonnees a GUI scale different.</li>
+          <li>Tester Generer NBT et Reset NBT dans le mode Template NBT.</li>
+          <li>Tester Capture spawn ou position joueur seulement pour le spawn.</li>
+          <li>Tester Wand pour la zone globale.</li>
+          <li>Sauvegarder, fermer, rouvrir.</li>
+        </ol>
+        <p class="expected">Attendu : chaque action modifie visuellement l'ecran, aucune dimension ne sort du cadre, reset/generation sont comprehensibles.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-admin-boss-list"><span>Screen Boss List</span></label>
+        <ol class="steps">
+          <li>Ouvrir Boss.</li>
+          <li>Verifier liste vide, ajout boss, suppression boss, bouton Gerer.</li>
+          <li>Ajouter plusieurs boss avec noms differents.</li>
+          <li>Sauvegarder puis rouvrir la liste.</li>
+        </ol>
+        <p class="expected">Attendu : liste compacte et claire, pas de texte sous bouton inutile, pas de ligne vide inutilisable.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-admin-boss-detail-tabs"><span>Screen Boss Detail - tous les onglets</span><span class="tag severity-high">Ecran critique</span></label>
+        <ol class="steps">
+          <li>Ouvrir un boss puis passer onglets Identite, Spawn, Combat, Phases, Drops.</li>
+          <li>Sur chaque onglet, verifier labels, tooltips, champs obligatoires, boutons et Save.</li>
+          <li>Ajouter/supprimer une phase et un drop.</li>
+          <li>Sauvegarder sur chaque onglet et verifier que l'onglet courant reste ouvert.</li>
+        </ol>
+        <p class="expected">Attendu : aucun onglet vide ou confus, les nouveaux elements ont des champs directement editables.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-admin-waves-list"><span>Screen Waves List</span></label>
+        <ol class="steps">
+          <li>Ouvrir Vagues.</li>
+          <li>Verifier liste vide, ajout vague, suppression vague, ordre d'affichage, bouton Gerer.</li>
+          <li>Ajouter trois vagues et sauvegarder.</li>
+          <li>Rouvrir pour verifier l'ordre.</li>
+        </ol>
+        <p class="expected">Attendu : la gestion des vagues ressemble en qualite a la gestion des boss et ne compresse pas les lignes.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-admin-wave-detail-tabs"><span>Screen Wave Detail - tous les onglets</span><span class="tag severity-high">Ecran critique</span></label>
+        <ol class="steps">
+          <li>Ouvrir une vague puis passer onglets Wave, Mobs, Identity, Spawn, Stats, Equipment, Combat.</li>
+          <li>Sur Mobs : ajouter, selectionner, supprimer, recreer un mob.</li>
+          <li>Sur Spawn : tester position fixe et zone.</li>
+          <li>Sur Equipment : verifier chaque slot separe et autocomplete.</li>
+          <li>Sur Combat : verifier tooltips, champs key=value et cooldowns.</li>
+          <li>Sauvegarder et rouvrir.</li>
+        </ol>
+        <p class="expected">Attendu : aucun onglet ne clip, le mob selectionne est clair, toutes les options de vague ont une logique visible.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-admin-rewards"><span>Screen Rewards</span></label>
+        <ol class="steps">
+          <li>Ouvrir Recompenses.</li>
+          <li>Verifier monnaie, loot list, ajout/suppression loot, min/max/chance.</li>
+          <li>Tester une chance 0, 0.5 et 1 si possible.</li>
+          <li>Sauvegarder, rouvrir.</li>
+        </ol>
+        <p class="expected">Attendu : l'admin comprend ce qui sera donne en fin de run, les valeurs restent visibles.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-admin-free-classes"><span>Screen Classes gratuites globales</span><span class="tag severity-high">Ecran</span></label>
+        <ol class="steps">
+          <li>Depuis le hub admin, ouvrir Classes gratuites.</li>
+          <li>Verifier que l'ecran est global, pas rattache a un donjon.</li>
+          <li>Ajouter, modifier, supprimer une classe.</li>
+          <li>Verifier id, nom, role, puissance, items et sauvegarde.</li>
+        </ol>
+        <p class="expected">Attendu : les classes creees ici sont ensuite visibles dans le hub joueur Loadout.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-admin-monitor"><span>Screen Monitor</span></label>
+        <ol class="steps">
+          <li>Ouvrir Monitor sans run active.</li>
+          <li>Ouvrir Monitor pendant une run.</li>
+          <li>Verifier refresh, liste runs, statut, joueurs, boutons Gagner/Stopper si une run est active.</li>
+          <li>Terminer une run puis observer le monitor.</li>
+        </ol>
+        <p class="expected">Attendu : le monitor reflete l'etat serveur reel et ne garde pas de run terminee comme active.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-admin-debug"><span>Screen Debug global</span><span class="tag severity-high">Ecran critique</span></label>
+        <ol class="steps">
+          <li>Ouvrir Debug depuis le hub admin.</li>
+          <li>Tester onglet Player : target, amount, points, progress dungeon, sync, money, reset, unlock.</li>
+          <li>Tester onglet HUD : HUD only, HUD + inventaire, remove/restore.</li>
+          <li>Tester onglet Runs : etat vide, puis bouton global Terminer toutes les runs si une run est active.</li>
+          <li>Verifier toasts et absence de clip sur tous les boutons.</li>
+        </ol>
+        <p class="expected">Attendu : debug utilisable par un admin non dev, sans commandes externes pour tester les features principales.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-admin-arcadia-config"><span>Screen Arcadia / options avancees du donjon</span></label>
+        <ol class="steps">
+          <li>Ouvrir Arcadia depuis le menu du donjon.</li>
+          <li>Lire chaque champ et tooltip.</li>
+          <li>Modifier une valeur non dangereuse, sauvegarder, rouvrir.</li>
+          <li>Verifier que les libelles ne sont pas techniques au point d'etre incomprehensibles.</li>
+        </ol>
+        <p class="expected">Attendu : les ecrans avances restent coherents, meme si toutes les features ne sont pas utilisees dans le test principal.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>0C. Revue ecran par ecran - Client UI</h2>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-client-hub-tabs"><span>Screen Player Hub - navigation globale</span><span class="tag severity-high">Ecran</span></label>
+        <ol class="steps">
+          <li>Ouvrir le hub avec <code>H</code>.</li>
+          <li>Passer chaque onglet : Donjons, Loadout, Boutique, Profil, Options.</li>
+          <li>Verifier header, monnaie, sync, close, taille du panel et fond.</li>
+          <li>Pendant une run active, rouvrir avec <code>H</code> et verifier que le bouton Leave/Abandon est visible.</li>
+          <li>Tester fermeture/reouverture.</li>
+          <li>Appuyer sur <code>I</code> dans le menu et verifier que cela n'ouvre pas de debug Tessera visible pour un joueur/admin testeur.</li>
+        </ol>
+        <p class="expected">Attendu : les onglets ressemblent a une UI finale, pas a des placeholders MVP.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-client-dungeons-tab"><span>Onglet Donjons</span><span class="tag severity-high">Ecran</span></label>
+        <ol class="steps">
+          <li>Verifier liste vide avant creation puis liste avec donjon.</li>
+          <li>Verifier nom, id/meta, etat, boutons configurer/jouer si presents.</li>
+          <li>Selectionner un donjon et lancer le lobby.</li>
+          <li>Cliquer Queue rapide si visible.</li>
+        </ol>
+        <p class="expected">Attendu : pas d'affichage du donjon sur les autres onglets, pas de tag inutile, bouton Jouer clair. Queue rapide affiche un toast placeholder et ne cree pas de run.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-client-loadout-tab"><span>Onglet Loadout</span><span class="tag severity-high">Ecran critique</span></label>
+        <ol class="steps">
+          <li>Verifier liste des classes gratuites globales.</li>
+          <li>Selectionner chaque classe.</li>
+          <li>Verifier classe active, badges, items, role, puissance.</li>
+          <li>Tester etat custom lock puis custom unlock via debug.</li>
+        </ol>
+        <p class="expected">Attendu : aucun badge ne se superpose, le loadout est global et comprehensible. Le custom affiche son etat lock/unlock sans proposer de give gratuit d'items.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-client-shop-tab"><span>Onglet Boutique</span></label>
+        <ol class="steps">
+          <li>Verifier tous les items de boutique affiches.</li>
+          <li>Cliquer chaque action d'achat.</li>
+          <li>Verifier monnaie suffisante/insuffisante si possible.</li>
+          <li>Observer le toast placeholder de boutique non disponible.</li>
+        </ol>
+        <p class="expected">Attendu : l'ecran ne retire aucune monnaie et annonce clairement que l'achat serveur n'est pas disponible.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-client-profile-tab"><span>Onglet Profil</span></label>
+        <ol class="steps">
+          <li>Verifier carte joueur, monnaie, runs, PB, niveau/rang.</li>
+          <li>Verifier badges/titres : debloque, verrouille, bientot.</li>
+          <li>Faire une victoire puis revenir observer les changements.</li>
+        </ol>
+        <p class="expected">Attendu : les titres non acquis ne ressemblent pas a des titres possedes, la progression se met a jour apres run.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-client-options-tab"><span>Onglet Options</span></label>
+        <ol class="steps">
+          <li>Tester toggles HUD, feed, toasts, watch overlay si present.</li>
+          <li>Verifier tooltips et etat ON/OFF.</li>
+          <li>Fermer/reouvrir le hub pendant la meme session.</li>
+        </ol>
+        <p class="expected">Attendu : les options ont un effet visible ou indiquent clairement qu'elles preparent une feature future.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-client-lobby"><span>Screen Dungeon Lobby</span><span class="tag severity-high">Ecran critique</span></label>
+        <ol class="steps">
+          <li>Ouvrir le lobby depuis un donjon.</li>
+          <li>Verifier titre, etapes, joueurs, classe selectionnee, countdown, etat regeneration.</li>
+          <li>Tester lancement normal, generation en cours et retour/fermeture.</li>
+        </ol>
+        <p class="expected">Attendu : le joueur comprend s'il attend des joueurs, un countdown ou une regeneration NBT.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-client-result"><span>Screens Result Victory / Defeat / Death</span><span class="tag severity-high">Ecran</span></label>
+        <ol class="steps">
+          <li>Obtenir une victoire et observer l'ecran resultat.</li>
+          <li>Obtenir une defaite ou abandon et observer l'ecran resultat.</li>
+          <li>Verifier temps, PB, rewards, boutons hub/rejouer/fermer.</li>
+        </ol>
+        <p class="expected">Attendu : resultats coherents avec la run et retour propre au hub.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-client-archetype-selection"><span>Screen Selection classe / archetype si accessible</span></label>
+        <ol class="steps">
+          <li>Si le lancement ouvre un ecran de selection de classe separe, verifier la liste, les details et le bouton de validation.</li>
+          <li>Si cet ecran n'est pas accessible dans le parcours actuel, cocher avec commentaire "non accessible via UI v1.1".</li>
+        </ol>
+        <p class="expected">Attendu : aucun ancien ecran accessible ne contredit le systeme de classes gratuites globales.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-client-debug-run"><span>Screen Debug Run si ouvert par commande OP</span></label>
+        <ol class="steps">
+          <li>Avec un compte OP, ouvrir l'ecran de debug run via la commande de debug si necessaire.</li>
+          <li>Verifier que cet ecran de test ne fuit pas dans le parcours joueur normal.</li>
+        </ol>
+        <p class="expected">Attendu : l'ecran debug reste reserve aux tests OP et ne remplace pas les flows joueur.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="screen-client-hud-overlay"><span>HUD in-run complet</span><span class="tag severity-high">Ecran critique</span></label>
+        <ol class="steps">
+          <li>En run, verifier top-left Arcadia Run, boss bar, hotbar, health/food custom.</li>
+          <li>Tester avec et sans boss actif.</li>
+          <li>Tester changement GUI scale.</li>
+          <li>Terminer la run et verifier disparition complete du HUD.</li>
+        </ol>
+        <p class="expected">Attendu : HUD custom remplace ce qui doit etre remplace et disparait hors run.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>1. Creation d'un donjon depuis le panel admin</h2>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="admin-create-dungeon"><span>Creer un nouveau donjon</span><span class="tag severity-high">Critique</span></label>
+        <ol class="steps">
+          <li>Ouvrir <code>/arcadia admin</code>.</li>
+          <li>Cliquer sur le bouton de creation de donjon.</li>
+          <li>Entrer un ID simple : <code>test_admin_01</code>.</li>
+          <li>Entrer un nom visible : <code>Test Admin 01</code>.</li>
+          <li>Definir les vies de depart a <code>3</code>.</li>
+          <li>Sauvegarder.</li>
+          <li>Revenir au hub admin.</li>
+        </ol>
+        <p class="expected">Attendu : le donjon apparait dans la liste admin et aucune erreur ne s'affiche.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="admin-duplicate-dungeon"><span>Verifier la protection contre doublon</span></label>
+        <ol class="steps">
+          <li>Essayer de creer un second donjon avec le meme ID <code>test_admin_01</code>.</li>
+          <li>Observer le comportement.</li>
+        </ol>
+        <p class="expected">Attendu : le jeu empeche ou signale clairement le doublon. Il ne doit pas ecraser silencieusement le donjon existant.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="admin-core"><span>Configurer les options Core</span></label>
+        <ol class="steps">
+          <li>Ouvrir le donjon <code>Test Admin 01</code>.</li>
+          <li>Aller dans <strong>Core</strong>.</li>
+          <li>Regler vies, countdown lobby et structure/template si disponible.</li>
+          <li>Sauvegarder.</li>
+          <li>Verifier que l'ecran reste ouvert apres sauvegarde et qu'un toast de confirmation apparait.</li>
+        </ol>
+        <p class="expected">Attendu : les champs restent lisibles, le bouton Save est toujours au meme endroit, les valeurs restent apres reouverture.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="admin-messages"><span>Configurer les messages</span></label>
+        <ol class="steps">
+          <li>Aller dans l'ecran Messages.</li>
+          <li>Renseigner un message de lancement, victoire et defaite.</li>
+          <li>Sauvegarder, quitter l'ecran, revenir.</li>
+        </ol>
+        <p class="expected">Attendu : les messages restent sauvegardes et les champs ne se chevauchent pas.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="admin-all-submenus-open"><span>Ouvrir tous les sous-menus du donjon</span><span class="tag severity-high">Couverture UI</span></label>
+        <ol class="steps">
+          <li>Depuis l'ecran de configuration du donjon, ouvrir successivement tous les boutons disponibles.</li>
+          <li>Verifier au minimum : Core, Boss, Vagues, Recompenses, Messages, Zone, Arcadia.</li>
+          <li>Verifier separement que Monitor et Debug restent accessibles depuis le hub admin.</li>
+          <li>Dans chaque ecran, verifier que Back revient au bon endroit.</li>
+          <li>Dans chaque ecran, verifier que Save ne renvoie pas arbitrairement a un autre ecran.</li>
+        </ol>
+        <p class="expected">Attendu : aucun sous-menu ne crash, chaque bouton ouvre l'ecran attendu, navigation coherente.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="admin-invalid-values"><span>Tester valeurs invalides dans les champs principaux</span><span class="tag severity-medium">Robustesse</span></label>
+        <ol class="steps">
+          <li>Dans Core, essayer une valeur non numerique dans un champ numerique, puis sauvegarder.</li>
+          <li>Essayer une valeur negative pour vies/countdown si le champ l'accepte.</li>
+          <li>Essayer une dimension inexistante dans un champ dimension.</li>
+          <li>Revenir a des valeurs valides et sauvegarder.</li>
+        </ol>
+        <p class="expected">Attendu : les valeurs invalides sont refusees, corrigees ou signalees clairement. Le donjon ne devient pas inutilisable.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="admin-save-persistence-basic"><span>Verifier persistence apres fermeture/reouverture</span><span class="tag severity-high">Critique</span></label>
+        <ol class="steps">
+          <li>Sauvegarder Core et Messages.</li>
+          <li>Fermer completement l'admin avec Echap ou le bouton Back jusqu'au jeu.</li>
+          <li>Rouvrir <code>/arcadia admin</code> puis le donjon.</li>
+          <li>Verifier que les valeurs saisies sont encore la.</li>
+        </ol>
+        <p class="expected">Attendu : aucune valeur sauvegardee ne revient a son defaut sans raison.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>2. Zone, template NBT et reset d'instance</h2>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="zone-template"><span>Configurer une instance via template NBT</span><span class="tag severity-high">Critique</span></label>
+        <ol class="steps">
+          <li>Dans le donjon, ouvrir l'ecran Zone.</li>
+          <li>Choisir le mode <strong>Template NBT</strong>.</li>
+          <li>Choisir un template propose par le jeu.</li>
+          <li>Choisir un slot libre ou garder le slot par defaut propose.</li>
+          <li>Cliquer sur <strong>Generer NBT</strong>.</li>
+          <li>Attendre la fin de generation sans bouger pendant quelques secondes.</li>
+        </ol>
+        <p class="expected">Attendu : la structure apparait, le serveur ne freeze pas fortement, la dimension, le slot, le Y de placement et les coords affichees sont coherents.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="zone-spawn"><span>Definir le spawn du donjon</span></label>
+        <ol class="steps">
+          <li>Se placer dans la structure au point de spawn souhaite.</li>
+          <li>Dans Zone, utiliser le bouton de capture/position pour le spawn si disponible.</li>
+          <li>Sauvegarder la zone.</li>
+          <li>Fermer et rouvrir l'ecran Zone.</li>
+        </ol>
+        <p class="expected">Attendu : le spawn garde les coordonnees et la dimension correctes. Aucun champ dimension ne sort de l'ecran.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="zone-wand"><span>Definir une zone avec la wand</span></label>
+        <ol class="steps">
+          <li>Dans Zone, cliquer sur le bouton pour definir avec wand.</li>
+          <li>Verifier que la wand est donnee.</li>
+          <li>Selectionner Pos1 et Pos2 dans le monde.</li>
+          <li>Si le bouton UI ne suffit pas, tester les commandes OP <code>/arcadia admin wand</code>, <code>/arcadia admin wand_select</code> ou <code>/arcadia admin area_clear</code>.</li>
+          <li>Retourner dans le menu Zone.</li>
+        </ol>
+        <p class="expected">Attendu : la zone globale est visible dans l'UI, la wand ne reste pas bloquee inutilement dans l'inventaire, la selection est comprehensible.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="zone-reset"><span>Tester Reset NBT</span><span class="tag severity-high">Critique</span></label>
+        <ol class="steps">
+          <li>Casser ou placer quelques blocs dans la structure generee.</li>
+          <li>Retourner dans Zone.</li>
+          <li>Cliquer sur <strong>Reset NBT</strong> ou relancer une generation sur le meme slot.</li>
+          <li>Attendre la fin du reset.</li>
+        </ol>
+        <p class="expected">Attendu : l'ancienne instance est nettoyee, les blocs modifies reviennent a l'etat du template, le meme slot peut etre reutilise.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>3. Classes gratuites globales</h2>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="classes-create"><span>Creer et sauvegarder les classes gratuites</span></label>
+        <ol class="steps">
+          <li>Depuis le hub admin, ouvrir le menu des classes gratuites globales.</li>
+          <li>Creer au moins 3 classes : tank, mage, archer.</li>
+          <li>Pour chaque classe, renseigner nom, role, puissance et items de depart.</li>
+          <li>Sauvegarder.</li>
+          <li>Fermer puis rouvrir le menu.</li>
+        </ol>
+        <p class="expected">Attendu : les classes restent presentes et ne dependent pas d'un donjon precis.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="classes-player-visible"><span>Verifier cote joueur</span></label>
+        <ol class="steps">
+          <li>Fermer l'admin.</li>
+          <li>Appuyer sur <code>H</code>.</li>
+          <li>Aller dans Loadout.</li>
+          <li>Verifier que les classes creees par l'admin sont visibles.</li>
+          <li>Selectionner une classe et quitter/reouvrir le menu.</li>
+        </ol>
+        <p class="expected">Attendu : la classe selectionnee reste active, les badges ne se chevauchent pas, les items sont visibles.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>4. Boss</h2>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="boss-list"><span>Ajouter plusieurs boss</span><span class="tag severity-high">Critique</span></label>
+        <ol class="steps">
+          <li>Ouvrir le donjon puis l'ecran Boss.</li>
+          <li>Ajouter deux boss.</li>
+          <li>Verifier que la liste affiche chaque boss avec un bouton Gerer.</li>
+          <li>Ouvrir le detail du premier boss.</li>
+        </ol>
+        <p class="expected">Attendu : ajouter un boss ne cree pas une ligne vide inutilisable. La liste reste lisible.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="boss-identity"><span>Configurer identite et spawn</span></label>
+        <ol class="steps">
+          <li>Dans le detail boss, onglet Identite : renseigner ID, nom, entite, HP et degats.</li>
+          <li>Onglet Spawn : tester Optionnel/Fixe, Kill requis/Kill libre, Spawn apres vague.</li>
+          <li>Lire les tooltips sur les options.</li>
+          <li>Renseigner position et dimension.</li>
+          <li>Sauvegarder.</li>
+        </ol>
+        <p class="expected">Attendu : tous les champs sont visibles, les tooltips expliquent les options, sauvegarder ne ramene pas a la liste des boss.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="boss-combat-equipment"><span>Configurer combat et equipement</span></label>
+        <ol class="steps">
+          <li>Onglet Combat : regler attributs, valeurs et options.</li>
+          <li>Onglet Equipement : remplir main, off, head, chest, legs, feet.</li>
+          <li>Verifier l'autocomplete sur les ids d'items.</li>
+          <li>Sauvegarder et rouvrir le boss.</li>
+        </ol>
+        <p class="expected">Attendu : les valeurs restent, pas de texte coupe, les champs d'equipement sont separes et comprehensibles.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="boss-phases-drops"><span>Ajouter phases et drops boss</span></label>
+        <ol class="steps">
+          <li>Onglet Phases : ajouter au moins 2 phases.</li>
+          <li>Renseigner seuil HP, message, summons, effets et commandes si disponibles.</li>
+          <li>Onglet Drops : ajouter au moins 2 drops avec chance/min/max.</li>
+          <li>Sauvegarder, quitter, rouvrir.</li>
+        </ol>
+        <p class="expected">Attendu : les nouvelles phases/drops ont directement des champs remplissables, pas de ligne vide, les sliders/valeurs restent lisibles.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. Vagues et mobs</h2>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="waves-list"><span>Creer plusieurs vagues</span><span class="tag severity-high">Critique</span></label>
+        <ol class="steps">
+          <li>Ouvrir l'ecran Vagues.</li>
+          <li>Ajouter trois vagues.</li>
+          <li>Verifier que la liste est lisible et que chaque vague a un bouton Gerer.</li>
+          <li>Ouvrir la premiere vague.</li>
+        </ol>
+        <p class="expected">Attendu : l'ajout de vague ne cree pas de bloc vide inutilisable. Les onglets du detail sont clairs.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="wave-timing"><span>Configurer ordre et timing</span></label>
+        <ol class="steps">
+          <li>Dans le detail vague, configurer le nom.</li>
+          <li>Tester le mode ordre predefini : vague 1 puis vague 2 puis vague 3.</li>
+          <li>Tester le mode ticks depuis debut du donjon sur une vague.</li>
+          <li>Sauvegarder.</li>
+        </ol>
+        <p class="expected">Attendu : le mode choisi est clair, les champs inutiles ne perturbent pas l'ecran, aucune valeur ne disparait.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="wave-mobs"><span>Ajouter et configurer les mobs</span><span class="tag severity-high">Critique</span></label>
+        <ol class="steps">
+          <li>Onglet Mobs : ajouter deux mobs.</li>
+          <li>Selectionner chaque mob et renseigner entite, quantite, nom custom.</li>
+          <li>Verifier l'autocomplete entite.</li>
+          <li>Supprimer un mob, en rajouter un autre.</li>
+        </ol>
+        <p class="expected">Attendu : la liste des mobs est lisible, le mob selectionne est evident, supprimer/recreer ne reutilise pas de vieux champs vides.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="wave-spawn-stats-equipment"><span>Configurer spawn, stats, equipement et combat</span></label>
+        <ol class="steps">
+          <li>Onglet Spawn : renseigner position fixe ou zone de spawn.</li>
+          <li>Onglet Stats : regler HP, degats, vitesse ou valeurs disponibles.</li>
+          <li>Onglet Equipement : remplir les slots separes.</li>
+          <li>Onglet Combat : renseigner attributs, cooldowns, dodge si disponible.</li>
+          <li>Lire les tooltips sur les champs non evidents.</li>
+          <li>Sauvegarder, quitter, rouvrir.</li>
+        </ol>
+        <p class="expected">Attendu : tous les onglets gardent leurs donnees et aucun champ ne sort de l'ecran.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>6. Recompenses, monitoring et debug admin</h2>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="rewards"><span>Configurer recompenses</span></label>
+        <ol class="steps">
+          <li>Ouvrir Recompenses.</li>
+          <li>Configurer monnaie de victoire.</li>
+          <li>Ajouter au moins 2 loots avec item, min, max, chance.</li>
+          <li>Sauvegarder et rouvrir.</li>
+        </ol>
+        <p class="expected">Attendu : les recompenses restent sauvegardees et seront visibles apres une victoire.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="monitor"><span>Verifier le monitor admin</span></label>
+        <ol class="steps">
+          <li>Ouvrir Monitor.</li>
+          <li>Verifier l'etat sans run active.</li>
+          <li>Laisser cet ecran pour le recontroler pendant une run plus tard.</li>
+        </ol>
+        <p class="expected">Attendu : l'ecran affiche clairement qu'il n'y a pas de run active.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="debug-tabs"><span>Verifier le debug global</span></label>
+        <ol class="steps">
+          <li>Depuis le hub admin, ouvrir Debug.</li>
+          <li>Verifier les onglets Player, HUD, Runs.</li>
+          <li>Tester sur soi : ajouter monnaie, definir monnaie, ajouter points, unlock titres/loadout si disponible.</li>
+          <li>Renseigner un donjon configure puis utiliser TP donjon pour verifier que l'admin peut aller a la zone sans commande externe.</li>
+          <li>Tester HUD only puis HUD + inventaire donjon.</li>
+          <li>Retirer le HUD/inventaire de preview.</li>
+        </ol>
+        <p class="expected">Attendu : pas de texte qui clip, les actions donnent un toast clair, l'inventaire normal revient apres preview.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="debug-player-reset"><span>Tester reset progression joueur</span><span class="tag severity-high">Donnees joueur</span></label>
+        <ol class="steps">
+          <li>Dans Debug / Player, noter la monnaie et la progression du joueur test.</li>
+          <li>Utiliser Add Money, Set Money, Add Points et Unlock custom/loadout si disponible.</li>
+          <li>Ouvrir le hub joueur et verifier Profil/Loadout.</li>
+          <li>Retourner Debug et utiliser Reset Player.</li>
+          <li>Reouvrir le hub joueur.</li>
+        </ol>
+        <p class="expected">Attendu : les changements debug sont visibles cote joueur, puis le reset remet un etat coherent sans casser l'UI.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="debug-runs-actions"><span>Tester actions debug sur runs</span></label>
+        <ol class="steps">
+          <li>Sans run active, ouvrir Debug / Runs.</li>
+          <li>Verifier les boutons disponibles et leur etat.</li>
+          <li>Pendant une run active plus tard, revenir ici et tester le bouton global de fin de toutes les runs si disponible.</li>
+        </ol>
+        <p class="expected">Attendu : sans run active, l'ecran reste clair. Les actions par run precise se testent dans Monitor, pas dans Debug.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>7. Parcours joueur complet</h2>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="player-dungeon-list"><span>Voir le donjon cote joueur</span><span class="tag severity-high">Critique</span></label>
+        <ol class="steps">
+          <li>Fermer l'admin.</li>
+          <li>Appuyer sur <code>H</code>.</li>
+          <li>Onglet Donjons : verifier que <code>Test Admin 01</code> est visible.</li>
+          <li>Selectionner le donjon.</li>
+        </ol>
+        <p class="expected">Attendu : le donjon cree par l'admin est jouable sans toucher aux fichiers.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="player-loadout"><span>Selectionner une classe et verifier le loadout</span></label>
+        <ol class="steps">
+          <li>Onglet Loadout : choisir une classe gratuite.</li>
+          <li>Verifier les items affiches et la puissance.</li>
+          <li>Si loadout custom est lock, verifier que l'etat est clair.</li>
+          <li>Si debug a unlock le custom, verifier que l'etat et les items custom affiches ne debordent pas.</li>
+        </ol>
+        <p class="expected">Attendu : selection claire, pas de badges superposes, pas de champ qui depasse.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="player-profile-options"><span>Verifier profil et options</span></label>
+        <ol class="steps">
+          <li>Onglet Profil : verifier monnaies, runs, PB, titres/badges.</li>
+          <li>Les titres non debloques doivent etre clairement lock/soon, pas presentes comme acquis.</li>
+          <li>Onglet Options : activer/desactiver HUD et Toasts.</li>
+        </ol>
+        <p class="expected">Attendu : profil comprehensible, options persistantes visuellement pendant la session.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="player-shop"><span>Verifier boutique joueur</span></label>
+        <ol class="steps">
+          <li>Ouvrir l'onglet Boutique.</li>
+          <li>Observer chaque item, son prix et son etat visuel.</li>
+          <li>Cliquer sur chaque bouton d'achat disponible.</li>
+          <li>Verifier le toast ou message de retour.</li>
+        </ol>
+        <p class="expected">Attendu : boutique placeholder : chaque achat affiche que l'achat serveur n'est pas disponible et ne retire pas de monnaie.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="player-custom-loadout"><span>Verifier etat loadout custom si debloque</span><span class="tag severity-medium">Placeholder</span></label>
+        <ol class="steps">
+          <li>Debloquer le loadout custom via Debug si necessaire.</li>
+          <li>Retourner dans le hub joueur, onglet Loadout.</li>
+          <li>Verifier que l'etat custom debloque est visible et ne deborde pas.</li>
+          <li>Verifier qu'aucun bouton d'edition non branche ne promet une sauvegarde inexistante.</li>
+          <li>Fermer, rouvrir et verifier que l'etat reste coherent.</li>
+        </ol>
+        <p class="expected">Attendu : l'UI explique clairement l'etat custom actuel. L'edition complete n'est pas exposee si elle n'est pas branchee.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="player-lobby"><span>Entrer dans le lobby et lancer</span><span class="tag severity-high">Critique</span></label>
+        <ol class="steps">
+          <li>Depuis Donjons, cliquer Jouer/Lancer sur <code>Test Admin 01</code>.</li>
+          <li>Observer l'ecran lobby.</li>
+          <li>Verifier le countdown.</li>
+          <li>Si le donjon regen, verifier que le countdown attend la fin de generation.</li>
+          <li>Verifier qu'une barre/progression de generation est visible pendant la preparation NBT.</li>
+          <li>Verifier qu'aucun spam "tu ne peux pas sortir de la zone" n'apparait pendant la generation.</li>
+          <li>Lancer la run.</li>
+        </ol>
+        <p class="expected">Attendu : l'ecran indique clairement creation, attente, generation et lancement. Le joueur est teleporte au spawn configure uniquement quand l'instance est prete.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>8. Test en run</h2>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="run-hud"><span>Verifier le HUD custom</span><span class="tag severity-high">Critique</span></label>
+        <ol class="steps">
+          <li>Au lancement, observer le HUD Arcadia.</li>
+          <li>Verifier timer, vies, vague/objective, boss bar si boss actif.</li>
+          <li>Faire prendre des degats au boss et verifier que la barre de vie custom descend en direct.</li>
+          <li>Verifier que la hotbar custom remplace correctement la vanilla.</li>
+          <li>Verifier que les barres Health/Food custom sont au bon endroit et lisibles.</li>
+          <li>Changer le GUI scale dans les options Minecraft si possible, puis observer a nouveau.</li>
+        </ol>
+        <p class="expected">Attendu : HUD lisible a plusieurs GUI scales, pas de texte mange, pas de HUD vanilla parasite pendant la run.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="run-inventory"><span>Verifier inventaire donjon</span><span class="tag severity-high">Critique</span></label>
+        <ol class="steps">
+          <li>Noter rapidement l'inventaire normal avant run.</li>
+          <li>Pendant la run, verifier que le kit choisi est equipe.</li>
+          <li>Ramasser un item quelconque.</li>
+          <li>Changer de slot, jeter/ramasser si necessaire.</li>
+          <li>Finir ou abandonner la run.</li>
+        </ol>
+        <p class="expected">Attendu : l'inventaire donjon est coherent pendant la run et l'inventaire normal revient apres la run.</p>
+        <p class="fail">Echec critique : item normal perdu, item donjon remplace une arme de kit sans raison, inventaire normal non restaure.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="run-waves-boss"><span>Verifier spawn vagues et boss</span></label>
+        <ol class="steps">
+          <li>Attendre ou avancer jusqu'a la premiere vague.</li>
+          <li>Verifier que les mobs configurés spawnent au bon endroit.</li>
+          <li>Verifier les noms custom/equipements/quantites.</li>
+          <li>Verifier que les boss apparaissent selon leur configuration.</li>
+          <li>Tester deux boss avec ordre inverse : boss_2 premier puis boss_1 second.</li>
+          <li>Tuer le premier boss et verifier que la run ne se termine pas si un boss bloquant reste.</li>
+          <li>Verifier que les phases boss se declenchent.</li>
+        </ol>
+        <p class="expected">Attendu : l'ordre des vagues et boss correspond a l'admin UI, aucun spawn hors zone evidente, la boss bar disparait ou change proprement quand le boss actif meurt.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="run-victory"><span>Terminer en victoire</span><span class="tag severity-high">Critique</span></label>
+        <ol class="steps">
+          <li>Finir le donjon normalement ou utiliser Debug admin pour forcer la victoire si le combat est trop long.</li>
+          <li>Observer l'ecran de resultat.</li>
+          <li>Verifier monnaie, recompenses, PB et profil.</li>
+          <li>Si plusieurs loot rewards sont configures, verifier que la seconde recompense peut aussi etre donnee.</li>
+          <li>Retourner au hub joueur et regarder Profil.</li>
+        </ol>
+        <p class="expected">Attendu : victoire comptee, recompenses ajoutees sans reset monnaie, HUD retire, inventaire normal restaure.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="run-relaunch"><span>Relancer le meme donjon apres victoire</span><span class="tag severity-high">Critique</span></label>
+        <ol class="steps">
+          <li>Depuis le hub joueur, relancer <code>Test Admin 01</code>.</li>
+          <li>Observer le lobby et la regeneration/reset d'instance.</li>
+          <li>Verifier qu'aucune erreur "slot deja utilise" ne bloque le lancement.</li>
+          <li>Verifier que le slot configure par l'admin est reutilise et non remplace par un nouveau slot cache.</li>
+          <li>Entrer dans la run puis abandonner ou finir rapidement.</li>
+        </ol>
+        <p class="expected">Attendu : le meme slot configure par l'admin est reset et reutilisable.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="run-defeat-abandon"><span>Tester defaite ou abandon</span></label>
+        <ol class="steps">
+          <li>Lancer une nouvelle run.</li>
+          <li>Perdre toutes les vies ou utiliser Debug pour forcer defaite.</li>
+          <li>Observer l'ecran resultat defaite.</li>
+          <li>Verifier retour hub, HUD retire, inventaire restaure.</li>
+        </ol>
+        <p class="expected">Attendu : defaite propre, aucune run fantome dans Monitor, relaunch possible.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="run-disconnect-rejoin"><span>Quitter/rejoindre pendant ou apres une run</span><span class="tag severity-medium">Persistance</span></label>
+        <ol class="steps">
+          <li>Pendant une run, quitter le monde ou se deconnecter si le test est sur serveur.</li>
+          <li>Rejoindre a nouveau.</li>
+          <li>Observer HUD, inventaire, position et etat de run.</li>
+          <li>Terminer ou forcer la fin de la run.</li>
+          <li>Quitter/rejoindre encore une fois et verifier le profil.</li>
+        </ol>
+        <p class="expected">Attendu : pas de crash, pas d'inventaire bloque, profil coherent apres reconnexion, et une run multi continue si un seul joueur quitte.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="run-instance-cleanup"><span>Verifier nettoyage apres fin de run</span><span class="tag severity-high">Critique</span></label>
+        <ol class="steps">
+          <li>Terminer une run.</li>
+          <li>Ouvrir Monitor, puis Debug / Runs si besoin.</li>
+          <li>Verifier qu'il ne reste pas de run active.</li>
+          <li>Retourner dans la dimension/zone du donjon si possible.</li>
+          <li>Relancer une nouvelle run du meme donjon.</li>
+        </ol>
+        <p class="expected">Attendu : la run finie est nettoyee dans Monitor, l'instance peut etre reset/reutilisee, aucun message "slot deja utilise" ne bloque.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>9. Test multi-joueur si un second compte est disponible</h2>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="multi-lobby"><span>Lobby a 2 joueurs</span><span class="tag severity-medium">Important</span></label>
+        <ol class="steps">
+          <li>Joueur A ouvre le hub et lance le donjon.</li>
+          <li>Joueur B ouvre le hub et rejoint le meme donjon avant lancement.</li>
+          <li>Verifier les noms dans le lobby.</li>
+          <li>Verifier que le nombre de places affiche correspond au maximum configure dans l'admin UI.</li>
+          <li>Le leader lance la run.</li>
+          <li>Verifier que les deux joueurs sont teleportes dans la meme instance et voient la meme progression.</li>
+        </ol>
+        <p class="expected">Attendu : les deux joueurs sont dans la meme run, teleportes ensemble, HUD synchronise.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="multi-min-max"><span>Minimum / maximum joueurs par donjon</span><span class="tag severity-high">Critique</span></label>
+        <ol class="steps">
+          <li>Dans l'admin UI, configurer un minimum de 2 joueurs et un maximum coherent.</li>
+          <li>Avec Joueur A seul, tenter de lancer le donjon.</li>
+          <li>Verifier le message d'attente minimum joueurs.</li>
+          <li>Faire rejoindre Joueur B, puis relancer depuis le leader.</li>
+          <li>Si possible, tenter de depasser le maximum configure avec un joueur supplementaire.</li>
+        </ol>
+        <p class="expected">Attendu : le lancement est bloque sous le minimum, autorise au minimum, et refuse proprement au-dela du maximum.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="multi-disconnect-one-player"><span>Deconnexion d'un joueur en run multi</span><span class="tag severity-high">Critique</span></label>
+        <ol class="steps">
+          <li>Lancer une run avec Joueur A et Joueur B.</li>
+          <li>Faire quitter Joueur B pendant la run.</li>
+          <li>Verifier que Joueur A reste dans la run et que le HUD continue.</li>
+          <li>Faire revenir Joueur B et verifier son inventaire/position/profil.</li>
+          <li>Terminer la run avec Joueur A.</li>
+        </ol>
+        <p class="expected">Attendu : la deconnexion d'un participant ne force pas l'abandon de toute la run, et l'inventaire du joueur qui revient est restaure correctement.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="multi-rewards"><span>Fin de run multi</span></label>
+        <ol class="steps">
+          <li>Terminer la run en victoire ou debug forcecomplete.</li>
+          <li>Verifier les resultats des deux joueurs.</li>
+          <li>Verifier que les profils des deux joueurs progressent.</li>
+        </ol>
+        <p class="expected">Attendu : progression et recompenses coherentes pour tous les participants.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>10. Persistance, redemarrage et regression globale</h2>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="restart-client-world"><span>Redemarrer le monde et verifier les donnees</span><span class="tag severity-high">Release blocker</span></label>
+        <ol class="steps">
+          <li>Quitter completement le monde.</li>
+          <li>Relancer/rejoindre le meme monde.</li>
+          <li>Ouvrir <code>/arcadia admin</code>.</li>
+          <li>Verifier que le donjon, classes, zone, boss, vagues, recompenses et messages existent encore.</li>
+          <li>Ouvrir le hub joueur et verifier profil/loadout/progression.</li>
+        </ol>
+        <p class="expected">Attendu : toute la configuration faite via UI persiste apres redemarrage.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="restart-sqlite-packaging"><span>Verifier le packaging SQLite du JAR</span><span class="tag severity-high">Release blocker</span></label>
+        <ol class="steps">
+          <li>Lancer le serveur/client avec <code>arcadia_dungeon-1.1.0.jar</code>.</li>
+          <li>Verifier que le monde demarre sans crash <code>No suitable driver</code> ou <code>ClassNotFoundException: org.sqlite.JDBC</code>.</li>
+          <li>Verifier qu'il n'y a pas de fichier <code>dev-thin-do-not-distribute</code> utilise par erreur dans le dossier mods.</li>
+          <li>Faire une action qui modifie le profil joueur, puis quitter/revenir.</li>
+        </ol>
+        <p class="expected">Attendu : la base Arcadia s'initialise et persiste sans installation manuelle de driver SQLite.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="restart-relaunch-run"><span>Relancer une run apres redemarrage</span><span class="tag severity-high">Release blocker</span></label>
+        <ol class="steps">
+          <li>Apres redemarrage du monde, lancer le donjon configure.</li>
+          <li>Verifier le lobby, la generation/reset, le spawn, le HUD et les mobs.</li>
+          <li>Terminer rapidement la run.</li>
+        </ol>
+        <p class="expected">Attendu : le donjon reste jouable sans reconfiguration manuelle.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="delete-or-cleanup-dungeon"><span>Suppression ou nettoyage du donjon de test</span></label>
+        <ol class="steps">
+          <li>Depuis le hub admin, utiliser le menu contextuel de la ligne du donjon si l'action Supprimer est disponible.</li>
+          <li>Noter que la suppression est immediate si aucune confirmation n'est affichee.</li>
+          <li>Si aucune suppression UI n'est accessible, noter que le nettoyage doit etre fait par le dev apres test.</li>
+        </ol>
+        <p class="expected">Attendu : le testeur sait exactement si le donjon a ete supprime. L'absence de confirmation doit etre notee comme bug UX si elle gene le test.</p>
+      </div>
+
+      <div class="case">
+        <label class="case-title"><input type="checkbox" data-check="final-no-ghost-state"><span>Etat final propre</span></label>
+        <ol class="steps">
+          <li>Verifier qu'aucun HUD Arcadia ne reste affiche hors run.</li>
+          <li>Verifier que l'inventaire normal est restaure.</li>
+          <li>Verifier Monitor/Debug : aucune run active non voulue.</li>
+          <li>Verifier que le joueur peut jouer normalement hors donjon.</li>
+        </ol>
+        <p class="expected">Attendu : apres tous les tests, le mod ne laisse pas d'etat fantome cote client ou serveur.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>11. Rapport de bugs</h2>
+      <div class="callout good">
+        Pour chaque probleme, prendre au minimum un screenshot et noter l'etape exacte de cette procedure.
+      </div>
+      <div class="field">
+        <label for="bugs">Bugs trouves</label>
+        <textarea id="bugs" data-store="bugs" placeholder="Exemple : Etape 5 / wave-mobs - bouton Add mob cree une ligne vide sans champs. Screenshot: nom_du_fichier.png"></textarea>
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label for="verdict">Verdict testeur</label>
+        <textarea id="verdict" data-store="verdict" placeholder="OK release / OK avec reserves / Bloque release + raison"></textarea>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const prefix = "arcadia-v11-admin-test:";
+    const checks = Array.from(document.querySelectorAll("[data-check]"));
+    const fields = Array.from(document.querySelectorAll("[data-store]"));
+    const counter = document.getElementById("counter");
+    const progress = document.getElementById("progress");
+    const exportStatus = document.getElementById("export-status");
+    const resultControls = new Map();
+
+    function makeResultControls(box) {
+      const id = box.dataset.check;
+      const container = box.closest(".case");
+      if (!container) return;
+
+      const row = document.createElement("div");
+      row.className = "result-row";
+
+      const validLabel = document.createElement("label");
+      validLabel.className = "result-choice valid-choice";
+      const valid = document.createElement("input");
+      valid.type = "checkbox";
+      valid.dataset.result = "valid";
+      validLabel.appendChild(valid);
+      validLabel.appendChild(document.createTextNode("Validee"));
+
+      const invalidLabel = document.createElement("label");
+      invalidLabel.className = "result-choice fail-choice";
+      const invalid = document.createElement("input");
+      invalid.type = "checkbox";
+      invalid.dataset.result = "invalid";
+      invalidLabel.appendChild(invalid);
+      invalidLabel.appendChild(document.createTextNode("Pas validee"));
+
+      const comment = document.createElement("textarea");
+      comment.className = "case-comment";
+      comment.placeholder = "Commentaire optionnel : bug, reserve, screenshot, etape de reproduction...";
+
+      row.appendChild(validLabel);
+      row.appendChild(invalidLabel);
+      row.appendChild(comment);
+      container.appendChild(row);
+
+      const oldValidKey = prefix + "check:" + id;
+      const validKey = prefix + "result:valid:" + id;
+      const invalidKey = prefix + "result:invalid:" + id;
+      const commentKey = prefix + "result:comment:" + id;
+
+      valid.checked = localStorage.getItem(validKey) === "1" || localStorage.getItem(oldValidKey) === "1";
+      invalid.checked = localStorage.getItem(invalidKey) === "1";
+      if (valid.checked && invalid.checked) invalid.checked = false;
+      box.checked = valid.checked;
+
+      const savedComment = localStorage.getItem(commentKey);
+      if (savedComment !== null) comment.value = savedComment;
+
+      valid.addEventListener("change", () => {
+        if (valid.checked) invalid.checked = false;
+        box.checked = valid.checked;
+        localStorage.setItem(validKey, valid.checked ? "1" : "0");
+        localStorage.setItem(invalidKey, invalid.checked ? "1" : "0");
+        localStorage.setItem(oldValidKey, valid.checked ? "1" : "0");
+        updateProgress();
+      });
+
+      invalid.addEventListener("change", () => {
+        if (invalid.checked) valid.checked = false;
+        box.checked = valid.checked;
+        localStorage.setItem(validKey, valid.checked ? "1" : "0");
+        localStorage.setItem(invalidKey, invalid.checked ? "1" : "0");
+        localStorage.setItem(oldValidKey, valid.checked ? "1" : "0");
+        updateProgress();
+      });
+
+      comment.addEventListener("input", () => {
+        localStorage.setItem(commentKey, comment.value);
+      });
+
+      resultControls.set(id, { valid, invalid, comment, validKey, invalidKey, commentKey, oldValidKey });
+    }
+
+    checks.forEach(makeResultControls);
+
+    function updateProgress() {
+      const done = checks.filter(c => {
+        const controls = resultControls.get(c.dataset.check);
+        return controls && (controls.valid.checked || controls.invalid.checked);
+      }).length;
+      const total = checks.length;
+      const failed = checks.filter(c => {
+        const controls = resultControls.get(c.dataset.check);
+        return controls && controls.invalid.checked;
+      }).length;
+      counter.textContent = done + " / " + total + " tests renseignes" + (failed > 0 ? " - " + failed + " non valides" : "");
+      progress.style.width = total === 0 ? "0%" : ((done / total) * 100).toFixed(1) + "%";
+    }
+
+    checks.forEach(box => {
+      box.addEventListener("change", () => {
+        const controls = resultControls.get(box.dataset.check);
+        if (controls) {
+          controls.valid.checked = box.checked;
+          if (box.checked) controls.invalid.checked = false;
+          localStorage.setItem(controls.validKey, controls.valid.checked ? "1" : "0");
+          localStorage.setItem(controls.invalidKey, controls.invalid.checked ? "1" : "0");
+          localStorage.setItem(controls.oldValidKey, controls.valid.checked ? "1" : "0");
+        }
+        updateProgress();
+      });
+    });
+
+    fields.forEach(field => {
+      const key = prefix + "field:" + field.dataset.store;
+      const saved = localStorage.getItem(key);
+      if (saved !== null) field.value = saved;
+      field.addEventListener("input", () => localStorage.setItem(key, field.value));
+    });
+
+    document.getElementById("reset").addEventListener("click", () => {
+      if (!confirm("Reset tous les statuts ? Les commentaires restent conserves.")) return;
+      checks.forEach(box => {
+        box.checked = false;
+        const controls = resultControls.get(box.dataset.check);
+        if (!controls) return;
+        controls.valid.checked = false;
+        controls.invalid.checked = false;
+        localStorage.removeItem(controls.validKey);
+        localStorage.removeItem(controls.invalidKey);
+        localStorage.removeItem(controls.oldValidKey);
+      });
+      updateProgress();
+    });
+
+    function caseTitle(box) {
+      const title = box.closest(".case")?.querySelector(".case-title span");
+      return title ? title.textContent.trim() : box.dataset.check;
+    }
+
+    function sectionTitle(box) {
+      const section = box.closest("section");
+      const title = section ? section.querySelector("h2") : null;
+      return title ? title.textContent.trim() : "";
+    }
+
+    function collectReport() {
+      const results = checks.map(box => {
+        const controls = resultControls.get(box.dataset.check);
+        const status = controls?.valid.checked ? "validated"
+          : controls?.invalid.checked ? "not_validated"
+          : "not_tested";
+        return {
+          id: box.dataset.check,
+          section: sectionTitle(box),
+          title: caseTitle(box),
+          status,
+          validated: status === "validated",
+          notValidated: status === "not_validated",
+          comment: controls ? controls.comment.value.trim() : ""
+        };
+      });
+      const fieldsData = {};
+      fields.forEach(field => {
+        fieldsData[field.dataset.store] = field.value;
+      });
+      const summary = {
+        total: results.length,
+        validated: results.filter(r => r.status === "validated").length,
+        notValidated: results.filter(r => r.status === "not_validated").length,
+        notTested: results.filter(r => r.status === "not_tested").length
+      };
+      return {
+        reportType: "arcadia-dungeon-v1.1-recette",
+        exportedAt: new Date().toISOString(),
+        target: {
+          mod: "Arcadia Dungeon",
+          version: "1.1 candidate",
+          minecraft: "1.21.1",
+          neoforge: "21.1.222",
+          tesseraUI: "1.1",
+          jar: "arcadia_dungeon-1.1.0.jar"
+        },
+        metadata: fieldsData,
+        summary,
+        results
+      };
+    }
+
+    function safeFilePart(value) {
+      return (value || "arcadia-test")
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 48) || "arcadia-test";
+    }
+
+    function exportJson() {
+      const report = collectReport();
+      const json = JSON.stringify(report, null, 2);
+      const tester = safeFilePart(report.metadata.tester);
+      const date = safeFilePart(report.metadata.date || new Date().toISOString().slice(0, 10));
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "arcadia-dungeon-v1.1-recette-" + tester + "-" + date + ".json";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      exportStatus.textContent = "JSON exporte : " + report.summary.validated + "/" + report.summary.total + " valides";
+    }
+
+    async function copyJson() {
+      const json = JSON.stringify(collectReport(), null, 2);
+      try {
+        await navigator.clipboard.writeText(json);
+        exportStatus.textContent = "JSON copie dans le presse-papiers";
+      } catch (err) {
+        const area = document.createElement("textarea");
+        area.value = json;
+        area.style.position = "fixed";
+        area.style.left = "-9999px";
+        document.body.appendChild(area);
+        area.focus();
+        area.select();
+        document.execCommand("copy");
+        area.remove();
+        exportStatus.textContent = "JSON copie via fallback";
+      }
+    }
+
+    document.getElementById("export-json").addEventListener("click", exportJson);
+    document.getElementById("copy-json").addEventListener("click", copyJson);
+
+    updateProgress();
+  </script>
+</body>
+</html>
