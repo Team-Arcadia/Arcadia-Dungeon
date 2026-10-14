@@ -48,14 +48,46 @@ public class DungeonManager {
     public void setServer(MinecraftServer server) {
         this.server = server;
         if (server == null) {
+            saveTimers();
             activeInstances.clear();
             playerCooldowns.clear();
+            dungeonAvailability.clear();
+            availabilityAnnounced.clear();
             playerReturnPoints.clear();
             allowedBeneficialEffects.clear();
             playerToDungeon.clear();
         } else {
             PlayerProgressManager.getInstance().loadAll();
+            DungeonTimerStore.load(playerCooldowns, dungeonAvailability);
+            // A timer that ran out while the server was down announces nothing at start
+            long now = System.currentTimeMillis();
+            for (Map.Entry<String, Long> entry : dungeonAvailability.entrySet()) {
+                DungeonConfig config = ConfigManager.getInstance().getDungeon(entry.getKey());
+                if (config == null || (now - entry.getValue()) / 1000 >= config.availableEverySeconds) {
+                    availabilityAnnounced.add(entry.getKey());
+                }
+            }
         }
+    }
+
+    private void saveTimers() {
+        DungeonTimerStore.save(playerCooldowns, dungeonAvailability);
+    }
+
+    /**
+     * True when both dungeons have an area in the same dimension and the two boxes touch.
+     * A normal dungeon and its challenge version share the same build, so they must never run together.
+     */
+    private static boolean areasOverlap(DungeonConfig a, DungeonConfig b) {
+        if (!a.hasArea() || !b.hasArea()) return false;
+        if (!a.areaPos1.dimension.equals(b.areaPos1.dimension)) return false;
+        return rangesOverlap(a.areaPos1.x, a.areaPos2.x, b.areaPos1.x, b.areaPos2.x)
+                && rangesOverlap(a.areaPos1.y, a.areaPos2.y, b.areaPos1.y, b.areaPos2.y)
+                && rangesOverlap(a.areaPos1.z, a.areaPos2.z, b.areaPos1.z, b.areaPos2.z);
+    }
+
+    private static boolean rangesOverlap(int a1, int a2, int b1, int b2) {
+        return Math.max(Math.min(a1, a2), Math.min(b1, b2)) <= Math.min(Math.max(a1, a2), Math.max(b1, b2));
     }
 
     public MinecraftServer getServer() {
@@ -77,6 +109,17 @@ public class DungeonManager {
         if (activeInstances.containsKey(dungeonId)) {
             initiator.sendSystemMessage(Component.literal("[Arcadia] Ce donjon est deja en cours!").withStyle(ChatFormatting.RED));
             return null;
+        }
+
+        for (DungeonInstance other : activeInstances.values()) {
+            DungeonConfig otherConfig = other.getConfig();
+            if (areasOverlap(config, otherConfig)) {
+                initiator.sendSystemMessage(Component.literal("[Arcadia] ").withStyle(ChatFormatting.RED)
+                        .append(parseColorCodes(otherConfig.name))
+                        .append(Component.literal(" est en cours dans la meme zone. Reessayez quand il sera termine.")
+                                .withStyle(ChatFormatting.RED)));
+                return null;
+            }
         }
 
         // Check progression requirement
@@ -327,6 +370,7 @@ public class DungeonManager {
             dungeonAvailability.put(dungeonId, System.currentTimeMillis());
             availabilityAnnounced.remove(dungeonId);
         }
+        saveTimers();
 
         if (config.announceCompletion && server != null) {
             String playerNames = instance.getPlayerNames(server);
@@ -367,6 +411,7 @@ public class DungeonManager {
             dungeonAvailability.put(dungeonId, System.currentTimeMillis());
             availabilityAnnounced.remove(dungeonId);
         }
+        saveTimers();
 
         if (config.announceCompletion && server != null && !playerNames.isEmpty()) {
             String msg = config.failMessage
@@ -507,10 +552,12 @@ public class DungeonManager {
 
     public void clearCooldown(UUID playerId) {
         playerCooldowns.entrySet().removeIf(e -> e.getKey().startsWith(playerId.toString()));
+        saveTimers();
     }
 
     public void clearAllCooldowns() {
         playerCooldowns.clear();
+        saveTimers();
     }
 
     public void allowBeneficialEffect(ServerPlayer player, net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> effect, int amplifier, int durationTicks) {
@@ -641,8 +688,15 @@ public class DungeonManager {
     public void pruneExpiredData() {
         long now = System.currentTimeMillis();
 
-        // Prune player cooldowns older than max possible cooldown (24h safety cap)
-        playerCooldowns.entrySet().removeIf(e -> (now - e.getValue()) / 1000 > 86400);
+        // Prune a player cooldown once its own dungeon cooldown is over (key = "uuid:dungeonId").
+        // A fixed 24h cap used to drop the cooldown of dungeons set to 36h.
+        playerCooldowns.entrySet().removeIf(e -> {
+            String key = e.getKey();
+            int sep = key.indexOf(':');
+            DungeonConfig config = sep < 0 ? null : ConfigManager.getInstance().getDungeon(key.substring(sep + 1));
+            long cooldown = config == null ? 0 : config.cooldownSeconds;
+            return (now - e.getValue()) / 1000 > cooldown;
+        });
         allowedBeneficialEffects.entrySet().removeIf(entry -> {
             entry.getValue().entrySet().removeIf(effect -> effect.getValue() < now);
             return entry.getValue().isEmpty();
