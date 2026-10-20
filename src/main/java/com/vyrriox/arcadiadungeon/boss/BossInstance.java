@@ -7,6 +7,7 @@ import com.vyrriox.arcadiadungeon.config.PhaseConfig;
 import com.vyrriox.arcadiadungeon.config.SummonConfig;
 import com.vyrriox.arcadiadungeon.dungeon.CombatTuning;
 import com.vyrriox.arcadiadungeon.dungeon.DungeonManager;
+import com.vyrriox.arcadiadungeon.dungeon.DungeonStats;
 import com.vyrriox.arcadiadungeon.dungeon.SpawnSafety;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -121,6 +122,7 @@ public class BossInstance {
         // Temporary invulnerability to prevent boss being killed before players arrive
         bossEntity.setInvulnerable(true);
 
+        DungeonStats.remember(bossEntity);
         level.addFreshEntity(bossEntity);
 
         if (config.showBossBar) {
@@ -333,6 +335,7 @@ public class BossInstance {
                 living.addTag("arcadia_managed");
                 living.addTag("arcadia_no_loot");
 
+                DungeonStats.remember(living);
                 level.addFreshEntity(living);
                 summonedMobs.add(living);
             } else {

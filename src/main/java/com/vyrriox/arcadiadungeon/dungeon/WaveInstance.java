@@ -142,6 +142,7 @@ public class WaveInstance {
                 living.addTag("arcadia_managed");
                 living.addTag("arcadia_no_loot");
 
+                DungeonStats.remember(living);
                 level.addFreshEntity(living);
                 aliveMobs.add(living);
                 successfulSpawns++;
