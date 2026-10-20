@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import com.vyrriox.arcadiadungeon.command.ArcadiaCommands;
 import com.vyrriox.arcadiadungeon.config.ConfigManager;
 import com.vyrriox.arcadiadungeon.dungeon.DungeonManager;
+import com.vyrriox.arcadiadungeon.dungeon.DungeonStats;
 import com.vyrriox.arcadiadungeon.event.DungeonEventHandler;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -40,6 +41,7 @@ public class ArcadiaDungeon {
         modEventBus.addListener(this::onCommonSetup);
         NeoForge.EVENT_BUS.register(this);
         NeoForge.EVENT_BUS.register(new DungeonEventHandler());
+        NeoForge.EVENT_BUS.register(DungeonStats.class);
     }
 
     private void onCommonSetup(final FMLCommonSetupEvent event) {
