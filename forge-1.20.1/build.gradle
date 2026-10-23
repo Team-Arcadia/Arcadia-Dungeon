@@ -1,0 +1,80 @@
+// Forge 1.20.1 build, ported from the NeoForge 1.21.1 build (ForgeGradle 6).
+// Java 17, official (Mojang) mappings. The NeoForge build also used Mojang names,
+// so symbol names match -- only the 1.20.1-vs-1.21.1 API surface differs.
+plugins {
+    id 'eclipse'
+    id 'idea'
+    id 'net.minecraftforge.gradle' version '[6.0.24,6.2)'
+}
+
+version = mod_version
+group = mod_group_id
+base { archivesName = "arcadia-dungeon-forge-${minecraft_version}" }
+
+// Loader-independent code for this Minecraft version lives in ../common on the main branch.
+// On the per-target branches it is merged into src/main, so this block does nothing there.
+def commonDir = file("../common/${minecraft_version}/src/main")
+if (commonDir.isDirectory()) {
+    sourceSets.main.java.srcDir(new File(commonDir, 'java'))
+    sourceSets.main.resources.srcDir(new File(commonDir, 'resources'))
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+minecraft {
+    mappings channel: 'official', version: minecraft_version
+    copyIdeResources = true
+
+    runs {
+        client {
+            workingDirectory project.file('run/client')
+            mods { "arcadia_dungeon" { source sourceSets.main } }
+        }
+        server {
+            workingDirectory project.file('run/server')
+            args '--nogui'
+            mods { "arcadia_dungeon" { source sourceSets.main } }
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    // Arcadia Lib, for the hub card and the panel protocol. This mod draws nothing itself:
+    // it describes a panel and the lib renders it on whatever client is connected, so no
+    // client source is needed here. It is on the runtime classpath and not compile only,
+    // because common setup calls the registry directly: absent at run time that is a
+    // NoClassDefFoundError before the server finishes starting. The NeoForge 1.21.1 target
+    // is wired the same way.
+    // fg.deobf registers the jar as a mod for the dev run rather than leaving it a bare
+    // classpath entry, which is what FML trips over: scanned off the classpath it is
+    // found as a mod file whose language provider it cannot resolve.
+    implementation fg.deobf(fileTree(dir: 'libs', include: ['arcadia-lib-*.jar']))
+}
+
+tasks.withType(ProcessResources).configureEach {
+    var replaceProperties = [
+            minecraft_version      : minecraft_version,
+            minecraft_version_range: minecraft_version_range,
+            forge_version          : forge_version,
+            forge_version_range    : forge_version_range,
+            loader_version_range   : loader_version_range,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
+            mod_version            : mod_version,
+            mod_authors            : mod_authors,
+            mod_description        : mod_description
+    ]
+    inputs.properties replaceProperties
+    filesMatching(['META-INF/mods.toml']) {
+        expand replaceProperties
+    }
+}
+
+jar { manifest { attributes 'Implementation-Version': project.version } }
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
