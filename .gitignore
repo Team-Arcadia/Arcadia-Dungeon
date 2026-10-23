@@ -14,3 +14,7 @@ out/
 logs/
 .claude/
 gradle-wrapper.jar
+
+# The Arcadia Lib jar this mod compiles against is tracked: a clone has to
+# build without fetching it from somewhere else.
+!libs/arcadia-lib-*.jar

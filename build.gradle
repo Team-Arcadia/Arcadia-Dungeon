@@ -56,6 +56,10 @@ configurations {
 
 dependencies {
     implementation "net.neoforged:neoforge:${neo_version}"
+    // Arcadia Lib, for the hub card and the panel protocol. Compile only in spirit: this mod
+    // ships no client class and draws nothing itself, it describes a panel and the lib renders
+    // it on whatever client is connected.
+    implementation fileTree(dir: 'libs', include: ['arcadia-lib-*.jar'])
 }
 
 tasks.withType(ProcessResources).configureEach {

@@ -550,6 +550,32 @@ public class DungeonManager {
         }
     }
 
+    /**
+     * Seconds left before this player may run this dungeon again, or 0 when they may now.
+     *
+     * <p>Read-only: {@link #startDungeon} still enforces the cooldown and tells the player
+     * why it refused. This is here so a listing can show the wait instead of offering a run
+     * that is going to be turned down.</p>
+     */
+    public long getCooldownRemainingSeconds(UUID playerId, String dungeonId) {
+        DungeonConfig config = ConfigManager.getInstance().getDungeon(dungeonId);
+        if (config == null || config.cooldownSeconds <= 0) return 0;
+        Long lastRun = playerCooldowns.get(playerId + ":" + dungeonId);
+        if (lastRun == null) return 0;
+        long elapsed = (System.currentTimeMillis() - lastRun) / 1000;
+        return Math.max(0, config.cooldownSeconds - elapsed);
+    }
+
+    /** Seconds until this dungeon opens again on its availability timer, or 0 when it is open. */
+    public long getAvailabilityRemainingSeconds(String dungeonId) {
+        DungeonConfig config = ConfigManager.getInstance().getDungeon(dungeonId);
+        if (config == null || config.availableEverySeconds <= 0) return 0;
+        Long lastAvailable = dungeonAvailability.get(dungeonId);
+        if (lastAvailable == null) return 0;
+        long elapsed = (System.currentTimeMillis() - lastAvailable) / 1000;
+        return Math.max(0, config.availableEverySeconds - elapsed);
+    }
+
     public void clearCooldown(UUID playerId) {
         playerCooldowns.entrySet().removeIf(e -> e.getKey().startsWith(playerId.toString()));
         saveTimers();

@@ -46,6 +46,28 @@ public class ArcadiaDungeon {
 
     private void onCommonSetup(final FMLCommonSetupEvent event) {
         LOGGER.info("Arcadia Dungeon initializing...");
+
+        // The dungeon section of the Arcadia hub. This mod has no client half and is not
+        // getting one: it registers a card and the action that opens it, and Arcadia Lib
+        // sends both to whatever client connects. Nothing below touches a client class.
+        com.arcadia.lib.ArcadiaModRegistry.registerCard(new com.arcadia.lib.client.ArcadiaModCard(
+                com.vyrriox.arcadiadungeon.hub.DungeonsPanel.CARD_ID,
+                "⚔",
+                // Plain text, not translation keys: this mod is not installed on the client,
+                // so its language file is not there either and a key would print raw.
+                "Donjons",
+                "Lancez un donjon",
+                0xC0504A,
+                1,      // sortOrder
+                0,      // row
+                -1,     // tabIndex: not a dashboard tab, it opens its own panel
+                true,
+                null,
+                com.vyrriox.arcadiadungeon.hub.DungeonsPanel.OPEN_ACTION));
+
+        com.arcadia.lib.ArcadiaModRegistry.registerServerAction(
+                com.vyrriox.arcadiadungeon.hub.DungeonsPanel.OPEN_ACTION,
+                com.vyrriox.arcadiadungeon.hub.DungeonsPanel::open);
     }
 
     @SubscribeEvent
