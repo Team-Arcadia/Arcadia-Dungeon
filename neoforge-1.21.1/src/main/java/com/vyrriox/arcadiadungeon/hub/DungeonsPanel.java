@@ -49,6 +49,11 @@ public final class DungeonsPanel implements PanelProvider {
     /** Dungeon ids in the order the last build emitted them; an entry ref indexes this. */
     private final List<String> shown = new ArrayList<>();
 
+    @Override
+    public String cardId() {
+        return CARD_ID;
+    }
+
     /** Opens the dungeon list for this player. */
     public static void open(ServerPlayer player) {
         PanelService.open(player, new DungeonsPanel());
