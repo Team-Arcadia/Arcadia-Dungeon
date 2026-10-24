@@ -86,10 +86,8 @@ public final class DungeonsPanel implements PanelProvider {
             builder.entry(entryFor(ref, config, player, manager, progress, uuid));
         }
 
-        // The library's own key rather than a literal: arcadia-lib is on the client whatever
-        // this module is, so this one string does follow the player's language.
-        builder.button(PanelButton.of(BUTTON_CLOSE,
-                Component.translatable("arcadia_lib.panel.close"), PanelButtonStyle.GHOST));
+        // No Close button: the panel says "Press ESC to close" under its toolbar, and this
+        // panel had nothing else in its toolbar, so the button was the whole bar.
         return builder.build();
     }
 
