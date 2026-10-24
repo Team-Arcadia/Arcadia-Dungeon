@@ -3,7 +3,7 @@
 Every non-trivial error hit while working on this mod, with its root cause and what
 resolved it. Read it before touching an area a past error was recorded in.
 
-## [2026-10-24 18:15] - A fresh clone could not build any target
+## [2026-10-24 18:15] — A fresh clone could not build any target
 
 **Context:** Rebuilding a published version in a separate working copy, to compare it against
 2.0.0.
