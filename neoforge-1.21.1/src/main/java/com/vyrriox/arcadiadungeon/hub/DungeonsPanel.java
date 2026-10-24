@@ -72,9 +72,12 @@ public final class DungeonsPanel implements PanelProvider {
             if (progress.hasCompleted(uuid, config.id)) cleared++;
         }
 
+        // English, like every other panel in the hub. This module ships no language file, so
+        // its text can only ever be one language, and sitting in an English hub it was the one
+        // panel in French with the accents stripped out of it.
         PanelSpec.Builder builder = PanelSpec
-                .builder(Component.literal("Donjons").withStyle(ChatFormatting.GOLD))
-                .subtitle(Component.literal(cleared + " / " + configs.size() + " termine(s)")
+                .builder(Component.literal("Dungeons").withStyle(ChatFormatting.GOLD))
+                .subtitle(Component.literal(cleared + " / " + configs.size() + " cleared")
                         .withStyle(ChatFormatting.GRAY));
 
         for (DungeonConfig config : configs) {
@@ -83,8 +86,10 @@ public final class DungeonsPanel implements PanelProvider {
             builder.entry(entryFor(ref, config, player, manager, progress, uuid));
         }
 
+        // The library's own key rather than a literal: arcadia-lib is on the client whatever
+        // this module is, so this one string does follow the player's language.
         builder.button(PanelButton.of(BUTTON_CLOSE,
-                Component.literal("Fermer"), PanelButtonStyle.GHOST));
+                Component.translatable("arcadia_lib.panel.close"), PanelButtonStyle.GHOST));
         return builder.build();
     }
 
@@ -100,13 +105,13 @@ public final class DungeonsPanel implements PanelProvider {
         if (running != null) {
             DungeonState state = running.getState();
             if (state == DungeonState.RECRUITING) {
-                lore.add(Component.literal("Recrutement: " + running.getPlayerCount()
-                                + " joueur(s), " + running.getRecruitmentRemainingSeconds() + "s")
-                        .withStyle(ChatFormatting.YELLOW));
-                lore.add(Component.literal("Cliquez pour rejoindre").withStyle(ChatFormatting.GREEN));
+                lore.add(Component.literal("Recruiting: " + running.getPlayerCount()
+                                + " player(s), " + running.getRecruitmentRemainingSeconds() + "s")
+                        .withStyle(ChatFormatting.GRAY));
+                lore.add(Component.literal("Click to join").withStyle(ChatFormatting.GOLD));
                 accent = 0xFFD4A847;
             } else {
-                lore.add(Component.literal("En cours depuis "
+                lore.add(Component.literal("Running for "
                                 + DungeonManager.formatTime(running.getElapsedSeconds()))
                         .withStyle(ChatFormatting.RED));
                 clickable = false;
@@ -118,30 +123,33 @@ public final class DungeonsPanel implements PanelProvider {
             String locked = lockedBy(config, progress, uuid);
 
             if (locked != null) {
-                lore.add(Component.literal("Terminez d'abord: " + locked)
+                lore.add(Component.literal("Clear " + locked + " first")
                         .withStyle(ChatFormatting.RED));
                 clickable = false;
                 accent = 0xFF6A5A4A;
             } else if (availability > 0) {
-                lore.add(Component.literal("Disponible dans "
+                lore.add(Component.literal("Available in "
                                 + DungeonManager.formatTime(availability))
-                        .withStyle(ChatFormatting.YELLOW));
+                        .withStyle(ChatFormatting.GRAY));
                 clickable = false;
                 accent = 0xFF6A5A4A;
             } else if (cooldown > 0) {
                 lore.add(Component.literal("Cooldown: "
                                 + DungeonManager.formatTime(cooldown))
-                        .withStyle(ChatFormatting.YELLOW));
+                        .withStyle(ChatFormatting.GRAY));
                 clickable = false;
                 accent = 0xFF6A5A4A;
             } else {
-                lore.add(Component.literal("Cliquez pour lancer").withStyle(ChatFormatting.GREEN));
+                // Gold rather than green. Green is the brightest thing vanilla's palette has and
+                // it was the loudest colour on a panel whose whole family is brass; the one line
+                // that is a call to action can be the warm accent instead.
+                lore.add(Component.literal("Click to start").withStyle(ChatFormatting.GOLD));
                 accent = completed ? 0xFF4ECCA3 : 0xFFB87333;
             }
         }
 
         if (completed) {
-            lore.add(Component.literal("Deja termine").withStyle(ChatFormatting.DARK_GRAY));
+            lore.add(Component.literal("Already cleared").withStyle(ChatFormatting.DARK_GRAY));
         }
 
         PanelEntry entry = new PanelEntry(ref, iconFor(config, running, completed),

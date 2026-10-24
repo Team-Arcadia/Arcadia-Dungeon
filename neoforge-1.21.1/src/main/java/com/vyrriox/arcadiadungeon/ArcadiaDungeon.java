@@ -54,9 +54,12 @@ public class ArcadiaDungeon {
                 com.vyrriox.arcadiadungeon.hub.DungeonsPanel.CARD_ID,
                 "⚔",
                 // Plain text, not translation keys: this mod is not installed on the client,
-                // so its language file is not there either and a key would print raw.
-                "Donjons",
-                "Lancez un donjon",
+                // so its language file is not there either and a key would print raw. Which
+                // also means this text can only ever be one language, and the hub it sits in
+                // is English, so it is English. It read "Donjons / Lancez un donjon" next to
+                // six English cards.
+                "Dungeons",
+                "Start a run",
                 0xC0504A,
                 1,      // sortOrder
                 0,      // row
