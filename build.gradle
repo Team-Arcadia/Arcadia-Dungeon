@@ -21,6 +21,14 @@ base {
     archivesName = mod_id
 }
 
+// Loader-independent code for this Minecraft version lives in ../common on the main branch.
+// On the per-target branches it is merged into src/main, so this block does nothing there.
+def commonDir = file("../common/${minecraft_version}/src/main")
+if (commonDir.isDirectory()) {
+    sourceSets.main.java.srcDir(new File(commonDir, 'java'))
+    sourceSets.main.resources.srcDir(new File(commonDir, 'resources'))
+}
+
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 runs {
