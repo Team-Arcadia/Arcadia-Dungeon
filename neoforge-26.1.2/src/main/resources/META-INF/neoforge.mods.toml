@@ -23,3 +23,14 @@ description='''${mod_description}'''
     versionRange="${minecraft_version_range}"
     ordering="NONE"
     side="BOTH"
+
+# arcadia-lib is not optional: ArcadiaDungeon registers its hub card into the lib's registry
+# while the mod is being constructed, and the dungeon panel imports the lib's panel protocol
+# directly. Without this, a modpack carrying an old lib crashes on a missing class instead of
+# saying which mod is too old.
+[[dependencies.${mod_id}]]
+    modId="arcadia_lib"
+    type="required"
+    versionRange="[2.0.0,)"
+    ordering="AFTER"
+    side="BOTH"
