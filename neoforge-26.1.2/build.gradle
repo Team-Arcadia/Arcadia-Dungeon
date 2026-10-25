@@ -61,3 +61,49 @@ tasks.withType(ProcessResources).configureEach {
 
 jar { manifest { attributes 'Implementation-Version': project.version } }
 tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+
+// -- Dev runs find the lib jar by themselves --------------------------------------------------
+// arcadia-lib is not registered as a mod of this project, so a dev run stops on the required
+// arcadia_lib dependency until its jar sits in the run directory's mods/ folder. That used to be
+// a line in a comment asking for a manual copy, and the manual copy never happened: the dedicated
+// server had never been started on this target at all, on any target of any dependent mod. A
+// build step does it now, because a build step runs and a comment does not.
+//
+// Only one jar is left in place. Two versions of the same mod id in mods/ is a duplicate-mod
+// crash, and libs/ keeps older builds around on purpose.
+def arcadiaLibJars = fileTree(dir: 'libs', include: ['arcadia-lib-*.jar'])
+tasks.register('deployArcadiaLib') {
+    group = 'arcadia'
+    description = 'Copies the newest arcadia-lib jar from libs/ into each run directory.'
+    def jars = arcadiaLibJars
+    def dirs = ['run/client', 'run/server']
+    def root = projectDir
+    inputs.files jars
+    outputs.upToDateWhen { false }
+    doLast {
+        def newest = jars.files.findAll { it.isFile() }.max { it.lastModified() }
+        if (newest == null) {
+            logger.warn('[arcadia] no arcadia-lib jar in libs/: a dev run will stop on the '
+                    + 'required arcadia_lib dependency. Build the lib and drop its jar there.')
+            return
+        }
+        dirs.each { String name ->
+            File mods = new File(root, name + '/mods')
+            mods.mkdirs()
+            mods.listFiles()?.each { File old ->
+                if (old.name.startsWith('arcadia-lib-') && old.name.endsWith('.jar')
+                        && old.name != newest.name) {
+                    old.delete()
+                }
+            }
+            java.nio.file.Files.copy(newest.toPath(), new File(mods, newest.name).toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+            logger.lifecycle("[arcadia] ${newest.name} -> ${name}/mods/")
+        }
+    }
+}
+tasks.configureEach {
+    if (name in ['runClient', 'runServer', 'runGameTestServer', 'runData']) {
+        dependsOn 'deployArcadiaLib'
+    }
+}

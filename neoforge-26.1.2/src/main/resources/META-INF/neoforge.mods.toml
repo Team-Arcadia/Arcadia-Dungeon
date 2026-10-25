@@ -9,6 +9,13 @@ version="${mod_version}"
 displayName="${mod_name}"
 authors="${mod_authors}"
 description='''${mod_description}'''
+# This mod ships no client class at all: every bit of its logic is server side and the client
+# only ever draws what arcadia-lib's panel protocol sends it. Without this line the loader
+# defaults to MATCH_VERSION, which means a client that does not have the dungeon installed is
+# refused by a server that does. That would undo the whole point of a server-side mod: the
+# players would all have to install it to connect. IGNORE_ALL_VERSION is what LuckPerms, the
+# plainest server-side mod in the pack, declares for the same reason.
+displayTest="IGNORE_ALL_VERSION"
 
 [[dependencies.${mod_id}]]
     modId="neoforge"
@@ -22,4 +29,15 @@ description='''${mod_description}'''
     type="required"
     versionRange="${minecraft_version_range}"
     ordering="NONE"
+    side="BOTH"
+
+# arcadia-lib is not optional: ArcadiaDungeon registers its hub card into the lib's registry
+# while the mod is being constructed, and the dungeon panel imports the lib's panel protocol
+# directly. Without this, a modpack carrying an old lib crashes on a missing class instead of
+# saying which mod is too old.
+[[dependencies.${mod_id}]]
+    modId="arcadia_lib"
+    type="required"
+    versionRange="[2.0.0,)"
+    ordering="AFTER"
     side="BOTH"
