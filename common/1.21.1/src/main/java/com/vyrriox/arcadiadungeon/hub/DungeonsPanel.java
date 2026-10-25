@@ -81,8 +81,8 @@ public final class DungeonsPanel implements PanelProvider {
         // its text can only ever be one language, and sitting in an English hub it was the one
         // panel in French with the accents stripped out of it.
         PanelSpec.Builder builder = PanelSpec
-                .builder(Component.literal("Dungeons").withStyle(ChatFormatting.GOLD))
-                .subtitle(Component.literal(cleared + " / " + configs.size() + " cleared")
+                .builder(Component.translatable("arcadia_dungeon.panel.title").withStyle(ChatFormatting.GOLD))
+                .subtitle(Component.translatable("arcadia_dungeon.panel.cleared", cleared, configs.size())
                         .withStyle(ChatFormatting.GRAY));
 
         for (DungeonConfig config : configs) {
@@ -108,14 +108,14 @@ public final class DungeonsPanel implements PanelProvider {
         if (running != null) {
             DungeonState state = running.getState();
             if (state == DungeonState.RECRUITING) {
-                lore.add(Component.literal("Recruiting: " + running.getPlayerCount()
-                                + " player(s), " + running.getRecruitmentRemainingSeconds() + "s")
+                lore.add(Component.translatable("arcadia_dungeon.panel.recruiting", running.getPlayerCount(),
+                                running.getRecruitmentRemainingSeconds())
                         .withStyle(ChatFormatting.GRAY));
-                lore.add(Component.literal("Click to join").withStyle(ChatFormatting.GOLD));
+                lore.add(Component.translatable("arcadia_dungeon.panel.click_join").withStyle(ChatFormatting.GOLD));
                 accent = 0xFFD4A847;
             } else {
-                lore.add(Component.literal("Running for "
-                                + DungeonManager.formatTime(running.getElapsedSeconds()))
+                lore.add(Component.translatable("arcadia_dungeon.panel.running_for",
+                                DungeonManager.formatTime(running.getElapsedSeconds()))
                         .withStyle(ChatFormatting.RED));
                 clickable = false;
                 accent = 0xFFC04040;
@@ -126,19 +126,19 @@ public final class DungeonsPanel implements PanelProvider {
             String locked = lockedBy(config, progress, uuid);
 
             if (locked != null) {
-                lore.add(Component.literal("Clear " + locked + " first")
+                lore.add(Component.translatable("arcadia_dungeon.panel.clear_first", locked)
                         .withStyle(ChatFormatting.RED));
                 clickable = false;
                 accent = 0xFF6A5A4A;
             } else if (availability > 0) {
-                lore.add(Component.literal("Available in "
-                                + DungeonManager.formatTime(availability))
+                lore.add(Component.translatable("arcadia_dungeon.panel.available_in",
+                                DungeonManager.formatTime(availability))
                         .withStyle(ChatFormatting.GRAY));
                 clickable = false;
                 accent = 0xFF6A5A4A;
             } else if (cooldown > 0) {
-                lore.add(Component.literal("Cooldown: "
-                                + DungeonManager.formatTime(cooldown))
+                lore.add(Component.translatable("arcadia_dungeon.panel.cooldown",
+                                DungeonManager.formatTime(cooldown))
                         .withStyle(ChatFormatting.GRAY));
                 clickable = false;
                 accent = 0xFF6A5A4A;
@@ -146,13 +146,13 @@ public final class DungeonsPanel implements PanelProvider {
                 // Gold rather than green. Green is the brightest thing vanilla's palette has and
                 // it was the loudest colour on a panel whose whole family is brass; the one line
                 // that is a call to action can be the warm accent instead.
-                lore.add(Component.literal("Click to start").withStyle(ChatFormatting.GOLD));
+                lore.add(Component.translatable("arcadia_dungeon.panel.click_start").withStyle(ChatFormatting.GOLD));
                 accent = completed ? 0xFF4ECCA3 : 0xFFB87333;
             }
         }
 
         if (completed) {
-            lore.add(Component.literal("Already cleared").withStyle(ChatFormatting.DARK_GRAY));
+            lore.add(Component.translatable("arcadia_dungeon.panel.already_cleared").withStyle(ChatFormatting.DARK_GRAY));
         }
 
         PanelEntry entry = new PanelEntry(ref, iconFor(config, running, completed),

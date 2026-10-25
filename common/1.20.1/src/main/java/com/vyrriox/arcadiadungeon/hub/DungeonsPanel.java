@@ -73,8 +73,8 @@ public final class DungeonsPanel implements PanelProvider {
         }
 
         PanelSpec.Builder builder = PanelSpec
-                .builder(Component.literal("Donjons").withStyle(ChatFormatting.GOLD))
-                .subtitle(Component.literal(cleared + " / " + configs.size() + " termine(s)")
+                .builder(Component.translatable("arcadia_dungeon.panel.title").withStyle(ChatFormatting.GOLD))
+                .subtitle(Component.translatable("arcadia_dungeon.panel.cleared", cleared, configs.size())
                         .withStyle(ChatFormatting.GRAY));
 
         for (DungeonConfig config : configs) {
@@ -83,8 +83,10 @@ public final class DungeonsPanel implements PanelProvider {
             builder.entry(entryFor(ref, config, player, manager, progress, uuid));
         }
 
-        builder.button(PanelButton.of(BUTTON_CLOSE,
-                Component.literal("Fermer"), PanelButtonStyle.GHOST));
+        // No close button. The panel prints "Press ESC to close" under its toolbar and Escape has
+        // always closed a panel, so the button spent a column repeating the keyboard. 1.21.1
+        // dropped it for that reason; this is the same screen catching up. BUTTON_CLOSE and its
+        // handler stay, since answering a ref the panel no longer draws costs nothing.
         return builder.build();
     }
 
@@ -100,14 +102,14 @@ public final class DungeonsPanel implements PanelProvider {
         if (running != null) {
             DungeonState state = running.getState();
             if (state == DungeonState.RECRUITING) {
-                lore.add(Component.literal("Recrutement: " + running.getPlayerCount()
-                                + " joueur(s), " + running.getRecruitmentRemainingSeconds() + "s")
+                lore.add(Component.translatable("arcadia_dungeon.panel.recruiting", running.getPlayerCount(),
+                                running.getRecruitmentRemainingSeconds())
                         .withStyle(ChatFormatting.YELLOW));
-                lore.add(Component.literal("Cliquez pour rejoindre").withStyle(ChatFormatting.GREEN));
+                lore.add(Component.translatable("arcadia_dungeon.panel.click_join").withStyle(ChatFormatting.GREEN));
                 accent = 0xFFD4A847;
             } else {
-                lore.add(Component.literal("En cours depuis "
-                                + DungeonManager.formatTime(running.getElapsedSeconds()))
+                lore.add(Component.translatable("arcadia_dungeon.panel.running_for",
+                                DungeonManager.formatTime(running.getElapsedSeconds()))
                         .withStyle(ChatFormatting.RED));
                 clickable = false;
                 accent = 0xFFC04040;
@@ -118,30 +120,30 @@ public final class DungeonsPanel implements PanelProvider {
             String locked = lockedBy(config, progress, uuid);
 
             if (locked != null) {
-                lore.add(Component.literal("Terminez d'abord: " + locked)
+                lore.add(Component.translatable("arcadia_dungeon.panel.clear_first", locked)
                         .withStyle(ChatFormatting.RED));
                 clickable = false;
                 accent = 0xFF6A5A4A;
             } else if (availability > 0) {
-                lore.add(Component.literal("Disponible dans "
-                                + DungeonManager.formatTime(availability))
+                lore.add(Component.translatable("arcadia_dungeon.panel.available_in",
+                                DungeonManager.formatTime(availability))
                         .withStyle(ChatFormatting.YELLOW));
                 clickable = false;
                 accent = 0xFF6A5A4A;
             } else if (cooldown > 0) {
-                lore.add(Component.literal("Cooldown: "
-                                + DungeonManager.formatTime(cooldown))
+                lore.add(Component.translatable("arcadia_dungeon.panel.cooldown",
+                                DungeonManager.formatTime(cooldown))
                         .withStyle(ChatFormatting.YELLOW));
                 clickable = false;
                 accent = 0xFF6A5A4A;
             } else {
-                lore.add(Component.literal("Cliquez pour lancer").withStyle(ChatFormatting.GREEN));
+                lore.add(Component.translatable("arcadia_dungeon.panel.click_start").withStyle(ChatFormatting.GREEN));
                 accent = completed ? 0xFF4ECCA3 : 0xFFB87333;
             }
         }
 
         if (completed) {
-            lore.add(Component.literal("Deja termine").withStyle(ChatFormatting.DARK_GRAY));
+            lore.add(Component.translatable("arcadia_dungeon.panel.already_cleared").withStyle(ChatFormatting.DARK_GRAY));
         }
 
         PanelEntry entry = new PanelEntry(ref, iconFor(config, running, completed),

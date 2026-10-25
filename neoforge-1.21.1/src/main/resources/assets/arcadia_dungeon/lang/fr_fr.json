@@ -1,0 +1,12 @@
+{
+  "arcadia_dungeon.panel.title": "Donjons",
+  "arcadia_dungeon.panel.cleared": "%s / %s terminé(s)",
+  "arcadia_dungeon.panel.recruiting": "Recrutement : %s joueur(s), %ss",
+  "arcadia_dungeon.panel.click_join": "Cliquez pour rejoindre",
+  "arcadia_dungeon.panel.running_for": "En cours depuis %s",
+  "arcadia_dungeon.panel.clear_first": "Terminez d’abord %s",
+  "arcadia_dungeon.panel.available_in": "Disponible dans %s",
+  "arcadia_dungeon.panel.cooldown": "Temps de recharge : %s",
+  "arcadia_dungeon.panel.click_start": "Cliquez pour lancer",
+  "arcadia_dungeon.panel.already_cleared": "Déjà terminé"
+}

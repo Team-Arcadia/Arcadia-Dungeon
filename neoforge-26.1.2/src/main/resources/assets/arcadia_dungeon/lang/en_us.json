@@ -1,0 +1,12 @@
+{
+  "arcadia_dungeon.panel.title": "Dungeons",
+  "arcadia_dungeon.panel.cleared": "%s / %s cleared",
+  "arcadia_dungeon.panel.recruiting": "Recruiting: %s player(s), %ss",
+  "arcadia_dungeon.panel.click_join": "Click to join",
+  "arcadia_dungeon.panel.running_for": "Running for %s",
+  "arcadia_dungeon.panel.clear_first": "Clear %s first",
+  "arcadia_dungeon.panel.available_in": "Available in %s",
+  "arcadia_dungeon.panel.cooldown": "Cooldown: %s",
+  "arcadia_dungeon.panel.click_start": "Click to start",
+  "arcadia_dungeon.panel.already_cleared": "Already cleared"
+}
