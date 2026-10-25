@@ -40,6 +40,11 @@ minecraft {
 
 repositories {
     mavenCentral()
+    // libs/ as a repository rather than a file tree: fg.deobf only remaps dependencies that come
+    // from a repository. A files(...) dependency is never deobfuscated, so wrapping a fileTree in
+    // fg.deobf does nothing at all, silently. Coordinates are read off the file name,
+    // <artifact>-<version>.jar.
+    flatDir { dir "$projectDir/libs" }
 }
 
 dependencies {
@@ -53,7 +58,12 @@ dependencies {
     // fg.deobf registers the jar as a mod for the dev run rather than leaving it a bare
     // classpath entry, which is what FML trips over: scanned off the classpath it is
     // found as a mod file whose language provider it cannot resolve.
-    implementation fg.deobf(fileTree(dir: 'libs', include: ['arcadia-lib-*.jar']))
+    // fg.deobf on a coordinate, not on a fileTree. The previous line read
+    // fg.deobf(fileTree(...)), which looks like it remaps the jar and does not: a files(...)
+    // dependency is never deobfuscated. So the lib stayed SRG-mapped, and this target's dev
+    // server died on NoSuchMethodError for Item$Properties.m_41487_ the moment the lib
+    // registered an item. The jar is named "-dev" but carries SRG names and no Mojang name.
+    implementation fg.deobf("localjars:arcadia-lib-forge-1.20.1:2.0.0-dev")
 }
 
 tasks.withType(ProcessResources).configureEach {
