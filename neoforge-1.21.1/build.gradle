@@ -31,6 +31,15 @@ if (commonDir.isDirectory()) {
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
+// GameTests (run with ./gradlew runGameTestServer). Compiled against main, never packaged.
+// The gameTestServer run was already declared and had nothing to run: the mod had no tests.
+sourceSets {
+    gametest {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
 runs {
     configureEach {
         systemProperty 'forge.logging.markers', 'REGISTRIES'
@@ -48,7 +57,10 @@ runs {
     }
 
     gameTestServer {
-        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+        modSource project.sourceSets.gametest
+        // 'neoforge.', not 'forge.': NeoForge 21 reads the first and ignores the second, so the
+        // namespace was never enabled and the run would have found no tests even with some.
+        systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
     }
 
     data {
@@ -159,4 +171,10 @@ tasks.configureEach {
     if (name in ['runClient', 'runServer', 'runGameTestServer', 'runData']) {
         dependsOn 'deployArcadiaLib'
     }
+}
+
+configurations {
+    gametestImplementation.extendsFrom implementation
+    gametestRuntimeOnly.extendsFrom runtimeOnly
+    gametestCompileOnly.extendsFrom compileOnly
 }
