@@ -12,6 +12,14 @@ panel protocol in Arcadia Lib.
 ---
 
 ## [2.0.0] - 2026-10-26
+### Correctifs
+
+- **Les pommes dorées ne faisaient rien dans un donjon** - Un donjon refuse tout effet bénéfique sauf autorisation préalable, et les pommes dorées sont censées être l’exception. L’autorisation était écrite à la fin de la consommation, que NeoForge signale après que les effets ont déjà été proposés et refusés : la pomme était donc mangée pour rien, sans Régénération ni Absorption, et sans Résistance ni Résistance au feu pour une pomme enchantée. Elle est maintenant écrite au début de la consommation, trente-deux ticks plus tôt, et la fenêtre ouverte est courte pour qu’une bouchée annulée ne laisse aucune brèche.
+
+### Fixed
+
+- **Golden apples did nothing inside a dungeon** - A dungeon refuses every beneficial effect unless it has been allowed in advance, and golden apples are meant to be the exception. The allowance was written when the apple finished being eaten, which NeoForge posts after the effects have already been offered and refused, so the apple was consumed for nothing: no Regeneration, no Absorption, and for an enchanted one no Resistance or Fire Resistance either. It is now written when the player starts eating, about thirty two ticks earlier, and the window it opens is short so a cancelled bite leaves no gap.
+
 
 ### Added
 
