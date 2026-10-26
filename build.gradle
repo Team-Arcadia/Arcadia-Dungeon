@@ -18,7 +18,7 @@ repositories {
 }
 
 base {
-    archivesName = mod_id
+    archivesName = "arcadia-dungeon-neoforge-${minecraft_version}"
 }
 
 // Loader-independent code for this Minecraft version lives in ../common on the main branch.
