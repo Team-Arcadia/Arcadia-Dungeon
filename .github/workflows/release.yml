@@ -1,108 +1,39 @@
 name: Release
 
+# A version tag (v1.4.2) builds every target and publishes their jars in one GitHub release.
 on:
-  push:
-    tags: [ 'v*' ]
-  workflow_dispatch:
+  workflow_run:
+    workflows: [ Build ]
+    types: [ completed ]
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
   release:
-    name: Build & Publish Release
+    if: github.event.workflow_run.conclusion == 'success' && startsWith(github.event.workflow_run.head_branch, 'v')
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
         with:
-          fetch-depth: 0
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: gradle
-
-      - name: Extract version from tag
-        id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-
-      - name: Build every target
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pattern: arcadia-dungeon-*
+          path: jars
+          merge-multiple: true
+      - name: Write release notes
         run: |
-          set -e
-          for target in forge-1.20.1 neoforge-1.21.1 neoforge-26.1.2; do
-            chmod +x "$target/gradlew"
-            ( cd "$target" && ./gradlew build --no-daemon )
-          done
-
-      - name: Collect the jars
-        id: collect
-        run: |
-          set -e
-          mkdir -p dist
-          VERSION="${{ steps.version.outputs.VERSION }}"
-          # The version from the tag decides which jar to publish, not "whatever is in build/libs".
-          # A CI checkout is clean so only the fresh jar is there, but a cached or reused workspace
-          # keeps older ones: tested locally, the same loop without this check also picked up a
-          # 1.4.4 jar and would have published the previous release alongside this one.
-          publishable() {
-            case "$1" in
-              *-dev.jar|*-sources.jar|*-javadoc.jar|*-slim.jar|*-all.jar) return 1 ;;
-              *-"$VERSION".jar) return 0 ;;
-              *) return 1 ;;
-            esac
-          }
-          # Two of these mods build the SAME file name on two targets, and release assets cannot
-          # share a name. Counting first and naming second matters: suffixing only the second one
-          # to arrive would leave the other with a bare name, and nothing would say which
-          # Minecraft version that bare one is for. If a name repeats, every jar in that set
-          # carries its target.
-          dupes=""
-          for target in forge-1.20.1 neoforge-1.21.1 neoforge-26.1.2; do
-            for jar in "$target"/build/libs/*.jar; do
-              publishable "$jar" || continue
-              dupes="$dupes $(basename "$jar")"
-            done
-          done
-          repeated=$(printf '%s\n' $dupes | sort | uniq -d)
-          for target in forge-1.20.1 neoforge-1.21.1 neoforge-26.1.2; do
-            for jar in "$target"/build/libs/*.jar; do
-              publishable "$jar" || continue
-              base=$(basename "$jar")
-              if printf '%s\n' "$repeated" | grep -qx "$base"; then
-                cp "$jar" "dist/${base%.jar}-$target.jar"
-              else
-                cp "$jar" "dist/$base"
-              fi
-            done
-          done
-          ls -1 dist
-
-      - name: Generate release notes
-        run: |
+          tag=${{ github.event.workflow_run.head_branch }}
           {
-            echo "## Arcadia Dungeon v${{ steps.version.outputs.VERSION }}"
+            echo "## Arcadia Dungeon ${tag#v}"
             echo
-            echo "### Downloads"
-            echo
-            for jar in dist/*.jar; do echo "- \`$(basename "$jar")\`"; done
-            echo
-            echo "### Requirements"
-            echo
-            echo "- Arcadia Lib ${{ steps.version.outputs.VERSION }} on the server, installed first"
+            echo "One jar per loader and Minecraft version: arcadia-dungeon-<loader>-<minecraft version>-<version>.jar."
             echo
             echo "See [CHANGELOG.md](CHANGELOG.md) for full details."
           } > RELEASE_NOTES.md
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event.workflow_run.head_branch }}
           body_path: RELEASE_NOTES.md
-          files: dist/*.jar
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          files: jars/*.jar
