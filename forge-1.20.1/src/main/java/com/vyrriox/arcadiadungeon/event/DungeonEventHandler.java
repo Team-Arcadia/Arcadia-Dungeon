@@ -255,6 +255,9 @@ public class DungeonEventHandler {
     // === TICK ===
     @SubscribeEvent
     public void onServerTick(TickEvent.ServerTickEvent event) {
+        // Forge fires this twice a tick, once per phase. The 1.21.1 original listens for
+        // ServerTickEvent.Post, so only the end of the tick is the same event.
+        if (event.phase != TickEvent.Phase.END) return;
         long now = System.currentTimeMillis();
         DungeonManager.getInstance().processPendingFails();
         BossManager.getInstance().tickAllBosses(); // Fix #19: early-exit is inside BossManager now
