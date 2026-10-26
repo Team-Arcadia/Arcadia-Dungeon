@@ -17,3 +17,9 @@ logs/
 # The Arcadia Lib jar this mod compiles against is tracked: a clone has to
 # build without fetching it from somewhere else.
 !libs/arcadia-lib-*.jar
+
+# Local-only working files: Claude's notes and the QA artefacts. These must never reach GitHub.
+# The other seven repositories already exclude them; this one was missing all three.
+CLAUDE.md
+test-procedures/
+TEST_PROCEDURE_*.html
