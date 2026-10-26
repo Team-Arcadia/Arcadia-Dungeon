@@ -182,20 +182,41 @@ public class DungeonEventHandler {
         }
     }
 
+    /** How long the golden apple allowance stays open, in ticks. Eating takes 32. */
+    private static final int PERMISSION_WINDOW_TICKS = 60;
+
+    /**
+     * Golden apples are the one food allowed to buff inside a dungeon, so the allowance has to
+     * exist before the apple applies its effects.
+     *
+     * <p>This listened for {@code Finish}, which NeoForge posts <em>after</em>
+     * {@code finishUsingItem} has run: its hook is
+     * {@code onItemUseFinish(entity, item, duration, result)} and it returns the resulting stack.
+     * So the order was: the apple applies Regeneration and Absorption, the Applicable handler
+     * refuses them because nothing allows them yet, and only then was the allowance written, for
+     * effects that were never coming back. Eating a golden apple in a dungeon did nothing at all,
+     * and an enchanted one lost Resistance and Fire Resistance with it.</p>
+     *
+     * <p>{@code Start} fires when the player begins eating, about thirty two ticks earlier, so the
+     * allowance is in place when the effects land. The duration passed below is the window the
+     * permission stays open, not the length of the effect: once an effect is applied it runs on
+     * its own, and a short window means a cancelled bite does not leave the door open for the same
+     * effect from another source.</p>
+     */
     @SubscribeEvent
-    public void onItemUseFinish(LivingEntityUseItemEvent.Finish event) {
+    public void onItemUseStart(LivingEntityUseItemEvent.Start event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         if (DungeonManager.getInstance().getPlayerDungeon(player.getUUID()) == null) return;
 
         var item = event.getItem().getItem();
         if (item == net.minecraft.world.item.Items.GOLDEN_APPLE) {
-            DungeonManager.getInstance().allowBeneficialEffect(player, net.minecraft.world.effect.MobEffects.REGENERATION, 1, 100);
-            DungeonManager.getInstance().allowBeneficialEffect(player, net.minecraft.world.effect.MobEffects.ABSORPTION, 0, 2400);
+            DungeonManager.getInstance().allowBeneficialEffect(player, net.minecraft.world.effect.MobEffects.REGENERATION, 1, PERMISSION_WINDOW_TICKS);
+            DungeonManager.getInstance().allowBeneficialEffect(player, net.minecraft.world.effect.MobEffects.ABSORPTION, 0, PERMISSION_WINDOW_TICKS);
         } else if (item == net.minecraft.world.item.Items.ENCHANTED_GOLDEN_APPLE) {
-            DungeonManager.getInstance().allowBeneficialEffect(player, net.minecraft.world.effect.MobEffects.REGENERATION, 1, 400);
-            DungeonManager.getInstance().allowBeneficialEffect(player, net.minecraft.world.effect.MobEffects.ABSORPTION, 3, 2400);
-            DungeonManager.getInstance().allowBeneficialEffect(player, net.minecraft.world.effect.MobEffects.RESISTANCE, 0, 6000);
-            DungeonManager.getInstance().allowBeneficialEffect(player, net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE, 0, 6000);
+            DungeonManager.getInstance().allowBeneficialEffect(player, net.minecraft.world.effect.MobEffects.REGENERATION, 1, PERMISSION_WINDOW_TICKS);
+            DungeonManager.getInstance().allowBeneficialEffect(player, net.minecraft.world.effect.MobEffects.ABSORPTION, 3, PERMISSION_WINDOW_TICKS);
+            DungeonManager.getInstance().allowBeneficialEffect(player, net.minecraft.world.effect.MobEffects.RESISTANCE, 0, PERMISSION_WINDOW_TICKS);
+            DungeonManager.getInstance().allowBeneficialEffect(player, net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE, 0, PERMISSION_WINDOW_TICKS);
         }
     }
 
