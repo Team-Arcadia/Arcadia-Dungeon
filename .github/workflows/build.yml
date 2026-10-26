@@ -1,10 +1,11 @@
-name: Build & Test
+name: Build
 
-# main holds one project per target, so there is no gradlew at the repository root. Every job
-# below works inside its own target folder.
+# Runs for a release (a version tag such as v1.4.2), for pull requests, and by hand from the
+# Actions page. A plain push to a branch does not start it.
 on:
   push:
-    tags: [ 'v*' ]
+    tags:
+      - 'v*'
   pull_request:
     branches: [ serverside-main ]
   workflow_dispatch:
@@ -14,36 +15,49 @@ permissions:
 
 jobs:
   build:
-    name: Build ${{ matrix.target }}
     runs-on: ubuntu-latest
     strategy:
-      # One target failing should not hide the state of the others.
       fail-fast: false
       matrix:
-        target: [ forge-1.20.1, neoforge-1.21.1, neoforge-26.1.2 ]
-
+        include:
+          - project: forge-1.20.1
+            java: 17
+            launcher: 17
+          - project: neoforge-1.21.1
+            java: 21
+            launcher: 21
+          - project: neoforge-26.1.2
+            java: 25
+            launcher: 25
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+      # On main every target is a folder; on a target branch the project sits at the root.
+      - name: Locate project
+        id: dir
+        run: |
+          if [ -d "${{ matrix.project }}" ]; then echo "path=${{ matrix.project }}" >> "$GITHUB_OUTPUT";
+          elif [ "${GITHUB_REF_NAME}" = "${{ matrix.project }}" ]; then echo "path=." >> "$GITHUB_OUTPUT";
+          else echo "path=" >> "$GITHUB_OUTPUT"; fi
+      # The game is compiled with the "java" toolchain; Gradle itself runs on "launcher" (the last
+      # version listed becomes JAVA_HOME).
+      - uses: actions/setup-java@v4
+        if: steps.dir.outputs.path != ''
         with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: gradle
-
-      - name: Grant execute permission
-        run: chmod +x ${{ matrix.target }}/gradlew
-
+          distribution: temurin
+          java-version: |
+            ${{ matrix.java }}
+            ${{ matrix.launcher }}
+      - uses: gradle/actions/setup-gradle@v4
+        if: steps.dir.outputs.path != ''
       - name: Build
-        working-directory: ${{ matrix.target }}
-        run: ./gradlew build --no-daemon
-
-      - name: Upload jar
-        if: success()
-        uses: actions/upload-artifact@v4
+        if: steps.dir.outputs.path != ''
+        working-directory: ${{ steps.dir.outputs.path }}
+        run: chmod +x gradlew && ./gradlew build --no-configuration-cache
+      - uses: actions/upload-artifact@v4
+        if: steps.dir.outputs.path != ''
         with:
-          name: Arcadia-Dungeon-${{ matrix.target }}-${{ github.ref_name }}
-          path: ${{ matrix.target }}/build/libs/*.jar
-          retention-days: 30
+          name: arcadia-dungeon-${{ matrix.project }}
+          # The mod jar only, not the deobfuscated -dev jar ForgeGradle leaves next to it.
+          path: |
+            ${{ steps.dir.outputs.path }}/build/libs/*.jar
+            !${{ steps.dir.outputs.path }}/build/libs/*-dev.jar
