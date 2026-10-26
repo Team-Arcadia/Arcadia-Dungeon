@@ -23,3 +23,7 @@ logs/
 CLAUDE.md
 test-procedures/
 TEST_PROCEDURE_*.html
+
+# Dev run directories. The other repositories already exclude these; this one only had run/,
+# and the dedicated-server harness writes run-server/ beside it.
+run-server/
