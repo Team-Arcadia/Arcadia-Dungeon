@@ -1,0 +1,49 @@
+name: Build & Test
+
+# main holds one project per target, so there is no gradlew at the repository root. Every job
+# below works inside its own target folder.
+on:
+  push:
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ serverside-main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      # One target failing should not hide the state of the others.
+      fail-fast: false
+      matrix:
+        target: [ forge-1.20.1, neoforge-1.21.1, neoforge-26.1.2 ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission
+        run: chmod +x ${{ matrix.target }}/gradlew
+
+      - name: Build
+        working-directory: ${{ matrix.target }}
+        run: ./gradlew build --no-daemon
+
+      - name: Upload jar
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Arcadia-Dungeon-${{ matrix.target }}-${{ github.ref_name }}
+          path: ${{ matrix.target }}/build/libs/*.jar
+          retention-days: 30
