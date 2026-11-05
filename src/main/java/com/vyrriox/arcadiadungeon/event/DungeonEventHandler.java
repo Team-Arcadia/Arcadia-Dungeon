@@ -1,5 +1,6 @@
 package com.vyrriox.arcadiadungeon.event;
 
+import com.vyrriox.arcadiadungeon.config.Messages;
 import com.vyrriox.arcadiadungeon.ArcadiaDungeon;
 import com.vyrriox.arcadiadungeon.boss.BossInstance;
 import com.vyrriox.arcadiadungeon.boss.BossManager;
@@ -267,7 +268,7 @@ public class DungeonEventHandler {
         for (String blocked : instance.getConfig().settings.blockedCommands) {
             if (rootCmd.equals(blocked) || cmdNoPrefix.equals(blocked)) {
                 event.setCanceled(true);
-                player.sendSystemMessage(Component.literal("[Arcadia] Cette commande est bloquee pendant le donjon!").withStyle(ChatFormatting.RED));
+                player.sendSystemMessage(Messages.get(player, "run.command_blocked"));
                 return;
             }
         }
@@ -478,9 +479,7 @@ public class DungeonEventHandler {
         if (instance == null) return;
 
         DungeonManager.getInstance().teleportToSpawn(player, instance.getConfig().spawnPoint);
-        player.sendSystemMessage(Component.literal("[Arcadia] Respawn au debut du donjon. ("
-                + instance.getRemainingLives(player.getUUID()) + " vie(s) restante(s))")
-                .withStyle(ChatFormatting.YELLOW));
+        player.sendSystemMessage(Messages.get(player, "run.respawn", "lives", instance.getRemainingLives(player.getUUID())));
     }
 
     // === HANDLERS ===
@@ -502,10 +501,7 @@ public class DungeonEventHandler {
                         String bossLabel = (boss.getConfig().customName == null || boss.getConfig().customName.isEmpty())
                                 ? bossId
                                 : boss.getConfig().customName;
-                        Component bossName = DungeonManager.parseColorCodes(bossLabel);
-                        player.sendSystemMessage(Component.literal("[Arcadia] Boss ").withStyle(ChatFormatting.GOLD)
-                                .append(bossName)
-                                .append(Component.literal(" vaincu!").withStyle(ChatFormatting.GOLD)));
+                        player.sendSystemMessage(Messages.get(player, "boss.defeated", "boss", bossLabel));
                     }
                 }
 
@@ -521,7 +517,7 @@ public class DungeonEventHandler {
                     if (spawned) {
                         for (UUID playerId : instance.getPlayers()) {
                             ServerPlayer player = DungeonManager.getInstance().getServer().getPlayerList().getPlayer(playerId);
-                            if (player != null) player.sendSystemMessage(Component.literal("[Arcadia] Prochain boss en approche...").withStyle(ChatFormatting.YELLOW));
+                            if (player != null) player.sendSystemMessage(Messages.get(player, "boss.next"));
                         }
                     } else if (instance.allRequiredBossesDefeated()) {
                         if (!instance.hasWaves() || instance.areWavesCompleted()) {
@@ -557,16 +553,16 @@ public class DungeonEventHandler {
         int remaining = instance.getRemainingLives(player.getUUID());
 
         if (maxDeaths > 0 && deaths >= maxDeaths) {
-            player.sendSystemMessage(Component.literal("[Arcadia] Maximum de morts (" + maxDeaths + ") atteint! Vous etes exclu du donjon.").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Messages.get(player, "run.excluded", "max", maxDeaths));
             for (UUID otherId : instance.getPlayers()) {
                 if (!otherId.equals(player.getUUID())) {
                     ServerPlayer other = DungeonManager.getInstance().getServer().getPlayerList().getPlayer(otherId);
-                    if (other != null) other.sendSystemMessage(Component.literal("[Arcadia] " + player.getName().getString() + " a ete exclu (trop de morts)!").withStyle(ChatFormatting.RED));
+                    if (other != null) other.sendSystemMessage(Messages.get(other, "run.other_excluded", "player", player.getName().getString()));
                 }
             }
             DungeonManager.getInstance().schedulePlayerRemoval(player.getUUID());
         } else {
-            player.sendSystemMessage(Component.literal("[Arcadia] Mort! " + remaining + " vie(s) restante(s).").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Messages.get(player, "run.death", "lives", remaining));
         }
     }
 
@@ -624,7 +620,7 @@ public class DungeonEventHandler {
                     announcedRecruitmentMilestones.add(key);
                     for (UUID playerId : instance.getPlayers()) {
                         ServerPlayer player = server.getPlayerList().getPlayer(playerId);
-                        if (player != null) player.sendSystemMessage(Component.literal("[Arcadia] Recrutement: " + m + "s restantes!").withStyle(ChatFormatting.YELLOW));
+                        if (player != null) player.sendSystemMessage(Messages.get(player, "recruit.countdown", "time", m));
                     }
                     DungeonManager.getInstance().broadcastClickableReminder(instance.getConfig(), m);
                 }
@@ -676,11 +672,10 @@ public class DungeonEventHandler {
             if (!currentWave.isSpawned()) {
                 currentWave.spawn(server, instance.getPlayerCount(), instance.getConfig().settings);
                 String msg = currentWave.getConfig().startMessage;
-                if (msg == null || msg.isEmpty()) msg = "&e[Donjon] &7Vague " + currentWave.getConfig().waveNumber + " !";
-                Component component = DungeonManager.parseColorCodes(msg);
+                int waveNumber = currentWave.getConfig().waveNumber;
                 for (UUID playerId : instance.getPlayers()) {
                     ServerPlayer player = server.getPlayerList().getPlayer(playerId);
-                    if (player != null) player.sendSystemMessage(component);
+                    if (player != null) player.sendSystemMessage(Messages.getOr(player, msg, "wave.start", "wave", waveNumber));
                 }
             }
 
@@ -690,7 +685,7 @@ public class DungeonEventHandler {
                 int clearedWaveNumber = currentWave.getConfig().waveNumber;
                 for (UUID playerId : instance.getPlayers()) {
                     ServerPlayer player = server.getPlayerList().getPlayer(playerId);
-                    if (player != null) player.sendSystemMessage(Component.literal("[Donjon] Vague " + clearedWaveNumber + " terminee!").withStyle(ChatFormatting.GREEN));
+                    if (player != null) player.sendSystemMessage(Messages.get(player, "wave.cleared", "wave", clearedWaveNumber));
                 }
 
                 // Check for inter-wave boss after this wave
@@ -703,7 +698,7 @@ public class DungeonEventHandler {
                     }
                     for (UUID playerId : instance.getPlayers()) {
                         ServerPlayer player = server.getPlayerList().getPlayer(playerId);
-                        if (player != null) player.sendSystemMessage(Component.literal("[Donjon] Un boss approche!").withStyle(ChatFormatting.GOLD));
+                        if (player != null) player.sendSystemMessage(Messages.get(player, "wave.boss_incoming"));
                     }
                 } else {
                     if (!instance.advanceWave()) onWavesCompleted(instance);
@@ -725,7 +720,7 @@ public class DungeonEventHandler {
         if (bossSpawned) {
             for (UUID playerId : instance.getPlayers()) {
                 ServerPlayer player = server.getPlayerList().getPlayer(playerId);
-                if (player != null) player.sendSystemMessage(Component.literal("[Donjon] Toutes les vagues eliminees! Le boss approche...").withStyle(ChatFormatting.GOLD));
+                if (player != null) player.sendSystemMessage(Messages.get(player, "wave.all_cleared"));
             }
         } else if (instance.allRequiredBossesDefeated()) {
             // No more bosses to spawn and all required are dead — complete
@@ -751,7 +746,7 @@ public class DungeonEventHandler {
                 if (player == null || !player.isAlive() || player.isSpectator()) continue;
                 if (!config.isInArea(player.level().dimension().location().toString(), player.getX(), player.getY(), player.getZ())) {
                     DungeonManager.getInstance().teleportToSpawn(player, config.spawnPoint);
-                    player.sendSystemMessage(Component.literal("[Arcadia] Vous ne pouvez pas quitter la zone du donjon!").withStyle(ChatFormatting.RED));
+                    player.sendSystemMessage(Messages.get(player, "run.cannot_leave_area"));
                 }
             }
 
@@ -768,8 +763,7 @@ public class DungeonEventHandler {
                     net.minecraft.server.level.ServerLevel overworld = server.overworld();
                     net.minecraft.core.BlockPos spawnPos = overworld.getSharedSpawnPos();
                     player.teleportTo(overworld, spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5, 0, 0);
-                    player.sendSystemMessage(Component.literal("[Arcadia] Un donjon est en cours dans cette zone! Vous avez ete teleporte au spawn.")
-                            .withStyle(ChatFormatting.RED));
+                    player.sendSystemMessage(Messages.get(player, "area.kicked_running"));
                 }
             }
         }
@@ -815,7 +809,7 @@ public class DungeonEventHandler {
                 }
                 if (changed) {
                     player.onUpdateAbilities();
-                    player.sendSystemMessage(Component.literal("[Arcadia] Le fly est desactive dans ce donjon.").withStyle(ChatFormatting.RED));
+                    player.sendSystemMessage(Messages.get(player, "run.fly_disabled"));
                 }
             }
         }
@@ -847,7 +841,7 @@ public class DungeonEventHandler {
             if (instance.isTimedOut()) {
                 for (UUID playerId : instance.getPlayers()) {
                     ServerPlayer player = DungeonManager.getInstance().getServer().getPlayerList().getPlayer(playerId);
-                    if (player != null) player.sendSystemMessage(Component.literal("[Arcadia] Temps ecoule!").withStyle(ChatFormatting.RED));
+                    if (player != null) player.sendSystemMessage(Messages.get(player, "end.time_up"));
                 }
                 DungeonManager.getInstance().failDungeon(dungeonId);
                 continue;
@@ -864,7 +858,7 @@ public class DungeonEventHandler {
                         announcedTimerMilestones.add(key);
                         for (UUID playerId : instance.getPlayers()) {
                             ServerPlayer player = DungeonManager.getInstance().getServer().getPlayerList().getPlayer(playerId);
-                            if (player != null) player.sendSystemMessage(Component.literal("[Arcadia] Temps restant: " + DungeonManager.formatTime(m) + "!").withStyle(ChatFormatting.YELLOW));
+                            if (player != null) player.sendSystemMessage(Messages.get(player, "run.time_left", "time", DungeonManager.formatTime(m)));
                         }
                     }
                 }
