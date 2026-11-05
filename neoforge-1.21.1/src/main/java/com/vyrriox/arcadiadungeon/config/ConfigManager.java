@@ -38,6 +38,8 @@ public class ConfigManager {
             return;
         }
 
+        Messages.load(configDir);
+
         dungeonConfigs.clear();
 
         // Load all dungeon configs
@@ -101,6 +103,7 @@ public class ConfigManager {
     }
 
     private void validateConfig(DungeonConfig config) {
+        config.clearLegacyDefaultMessages();
         if (config.spawnPoint == null) config.spawnPoint = new SpawnPointConfig();
         if (config.settings == null) config.settings = new DungeonSettings();
         if (config.bosses == null) config.bosses = new java.util.ArrayList<>();

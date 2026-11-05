@@ -8,6 +8,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import com.vyrriox.arcadiadungeon.config.Messages;
 import com.vyrriox.arcadiadungeon.boss.BossInstance;
 import com.vyrriox.arcadiadungeon.boss.BossManager;
 import com.vyrriox.arcadiadungeon.config.*;
@@ -1580,7 +1581,7 @@ public class ArcadiaCommands {
 
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Messages.get(null, "error.player_only"));
             return 0;
         }
 
@@ -1803,7 +1804,7 @@ public class ArcadiaCommands {
 
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Messages.get(null, "error.player_only"));
             return 0;
         }
 
@@ -2252,7 +2253,7 @@ public class ArcadiaCommands {
         String dungeonId = StringArgumentType.getString(ctx, "dungeon");
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Messages.get(null, "error.player_only"));
             return 0;
         }
 
@@ -2274,7 +2275,7 @@ public class ArcadiaCommands {
         String dungeonId = StringArgumentType.getString(ctx, "dungeon");
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Messages.get(null, "error.player_only"));
             return 0;
         }
         return DungeonManager.getInstance().joinDungeon(dungeonId, player) ? 1 : 0;
@@ -2292,7 +2293,7 @@ public class ArcadiaCommands {
         String dungeonId = StringArgumentType.getString(ctx, "dungeon");
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Messages.get(null, "error.player_only"));
             return 0;
         }
 
@@ -2311,19 +2312,18 @@ public class ArcadiaCommands {
     private static int leaveDungeon(CommandContext<CommandSourceStack> ctx) {
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Messages.get(null, "error.player_only"));
             return 0;
         }
 
         DungeonInstance instance = DungeonManager.getInstance().getPlayerDungeon(player.getUUID());
         if (instance == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Vous n'etes dans aucun donjon!"));
+            ctx.getSource().sendFailure(Messages.get(player, "error.not_in_dungeon"));
             return 0;
         }
 
         DungeonManager.getInstance().removePlayerFromDungeon(player.getUUID());
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Vous avez quitte le donjon.")
-                .withStyle(ChatFormatting.YELLOW), false);
+        ctx.getSource().sendSuccess(() -> Messages.get(player, "run.you_left"), false);
         return 1;
     }
 
@@ -2346,20 +2346,19 @@ public class ArcadiaCommands {
     private static int abandonDungeon(CommandContext<CommandSourceStack> ctx) {
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Messages.get(null, "error.player_only"));
             return 0;
         }
 
         DungeonInstance instance = DungeonManager.getInstance().getPlayerDungeon(player.getUUID());
         if (instance == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Vous n'etes dans aucun donjon!"));
+            ctx.getSource().sendFailure(Messages.get(player, "error.not_in_dungeon"));
             return 0;
         }
 
         String dungeonName = instance.getConfig().name;
         DungeonManager.getInstance().removePlayerFromDungeon(player.getUUID());
-        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Vous avez abandonne " + dungeonName + ".")
-                .withStyle(ChatFormatting.YELLOW), false);
+        ctx.getSource().sendSuccess(() -> Messages.get(player, "run.you_abandoned", "dungeon", dungeonName), false);
         return 1;
     }
 
@@ -2368,7 +2367,7 @@ public class ArcadiaCommands {
     private static int showStatus(CommandContext<CommandSourceStack> ctx) {
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Messages.get(null, "error.player_only"));
             return 0;
         }
 
@@ -2376,42 +2375,39 @@ public class ArcadiaCommands {
         PlayerProgress progress = PlayerProgressManager.getInstance()
                 .getOrCreate(uuid, player.getName().getString());
 
-        ctx.getSource().sendSuccess(() -> Component.literal("========= Statut Arcadia =========").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), false);
+        ctx.getSource().sendSuccess(() -> Messages.get(player, "status.title"), false);
 
         // Current dungeon
         DungeonInstance currentInstance = DungeonManager.getInstance().getPlayerDungeon(player.getUUID());
         if (currentInstance != null) {
             var cfg = currentInstance.getConfig();
             String state = switch (currentInstance.getState()) {
-                case RECRUITING -> "Recrutement (" + currentInstance.getRecruitmentRemainingSeconds() + "s)";
-                case ACTIVE -> "En cours";
-                case BOSS_FIGHT -> "Combat de boss";
-                case WAITING -> "Attente";
+                case RECRUITING -> Messages.text(player, "state.recruiting", "time", currentInstance.getRecruitmentRemainingSeconds());
+                case ACTIVE -> Messages.text(player, "state.active");
+                case BOSS_FIGHT -> Messages.text(player, "state.boss_fight");
+                case WAITING -> Messages.text(player, "state.waiting");
                 default -> currentInstance.getState().toString();
             };
             int lives = currentInstance.getRemainingLives(player.getUUID());
             long elapsed = currentInstance.getElapsedSeconds();
-            ctx.getSource().sendSuccess(() -> Component.literal(" Donjon actuel: ").withStyle(ChatFormatting.GRAY)
-                    .append(Component.literal(cfg.name).withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD)), false);
-            ctx.getSource().sendSuccess(() -> Component.literal("   Etat: ").withStyle(ChatFormatting.GRAY)
-                    .append(Component.literal(state).withStyle(ChatFormatting.WHITE)), false);
-            ctx.getSource().sendSuccess(() -> Component.literal("   Temps: ").withStyle(ChatFormatting.GRAY)
-                    .append(Component.literal(DungeonManager.formatTime(elapsed)).withStyle(ChatFormatting.WHITE))
-                    .append(cfg.settings.timeLimitSeconds > 0 ?
-                            Component.literal(" / " + DungeonManager.formatTime(cfg.settings.timeLimitSeconds)).withStyle(ChatFormatting.GRAY) :
-                            Component.literal(" (illimite)").withStyle(ChatFormatting.GRAY)), false);
-            ctx.getSource().sendSuccess(() -> Component.literal("   Vies: ").withStyle(ChatFormatting.GRAY)
-                    .append(Component.literal(cfg.settings.maxDeaths > 0 ? lives + "/" + cfg.settings.maxDeaths : "illimitees")
-                            .withStyle(lives <= 1 && cfg.settings.maxDeaths > 0 ? ChatFormatting.RED : ChatFormatting.GREEN)), false);
-            ctx.getSource().sendSuccess(() -> Component.literal("   Joueurs: ").withStyle(ChatFormatting.GRAY)
-                    .append(Component.literal(currentInstance.getPlayerCount() + "/" + cfg.settings.maxPlayers).withStyle(ChatFormatting.WHITE)), false);
+            ctx.getSource().sendSuccess(() -> Messages.get(player, "status.current", "dungeon", cfg.name), false);
+            ctx.getSource().sendSuccess(() -> Messages.get(player, "status.state", "state", state), false);
+            ctx.getSource().sendSuccess(() -> Messages.get(player,
+                    cfg.settings.timeLimitSeconds > 0 ? "status.time_limited" : "status.time_unlimited",
+                    "time", DungeonManager.formatTime(elapsed),
+                    "limit", DungeonManager.formatTime(cfg.settings.timeLimitSeconds)), false);
+            ctx.getSource().sendSuccess(() -> cfg.settings.maxDeaths > 0
+                    ? Messages.get(player, "status.lives", "color", lives <= 1 ? "&c" : "&a",
+                            "lives", lives, "max", cfg.settings.maxDeaths)
+                    : Messages.get(player, "status.lives_unlimited"), false);
+            ctx.getSource().sendSuccess(() -> Messages.get(player, "status.players",
+                    "count", currentInstance.getPlayerCount(), "max", cfg.settings.maxPlayers), false);
         } else {
-            ctx.getSource().sendSuccess(() -> Component.literal(" Donjon actuel: ").withStyle(ChatFormatting.GRAY)
-                    .append(Component.literal("Aucun").withStyle(ChatFormatting.WHITE)), false);
+            ctx.getSource().sendSuccess(() -> Messages.get(player, "status.current_none"), false);
         }
 
         ctx.getSource().sendSuccess(() -> Component.literal("").withStyle(ChatFormatting.RESET), false);
-        ctx.getSource().sendSuccess(() -> Component.literal(" Donjons:").withStyle(ChatFormatting.YELLOW), false);
+        ctx.getSource().sendSuccess(() -> Messages.get(player, "status.dungeons"), false);
 
         for (var entry : ConfigManager.getInstance().getDungeonConfigs().entrySet()) {
             DungeonConfig cfg = entry.getValue();
@@ -2424,46 +2420,43 @@ public class ArcadiaCommands {
             DungeonInstance active = DungeonManager.getInstance().getInstance(cfg.id);
 
             String status;
-            ChatFormatting color;
+            String color;
 
             if (!unlocked) {
                 DungeonConfig req = ConfigManager.getInstance().getDungeon(cfg.requiredDungeon);
-                status = "Verrouille (Requis: " + (req != null ? req.name : cfg.requiredDungeon) + ")";
-                color = ChatFormatting.RED;
+                status = Messages.text(player, "state.locked", "dungeon", req != null ? req.name : cfg.requiredDungeon);
+                color = "&c";
             } else if (active != null) {
-                status = active.getState() == DungeonState.RECRUITING ?
-                        "Recrutement (" + active.getRecruitmentRemainingSeconds() + "s)" :
-                        "En cours (" + active.getPlayerCount() + " joueurs)";
-                color = ChatFormatting.AQUA;
+                status = active.getState() == DungeonState.RECRUITING
+                        ? Messages.text(player, "state.recruiting", "time", active.getRecruitmentRemainingSeconds())
+                        : Messages.text(player, "state.running_players", "count", active.getPlayerCount());
+                color = "&b";
             } else {
-                status = "Disponible";
-                color = ChatFormatting.GREEN;
+                status = Messages.text(player, "state.available");
+                color = "&a";
                 if (completed) {
                     PlayerProgress.DungeonProgress dp = progress.completedDungeons.get(cfg.id);
                     if (dp != null) {
-                        status = dp.completions + "x | Record: " + formatTime(dp.bestTimeSeconds);
-                        color = ChatFormatting.GREEN;
+                        status = Messages.text(player, "state.record", "count", dp.completions, "time", formatTime(dp.bestTimeSeconds));
                     }
                 }
             }
 
             final String fStatus = status;
-            final ChatFormatting fColor = color;
-            ctx.getSource().sendSuccess(() -> Component.literal("   " + cfg.name + ": ").withStyle(ChatFormatting.GRAY)
-                    .append(Component.literal(fStatus).withStyle(fColor)), false);
+            final String fColor = color;
+            ctx.getSource().sendSuccess(() -> Messages.get(player, "status.dungeon_line",
+                    "dungeon", cfg.name, "color", fColor, "status", fStatus), false);
         }
 
         ctx.getSource().sendSuccess(() -> Component.literal("").withStyle(ChatFormatting.RESET), false);
         int totalCompletions = progress.getTotalCompletions();
         int dungeonsCompleted = progress.completedDungeons.size();
-        ctx.getSource().sendSuccess(() -> Component.literal(" Total: ").withStyle(ChatFormatting.GRAY)
-                .append(Component.literal(totalCompletions + " completions").withStyle(ChatFormatting.WHITE))
-                .append(Component.literal(" (" + dungeonsCompleted + " donjons)").withStyle(ChatFormatting.GRAY)), false);
+        ctx.getSource().sendSuccess(() -> Messages.get(player, "status.total",
+                "count", totalCompletions, "dungeons", dungeonsCompleted), false);
 
         var weeklyData = WeeklyLeaderboard.getInstance().getData();
         int weeklyCount = weeklyData.playerCompletions.getOrDefault(uuid, 0);
-        ctx.getSource().sendSuccess(() -> Component.literal(" Cette semaine: ").withStyle(ChatFormatting.GRAY)
-                .append(Component.literal(weeklyCount + " completions").withStyle(ChatFormatting.YELLOW)), false);
+        ctx.getSource().sendSuccess(() -> Messages.get(player, "status.weekly", "count", weeklyCount), false);
 
         ctx.getSource().sendSuccess(() -> Component.literal("===================================").withStyle(ChatFormatting.GOLD), false);
         return 1;
@@ -2743,7 +2736,7 @@ public class ArcadiaCommands {
     private static int debugResetCooldown(CommandContext<CommandSourceStack> ctx) {
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Messages.get(null, "error.player_only"));
             return 0;
         }
         DungeonManager.getInstance().clearCooldown(player.getUUID());
@@ -2757,7 +2750,7 @@ public class ArcadiaCommands {
     private static int showProgression(CommandContext<CommandSourceStack> ctx) {
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Messages.get(null, "error.player_only"));
             return 0;
         }
 
@@ -2767,9 +2760,7 @@ public class ArcadiaCommands {
         List<DungeonConfig> dungeons = new ArrayList<>(ConfigManager.getInstance().getDungeonConfigs().values());
         dungeons.sort(Comparator.comparingInt(d -> d.order));
 
-        ctx.getSource().sendSuccess(() -> Component.literal("").append(
-                Component.literal("========= Donjons Arcadia =========").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD)
-        ), false);
+        ctx.getSource().sendSuccess(() -> Messages.get(player, "progression.title"), false);
 
         for (DungeonConfig dungeon : dungeons) {
             if (!dungeon.enabled) continue;
@@ -2789,19 +2780,19 @@ public class ArcadiaCommands {
             if (completed) {
                 bar = "##########";
                 color = ChatFormatting.GREEN;
-                status = "COMPLETE";
-                details = dp.completions + "x | Record: " + formatTime(dp.bestTimeSeconds);
+                status = Messages.text(player, "progression.complete");
+                details = Messages.text(player, "state.record", "count", dp.completions, "time", formatTime(dp.bestTimeSeconds));
             } else if (unlocked) {
                 bar = ">>--------";
                 color = ChatFormatting.YELLOW;
-                status = "DISPONIBLE";
-                details = "Cliquez pour entrer!";
+                status = Messages.text(player, "progression.available");
+                details = Messages.text(player, "progression.click_enter");
             } else {
                 bar = "----------";
                 color = ChatFormatting.RED;
-                status = "VERROUILLE";
+                status = Messages.text(player, "progression.locked");
                 DungeonConfig req = ConfigManager.getInstance().getDungeon(dungeon.requiredDungeon);
-                details = "Requis: " + (req != null ? req.name : dungeon.requiredDungeon);
+                details = Messages.text(player, "progression.requires", "dungeon", req != null ? req.name : dungeon.requiredDungeon);
             }
 
             MutableComponent line = Component.literal(" ");
@@ -2815,16 +2806,16 @@ public class ArcadiaCommands {
             if (unlocked && !completed) {
                 line.withStyle(style -> style
                         .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/arcadia_dungeon start " + dungeon.id))
-                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("Cliquez pour lancer " + dungeon.name)))
+                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Messages.get(player, "hover.start", "dungeon", dungeon.name)))
                 );
             } else if (completed) {
                 line.withStyle(style -> style
                         .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/arcadia_dungeon start " + dungeon.id))
-                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("Relancer " + dungeon.name + "\n" + details)))
+                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Messages.get(player, "hover.restart", "dungeon", dungeon.name, "details", details)))
                 );
             } else {
                 line.withStyle(style -> style
-                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal(details)))
+                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, DungeonManager.parseColorCodes(details)))
                 );
             }
 
@@ -2832,7 +2823,7 @@ public class ArcadiaCommands {
 
             // Details line
             MutableComponent detailLine = Component.literal("   ");
-            detailLine.append(Component.literal(details).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
+            detailLine.append(DungeonManager.parseColorCodes(details).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
             ctx.getSource().sendSuccess(() -> detailLine, false);
         }
 
@@ -2842,28 +2833,32 @@ public class ArcadiaCommands {
         int totalEnabled = (int) dungeons.stream().filter(d -> d.enabled).count();
 
         ctx.getSource().sendSuccess(() -> Component.literal("====================================").withStyle(ChatFormatting.GOLD), false);
-        ctx.getSource().sendSuccess(() -> Component.literal(" Progression: " + completed + "/" + totalEnabled + " donjons | " + total + " completions totales")
-                .withStyle(ChatFormatting.AQUA), false);
+        ctx.getSource().sendSuccess(() -> Messages.get(player, "progression.summary", "done", completed, "total", totalEnabled, "count", total), false);
 
         return 1;
     }
 
+    private static String rankColor(int rank) {
+        return rank == 1 ? "&6" : rank == 2 ? "&7" : rank == 3 ? "&c" : "&f";
+    }
+
     private static int showTop(CommandContext<CommandSourceStack> ctx, String dungeonId) {
+        ServerPlayer viewer = ctx.getSource().getPlayer();
         if (dungeonId != null) {
             // Top for specific dungeon
             DungeonConfig config = ConfigManager.getInstance().getDungeon(dungeonId);
             if (config == null) {
-                ctx.getSource().sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + dungeonId));
+                ctx.getSource().sendFailure(Messages.get(viewer, "error.unknown_dungeon", "id", dungeonId));
                 return 0;
             }
 
             List<Map.Entry<PlayerProgress, PlayerProgress.DungeonProgress>> top =
                     PlayerProgressManager.getInstance().getTopForDungeon(dungeonId, 10);
 
-            ctx.getSource().sendSuccess(() -> Component.literal("=== Top " + config.name + " ===").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), false);
+            ctx.getSource().sendSuccess(() -> Messages.get(viewer, "top.dungeon_title", "dungeon", config.name), false);
 
             if (top.isEmpty()) {
-                ctx.getSource().sendSuccess(() -> Component.literal("Aucune completion enregistree.").withStyle(ChatFormatting.GRAY), false);
+                ctx.getSource().sendSuccess(() -> Messages.get(viewer, "top.empty"), false);
                 return 1;
             }
 
@@ -2873,24 +2868,17 @@ public class ArcadiaCommands {
                 PlayerProgress pp = entry.getKey();
                 PlayerProgress.DungeonProgress dp = entry.getValue();
 
-                ChatFormatting rankColor = rank <= 3 ? (rank == 1 ? ChatFormatting.GOLD : rank == 2 ? ChatFormatting.GRAY : ChatFormatting.RED) : ChatFormatting.WHITE;
-
-                ctx.getSource().sendSuccess(() -> Component.literal(" " + rank + ". ")
-                        .withStyle(rankColor, ChatFormatting.BOLD)
-                        .append(Component.literal(pp.playerName).withStyle(ChatFormatting.WHITE))
-                        .append(Component.literal(" - ").withStyle(ChatFormatting.GRAY))
-                        .append(Component.literal(formatTime(dp.bestTimeSeconds)).withStyle(ChatFormatting.YELLOW))
-                        .append(Component.literal(" (" + dp.completions + "x)").withStyle(ChatFormatting.GRAY))
-                , false);
+                ctx.getSource().sendSuccess(() -> Messages.get(viewer, "top.dungeon_line", "color", rankColor(rank), "rank", rank,
+                        "player", pp.playerName, "time", formatTime(dp.bestTimeSeconds), "count", dp.completions), false);
             }
         } else {
             // Global top
             List<PlayerProgress> top = PlayerProgressManager.getInstance().getTopPlayers(10);
 
-            ctx.getSource().sendSuccess(() -> Component.literal("=== Top Joueurs Arcadia ===").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), false);
+            ctx.getSource().sendSuccess(() -> Messages.get(viewer, "top.players_title"), false);
 
             if (top.isEmpty()) {
-                ctx.getSource().sendSuccess(() -> Component.literal("Aucune completion enregistree.").withStyle(ChatFormatting.GRAY), false);
+                ctx.getSource().sendSuccess(() -> Messages.get(viewer, "top.empty"), false);
                 return 1;
             }
 
@@ -2898,57 +2886,46 @@ public class ArcadiaCommands {
                 final int rank = i + 1;
                 PlayerProgress pp = top.get(i);
 
-                ChatFormatting rankColor = rank <= 3 ? (rank == 1 ? ChatFormatting.GOLD : rank == 2 ? ChatFormatting.GRAY : ChatFormatting.RED) : ChatFormatting.WHITE;
-
-                ctx.getSource().sendSuccess(() -> Component.literal(" " + rank + ". ")
-                        .withStyle(rankColor, ChatFormatting.BOLD)
-                        .append(Component.literal(pp.playerName).withStyle(ChatFormatting.WHITE))
-                        .append(Component.literal(" - ").withStyle(ChatFormatting.GRAY))
-                        .append(Component.literal(pp.getTotalCompletions() + " completions").withStyle(ChatFormatting.YELLOW))
-                        .append(Component.literal(" (" + pp.completedDungeons.size() + " donjons)").withStyle(ChatFormatting.GRAY))
-                , false);
+                ctx.getSource().sendSuccess(() -> Messages.get(viewer, "top.player_line", "color", rankColor(rank), "rank", rank,
+                        "player", pp.playerName, "count", pp.getTotalCompletions(), "dungeons", pp.completedDungeons.size()), false);
             }
         }
         return 1;
     }
 
     private static int showStats(CommandContext<CommandSourceStack> ctx, String playerName) {
+        ServerPlayer viewer = ctx.getSource().getPlayer();
         PlayerProgress progress;
 
         if (playerName != null) {
             progress = PlayerProgressManager.getInstance().findByName(playerName);
             if (progress == null) {
-                ctx.getSource().sendFailure(Component.literal("[Arcadia] Joueur introuvable: " + playerName));
+                ctx.getSource().sendFailure(Messages.get(viewer, "stats.unknown_player", "player", playerName));
                 return 0;
             }
         } else {
-            ServerPlayer player = ctx.getSource().getPlayer();
-            if (player == null) {
-                ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            if (viewer == null) {
+                ctx.getSource().sendFailure(Messages.get(null, "error.player_only"));
                 return 0;
             }
             progress = PlayerProgressManager.getInstance()
-                    .getOrCreate(player.getUUID().toString(), player.getName().getString());
+                    .getOrCreate(viewer.getUUID().toString(), viewer.getName().getString());
         }
 
-        ctx.getSource().sendSuccess(() -> Component.literal("=== Stats: " + progress.playerName + " ===").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("Completions totales: " + progress.getTotalCompletions()).withStyle(ChatFormatting.AQUA), false);
-        ctx.getSource().sendSuccess(() -> Component.literal("Donjons completes: " + progress.completedDungeons.size()).withStyle(ChatFormatting.AQUA), false);
+        ctx.getSource().sendSuccess(() -> Messages.get(viewer, "stats.title", "player", progress.playerName), false);
+        ctx.getSource().sendSuccess(() -> Messages.get(viewer, "stats.total", "count", progress.getTotalCompletions()), false);
+        ctx.getSource().sendSuccess(() -> Messages.get(viewer, "stats.dungeons", "count", progress.completedDungeons.size()), false);
 
         if (!progress.completedDungeons.isEmpty()) {
-            ctx.getSource().sendSuccess(() -> Component.literal("Details:").withStyle(ChatFormatting.YELLOW), false);
+            ctx.getSource().sendSuccess(() -> Messages.get(viewer, "stats.details"), false);
             for (Map.Entry<String, PlayerProgress.DungeonProgress> entry : progress.completedDungeons.entrySet()) {
                 String dId = entry.getKey();
                 PlayerProgress.DungeonProgress dp = entry.getValue();
                 DungeonConfig dc = ConfigManager.getInstance().getDungeon(dId);
                 String dName = dc != null ? dc.name : dId;
 
-                ctx.getSource().sendSuccess(() -> Component.literal("  - " + dName + ": ")
-                        .withStyle(ChatFormatting.GRAY)
-                        .append(Component.literal(dp.completions + "x").withStyle(ChatFormatting.WHITE))
-                        .append(Component.literal(" | Record: ").withStyle(ChatFormatting.GRAY))
-                        .append(Component.literal(formatTime(dp.bestTimeSeconds)).withStyle(ChatFormatting.GREEN))
-                , false);
+                ctx.getSource().sendSuccess(() -> Messages.get(viewer, "stats.line", "dungeon", dName,
+                        "count", dp.completions, "time", formatTime(dp.bestTimeSeconds)), false);
             }
         }
 
@@ -3122,7 +3099,7 @@ public class ArcadiaCommands {
 
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Messages.get(null, "error.player_only"));
             return 0;
         }
 
@@ -3322,7 +3299,7 @@ public class ArcadiaCommands {
 
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Messages.get(null, "error.player_only"));
             return 0;
         }
 
@@ -3362,7 +3339,7 @@ public class ArcadiaCommands {
 
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Messages.get(null, "error.player_only"));
             return 0;
         }
 
@@ -3798,7 +3775,7 @@ public class ArcadiaCommands {
     private static int giveAreaWand(CommandContext<CommandSourceStack> ctx) {
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Messages.get(null, "error.player_only"));
             return 0;
         }
 
@@ -3845,7 +3822,7 @@ public class ArcadiaCommands {
 
     private static int wandSelect(CommandContext<CommandSourceStack> ctx) {
         ServerPlayer player = ctx.getSource().getPlayer();
-        if (player == null) { ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!")); return 0; }
+        if (player == null) { ctx.getSource().sendFailure(Messages.get(null, "error.player_only")); return 0; }
 
         String dungeonId = StringArgumentType.getString(ctx, "dungeon");
         DungeonConfig config = ConfigManager.getInstance().getDungeon(dungeonId);
@@ -3864,7 +3841,7 @@ public class ArcadiaCommands {
     private static int giveWallWand(CommandContext<CommandSourceStack> ctx) {
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Messages.get(null, "error.player_only"));
             return 0;
         }
 
@@ -3884,7 +3861,7 @@ public class ArcadiaCommands {
 
     private static int wallSelect(CommandContext<CommandSourceStack> ctx) {
         ServerPlayer player = ctx.getSource().getPlayer();
-        if (player == null) { ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!")); return 0; }
+        if (player == null) { ctx.getSource().sendFailure(Messages.get(null, "error.player_only")); return 0; }
 
         String dungeonId = StringArgumentType.getString(ctx, "dungeon");
         String wallId = StringArgumentType.getString(ctx, "wallId");
@@ -4077,7 +4054,7 @@ public class ArcadiaCommands {
 
         ServerPlayer player = ctx.getSource().getPlayer();
         if (player == null) {
-            ctx.getSource().sendFailure(Component.literal("[Arcadia] Commande joueur uniquement!"));
+            ctx.getSource().sendFailure(Messages.get(null, "error.player_only"));
             return 0;
         }
 

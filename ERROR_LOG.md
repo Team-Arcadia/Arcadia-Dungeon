@@ -47,3 +47,24 @@ so a mod with nothing to serve still needs to say so.
 
 **Prevention:** A warning screen is not a log line a player will skip. Launch each target once
 after a packaging change, and read what the game puts in front of the player before the menu.
+
+## [2026-11-05 16:10] — A translated dungeon config still announced in French
+
+**Context:** A server owner translated a dungeon's JSON to Spanish and started a test run.
+
+**Error:** The dungeon's name came out in Spanish inside French sentences: `[Donjon] <player> lance
+Mazmorra de ejemplo! [REJOINDRE (90s)]`, then `Recrutement: 60s restantes!` and the rest.
+
+**Root cause:** Two separate faults. The chat lines were `Component.literal` strings in the code,
+out of reach of any config. And `recruitmentMessage`, which looks like the setting for exactly that
+line, was saved and editable but never read: `broadcastClickableJoin` built its own text. The
+Dungeons panel had a third form of the same mistake: `Component.translatable` on a mod no client
+holds, so nothing could resolve the key.
+
+**Fix:** `Messages`, which resolves every player-facing line on the server from
+`config/arcadia/dungeon/lang/<language>.json`. The five per-dungeon announcements became optional
+overrides, and the recruitment announcement reads its field.
+
+**Prevention:** In a server-side mod the client has no language file of it, so a translation key
+is never an option and text must leave the server already resolved. A config field needs a reader:
+search for its uses when adding one, not only for its assignment.

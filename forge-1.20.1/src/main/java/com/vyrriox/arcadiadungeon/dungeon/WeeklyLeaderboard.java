@@ -2,6 +2,7 @@ package com.vyrriox.arcadiadungeon.dungeon;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.vyrriox.arcadiadungeon.config.Messages;
 import com.vyrriox.arcadiadungeon.ArcadiaDungeon;
 import com.vyrriox.arcadiadungeon.config.RewardConfig;
 import net.minecraft.ChatFormatting;
@@ -152,23 +153,20 @@ public class WeeklyLeaderboard {
         // Announce
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             player.sendSystemMessage(Component.literal("").withStyle(ChatFormatting.RESET));
-            player.sendSystemMessage(Component.literal("======= Top Joueurs de la Semaine =======").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
+            player.sendSystemMessage(Messages.get(player, "weekly.title"));
 
             for (int i = 0; i < Math.min(3, sorted.size()); i++) {
                 Map.Entry<String, Integer> entry = sorted.get(i);
                 String name = data.playerNames.getOrDefault(entry.getKey(), "???");
                 int completions = entry.getValue();
-                ChatFormatting color = i == 0 ? ChatFormatting.GOLD : i == 1 ? ChatFormatting.GRAY : ChatFormatting.RED;
-                String medal = i == 0 ? "1er" : i == 1 ? "2eme" : "3eme";
+                String color = i == 0 ? "&6" : i == 1 ? "&7" : "&c";
 
-                player.sendSystemMessage(Component.literal("  " + medal + " - ")
-                        .withStyle(color, ChatFormatting.BOLD)
-                        .append(Component.literal(name).withStyle(ChatFormatting.WHITE))
-                        .append(Component.literal(" (" + completions + " completions)").withStyle(ChatFormatting.GRAY)));
+                player.sendSystemMessage(Messages.get(player, "weekly.line", "color", color,
+                        "rank", Messages.text(player, "weekly.rank." + (i + 1)), "player", name, "count", completions));
             }
 
             if (sorted.isEmpty()) {
-                player.sendSystemMessage(Component.literal("  Aucune completion cette semaine!").withStyle(ChatFormatting.GRAY));
+                player.sendSystemMessage(Messages.get(player, "weekly.empty"));
             }
 
             player.sendSystemMessage(Component.literal("==========================================").withStyle(ChatFormatting.GOLD));
@@ -209,9 +207,8 @@ public class WeeklyLeaderboard {
                     }
                 }
 
-                String medal = i == 0 ? "1er" : i == 1 ? "2eme" : "3eme";
-                player.sendSystemMessage(Component.literal("[Arcadia] Felicitations! Vous etes " + medal + " cette semaine! Recompenses recues!")
-                        .withStyle(ChatFormatting.GOLD));
+                player.sendSystemMessage(Messages.get(player, "weekly.reward",
+                        "rank", Messages.text(player, "weekly.rank." + (i + 1))));
             }
         }
 
