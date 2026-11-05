@@ -1,5 +1,6 @@
 package com.vyrriox.arcadiadungeon.boss;
 
+import com.vyrriox.arcadiadungeon.config.Messages;
 import com.vyrriox.arcadiadungeon.ArcadiaDungeon;
 import com.vyrriox.arcadiadungeon.config.BossConfig;
 import com.vyrriox.arcadiadungeon.dungeon.DungeonInstance;
@@ -54,13 +55,10 @@ public class BossManager {
                     instance.incrementBossIndex();
 
                     // Notify players with custom or default skip message
-                    String skipMsg = (bossConfig.skipMessage != null && !bossConfig.skipMessage.isEmpty())
-                            ? bossConfig.skipMessage.replace("%boss%", bossConfig.customName)
-                            : "[Arcadia] Le " + bossConfig.customName + " n'est pas apparu cette fois...";
-                    net.minecraft.network.chat.Component skipComponent = DungeonManager.parseColorCodes(skipMsg);
+                    String skipMsg = bossConfig.skipMessage;
                     for (UUID playerId : instance.getPlayers()) {
                         ServerPlayer player = server.getPlayerList().getPlayer(playerId);
-                        if (player != null) player.sendSystemMessage(skipComponent);
+                        if (player != null) player.sendSystemMessage(Messages.getOr(player, skipMsg, "boss.skipped", "boss", bossConfig.customName));
                     }
                     continue;
                 }
@@ -159,13 +157,10 @@ public class BossManager {
                 if (roll > bossConfig.spawnChance) {
                     ArcadiaDungeon.LOGGER.info("Optional inter-wave boss {} skipped (roll: {}, chance: {})",
                             bossConfig.id, String.format("%.2f", roll), bossConfig.spawnChance);
-                    String skipMsg = (bossConfig.skipMessage != null && !bossConfig.skipMessage.isEmpty())
-                            ? bossConfig.skipMessage.replace("%boss%", bossConfig.customName)
-                            : "[Arcadia] Le " + bossConfig.customName + " n'est pas apparu cette fois...";
-                    net.minecraft.network.chat.Component skipComponent = DungeonManager.parseColorCodes(skipMsg);
+                    String skipMsg = bossConfig.skipMessage;
                     for (UUID playerId : instance.getPlayers()) {
                         ServerPlayer player = server.getPlayerList().getPlayer(playerId);
-                        if (player != null) player.sendSystemMessage(skipComponent);
+                        if (player != null) player.sendSystemMessage(Messages.getOr(player, skipMsg, "boss.skipped", "boss", bossConfig.customName));
                     }
                     continue;
                 }
