@@ -4,14 +4,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DungeonConfig {
+    private static final String LEGACY_START_MESSAGE = "&6[Donjon] &e%player% &7lance &e%dungeon%&7! Rejoignez avec &f/arcadia_dungeon join %id%&7!";
+    private static final String LEGACY_COMPLETION_MESSAGE = "&6[Donjon] &a%player% &7a vaincu &e%dungeon%&7!";
+    private static final String LEGACY_FAIL_MESSAGE = "&6[Donjon] &c%player% &7a echoue dans &e%dungeon%&7!";
+    private static final String LEGACY_AVAILABILITY_MESSAGE = "&6[Donjon] &e%dungeon% &7est de nouveau accessible! &fLancez avec &e/arcadia_dungeon start %id%";
+    private static final String LEGACY_RECRUITMENT_MESSAGE = "&6[Donjon] &e%player% &7ouvre &e%dungeon%&7! &fRejoignez dans les %time%s &7avec &f/arcadia_dungeon join %id%";
+
+    // The five announcements below are overrides: empty means "use the language files".
     public String id = "";
     public String name = "";
     public int cooldownSeconds = 3600;
     public boolean announceStart = true;
     public boolean announceCompletion = true;
-    public String startMessage = "&6[Donjon] &e%player% &7lance &e%dungeon%&7! Rejoignez avec &f/arcadia_dungeon join %id%&7!";
-    public String completionMessage = "&6[Donjon] &a%player% &7a vaincu &e%dungeon%&7!";
-    public String failMessage = "&6[Donjon] &c%player% &7a echoue dans &e%dungeon%&7!";
+    public String startMessage = "";
+    public String completionMessage = "";
+    public String failMessage = "";
     public boolean teleportBackOnComplete = true;
     public SpawnPointConfig spawnPoint = new SpawnPointConfig();
     public List<BossConfig> bosses = new ArrayList<>();
@@ -20,7 +27,7 @@ public class DungeonConfig {
     public boolean enabled = true;
     public int availableEverySeconds = 0;
     public boolean announceAvailability = true;
-    public String availabilityMessage = "&6[Donjon] &e%dungeon% &7est de nouveau accessible! &fLancez avec &e/arcadia_dungeon start %id%";
+    public String availabilityMessage = "";
     public String requiredPermission = "";
     public int order = 0;
     public String requiredDungeon = "";
@@ -28,7 +35,7 @@ public class DungeonConfig {
 
     // Recruitment / group system
     public int recruitmentDurationSeconds = 90;
-    public String recruitmentMessage = "&6[Donjon] &e%player% &7ouvre &e%dungeon%&7! &fRejoignez dans les %time%s &7avec &f/arcadia_dungeon join %id%";
+    public String recruitmentMessage = "";
 
     // Dungeon area (cuboid) - containment + anti-parasites
     public AreaPos areaPos1 = null;
@@ -49,6 +56,19 @@ public class DungeonConfig {
             this.y = y;
             this.z = z;
         }
+    }
+
+    /**
+     * Blanks a message still holding the French text every dungeon used to be saved with. Those
+     * lines were never chosen by anyone, and left in place they would outrank the language files.
+     * A message that was edited differs from these and stays.
+     */
+    public void clearLegacyDefaultMessages() {
+        if (LEGACY_START_MESSAGE.equals(startMessage)) startMessage = "";
+        if (LEGACY_COMPLETION_MESSAGE.equals(completionMessage)) completionMessage = "";
+        if (LEGACY_FAIL_MESSAGE.equals(failMessage)) failMessage = "";
+        if (LEGACY_AVAILABILITY_MESSAGE.equals(availabilityMessage)) availabilityMessage = "";
+        if (LEGACY_RECRUITMENT_MESSAGE.equals(recruitmentMessage)) recruitmentMessage = "";
     }
 
     public boolean hasArea() {

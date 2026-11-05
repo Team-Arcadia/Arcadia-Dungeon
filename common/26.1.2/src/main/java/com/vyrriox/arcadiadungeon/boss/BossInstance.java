@@ -1,5 +1,6 @@
 package com.vyrriox.arcadiadungeon.boss;
 
+import com.vyrriox.arcadiadungeon.config.Messages;
 import com.vyrriox.arcadiadungeon.ArcadiaDungeon;
 import com.vyrriox.arcadiadungeon.config.BossConfig;
 import com.vyrriox.arcadiadungeon.config.MobSpawnConfig;
@@ -355,8 +356,7 @@ public class BossInstance {
         for (UUID playerId : dungeonPlayers) {
             ServerPlayer player = level.getServer().getPlayerList().getPlayer(playerId);
             if (player != null) {
-                player.sendSystemMessage(Component.literal("[Boss] Eliminez les sbires d'abord!")
-                        .withStyle(net.minecraft.ChatFormatting.RED));
+                player.sendSystemMessage(Messages.get(player, "boss.kill_summons"));
             }
         }
     }
