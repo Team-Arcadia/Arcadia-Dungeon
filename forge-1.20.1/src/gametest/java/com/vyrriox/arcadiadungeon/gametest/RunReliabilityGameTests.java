@@ -729,7 +729,17 @@ public class RunReliabilityGameTests {
         ServerPlayer player = playerAt(h, site.entrance());
         DungeonInstance instance = start(h, player, config);
         LivingEntity mob = firstMobOf(h, instance);
-        mob.teleportTo(outside.getX() - 11.5, outside.getY(), outside.getZ() + 0.5);
+        // Cleared by hand: the flat world has villages, and inside a house wall the mob would be
+        // moved for a good reason.
+        BlockPos walkedTo = outside.offset(-12, 0, 0);
+        h.getLevel().getChunk(walkedTo);
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                block(h.getLevel(), walkedTo.offset(dx, -1, dz), Blocks.STONE);
+                for (int dy = 0; dy <= 2; dy++) block(h.getLevel(), walkedTo.offset(dx, dy, dz), Blocks.AIR);
+            }
+        }
+        mob.teleportTo(walkedTo.getX() + 0.5, walkedTo.getY(), walkedTo.getZ() + 0.5);
 
         long now = System.currentTimeMillis();
         MobRescue.check(instance, h.getLevel().getServer(), now);
