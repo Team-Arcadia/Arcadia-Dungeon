@@ -348,6 +348,7 @@ public class DungeonManager {
             if (bossInstance.spawn()) {
                 instance.addBossInstance(bossConfig.id, bossInstance);
                 instance.setState(DungeonState.ACTIVE);
+                bossInstance.enterFirstPhase();
             }
         }
 

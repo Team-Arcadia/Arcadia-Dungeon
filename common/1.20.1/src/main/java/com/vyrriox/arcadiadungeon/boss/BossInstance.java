@@ -100,8 +100,6 @@ public class BossInstance {
             }
         }
 
-        enterFirstPhase();
-
         ArcadiaDungeon.LOGGER.info("Spawned boss {} at {},{},{}", config.id,
                 config.spawnPoint.x, config.spawnPoint.y, config.spawnPoint.z);
         return true;
@@ -207,9 +205,10 @@ public class BossInstance {
     /**
      * A first phase at full health is how the boss starts, so it applies from the first tick: its
      * multipliers, its message and its summons used to be ignored. A first phase below full health
-     * is an ordinary phase with a threshold, and it used to be skipped altogether.
+     * is an ordinary phase with a threshold, and it used to be skipped altogether. Called once the
+     * boss is part of its run and announced, so its first message comes after its arrival.
      */
-    private void enterFirstPhase() {
+    public void enterFirstPhase() {
         if (config.phases.isEmpty()) return;
         if (config.phases.get(0).healthThreshold >= 1.0) {
             if (tracked != null) transitionToPhase(0, run.getPlayers());

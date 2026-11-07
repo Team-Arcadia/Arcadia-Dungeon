@@ -110,6 +110,7 @@ public class BossManager {
                 }
             }
 
+            bossInstance.enterFirstPhase();
             return true;
         }
 
@@ -200,6 +201,7 @@ public class BossManager {
                     if (player != null) player.sendSystemMessage(spawnComponent);
                 }
             }
+            bossInstance.enterFirstPhase();
         }
         return spawned;
     }
@@ -287,7 +289,11 @@ public class BossManager {
             BossInstance boss = entry.getValue();
             TrackedMob.Presence presence = boss.presence();
             if (presence == TrackedMob.Presence.KILLED) {
-                onBossDefeated(instance, dungeonId, entry.getKey(), boss);
+                // Only once it has really left: a modded boss can sit at zero health while it changes
+                // form, and a boss that truly died this way is removed within a second.
+                if (boss.getBossEntity().isRemoved()) {
+                    onBossDefeated(instance, dungeonId, entry.getKey(), boss);
+                }
             } else if (presence == TrackedMob.Presence.REMOVED) {
                 onBossRemoved(instance, dungeonId, entry.getKey(), boss);
             }

@@ -210,6 +210,10 @@ public class WaveInstance {
         int before = mobs.size();
         mobs.removeIf(mob -> {
             TrackedMob.Presence presence = mob.follow(now);
+            if (presence == TrackedMob.Presence.REMOVED) {
+                ArcadiaDungeon.LOGGER.warn("Wave {}: a {} left the world without dying ({}), the wave goes on without it",
+                        config.waveNumber, mob.entity().getType(), mob.entity().getRemovalReason());
+            }
             return presence == TrackedMob.Presence.KILLED || presence == TrackedMob.Presence.REMOVED;
         });
         if (mobs.size() < before && run != null) run.noteProgress();
