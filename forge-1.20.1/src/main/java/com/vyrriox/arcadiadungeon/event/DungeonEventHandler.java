@@ -600,7 +600,7 @@ public class DungeonEventHandler {
         if (instance == null) return;
 
         DungeonManager.getInstance().teleportToSpawn(player, instance.getConfig().spawnPoint);
-        player.sendSystemMessage(Messages.get(player, "run.respawn", "lives", instance.getRemainingLives(player.getUUID())));
+        player.sendSystemMessage(Messages.get(player, "run.respawn", "lives", instance.getRemainingLivesLabel(player.getUUID())));
     }
 
     // === HANDLERS ===
@@ -610,7 +610,6 @@ public class DungeonEventHandler {
 
         int deaths = instance.addDeath(player.getUUID());
         int maxDeaths = instance.getConfig().settings.maxDeaths;
-        int remaining = instance.getRemainingLives(player.getUUID());
 
         if (maxDeaths > 0 && deaths >= maxDeaths) {
             player.sendSystemMessage(Messages.get(player, "run.excluded", "max", maxDeaths));
@@ -622,7 +621,7 @@ public class DungeonEventHandler {
             }
             DungeonManager.getInstance().schedulePlayerRemoval(player.getUUID());
         } else {
-            player.sendSystemMessage(Messages.get(player, "run.death", "lives", remaining));
+            player.sendSystemMessage(Messages.get(player, "run.death", "lives", instance.getRemainingLivesLabel(player.getUUID())));
         }
     }
 

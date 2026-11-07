@@ -67,6 +67,7 @@ panel protocol in Arcadia Lib.
   by itself. Both are let in now and leave with the run.
 - **Phase speed** multiplied the default speed, not the one set in `customAttributes`.
 - **Flight taken away for good** - A player who disconnected during a run did not get it back.
+- **2147483647 lives left** - A dungeon with no death limit announced that after each death.
 - **Attribute names between game versions** - On 26.1.2, `minecraft:generic.armor` and the like were
   unknown and ignored, so a dungeon written for 1.21.1 lost its armor. Either name works everywhere.
 - **Mobs invisible in single player** - The area refused the client's copy of the run's mobs.
@@ -164,6 +165,7 @@ panel protocol in Arcadia Lib.
   moddé fait apparaître lui-même. Ils entrent maintenant et repartent avec la partie.
 - **La vitesse de phase** multipliait la vitesse par défaut, pas celle de `customAttributes`.
 - **Le vol retiré pour de bon** - Un joueur déconnecté pendant une partie ne le récupérait pas.
+- **2147483647 vies restantes** - Un donjon sans limite de morts annonçait cela après chaque mort.
 - **Noms d'attributs entre versions du jeu** - En 26.1.2, `minecraft:generic.armor` et les autres
   étaient inconnus et ignorés : un donjon écrit pour la 1.21.1 perdait son armure. Les deux noms
   fonctionnent désormais partout.

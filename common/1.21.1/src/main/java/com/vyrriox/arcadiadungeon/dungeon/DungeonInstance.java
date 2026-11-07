@@ -299,6 +299,11 @@ public class DungeonInstance {
         return Math.max(0, max - getDeaths(playerId));
     }
 
+    /** The lives to show a player. With no limit there is no number: this used to say 2147483647. */
+    public String getRemainingLivesLabel(UUID playerId) {
+        return config.settings.maxDeaths <= 0 ? "\u221E" : String.valueOf(getRemainingLives(playerId));
+    }
+
     // === REWARDS ===
 
     public void giveRewards(ServerPlayer player, List<RewardConfig> rewards) {

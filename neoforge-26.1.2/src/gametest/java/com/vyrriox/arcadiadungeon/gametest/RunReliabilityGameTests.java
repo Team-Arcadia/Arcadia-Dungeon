@@ -1413,6 +1413,21 @@ public class RunReliabilityGameTests {
         });
     }
 
+    /** A dungeon with no death limit has no number of lives to announce. */
+    public static void unlimitedLivesAreNotANumber(GameTestHelper h) {
+        Site site = newSite(h);
+        DungeonConfig unlimited = dungeon(h, site);
+        unlimited.settings.maxDeaths = 0;
+        DungeonConfig limited = dungeon(h, site);
+        limited.settings.maxDeaths = 3;
+        UUID id = UUID.randomUUID();
+        String none = new DungeonInstance(unlimited, h.getLevel().getServer()).getRemainingLivesLabel(id);
+        String three = new DungeonInstance(limited, h.getLevel().getServer()).getRemainingLivesLabel(id);
+        if (none.matches(".*[0-9].*")) h.fail("a dungeon with no limit announces " + none + " lives");
+        if (!three.equals("3")) h.fail("a dungeon with three lives announces " + three);
+        h.succeed();
+    }
+
     /** Puts a fake player in the player list, for what looks players up by id, or takes it out. */
     @SuppressWarnings("unchecked")
     private static void listPlayer(GameTestHelper h, ServerPlayer player, boolean listed) {
