@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "arcadia_dungeon:the_first_phase_of_a_boss_is_not_skipped",
+  "structure": "arcadia_dungeon:floor",
+  "environment": "minecraft:default",
+  "max_ticks": 4000000
+}

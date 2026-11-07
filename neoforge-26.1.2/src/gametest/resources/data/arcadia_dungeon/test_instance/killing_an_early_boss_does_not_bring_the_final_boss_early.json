@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "arcadia_dungeon:killing_an_early_boss_does_not_bring_the_final_boss_early",
+  "structure": "arcadia_dungeon:floor",
+  "environment": "minecraft:default",
+  "max_ticks": 4000000
+}

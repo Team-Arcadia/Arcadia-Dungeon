@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "arcadia_dungeon:every_dungeon_plays_from_start_to_finish",
+  "structure": "arcadia_dungeon:floor",
+  "environment": "minecraft:default",
+  "max_ticks": 60000000
+}

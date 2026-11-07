@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "arcadia_dungeon:entities_loaded_from_disk_survive_a_run",
+  "structure": "arcadia_dungeon:floor",
+  "environment": "minecraft:default",
+  "max_ticks": 4000000
+}

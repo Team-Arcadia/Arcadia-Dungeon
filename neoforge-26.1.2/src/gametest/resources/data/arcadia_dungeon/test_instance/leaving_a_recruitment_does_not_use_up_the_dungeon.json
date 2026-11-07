@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "arcadia_dungeon:leaving_a_recruitment_does_not_use_up_the_dungeon",
+  "structure": "arcadia_dungeon:floor",
+  "environment": "minecraft:default",
+  "max_ticks": 4000000
+}

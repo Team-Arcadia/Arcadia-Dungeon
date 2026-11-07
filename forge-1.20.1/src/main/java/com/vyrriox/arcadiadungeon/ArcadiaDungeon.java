@@ -86,6 +86,7 @@ public class ArcadiaDungeon {
     public void onServerStarting(ServerStartingEvent event) {
         ConfigManager.getInstance().loadAll();
         DungeonManager.getInstance().setServer(event.getServer());
+        com.vyrriox.arcadiadungeon.config.DungeonValidator.logProblems(event.getServer());
         com.vyrriox.arcadiadungeon.dungeon.WeeklyLeaderboard.getInstance().load();
         LOGGER.info("Arcadia Dungeon loaded {} dungeon(s)", ConfigManager.getInstance().getDungeonConfigs().size());
     }

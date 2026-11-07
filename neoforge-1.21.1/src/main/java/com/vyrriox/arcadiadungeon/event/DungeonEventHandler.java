@@ -18,6 +18,8 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.monster.Vex;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
@@ -25,6 +27,8 @@ import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.CommandEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.EntityTravelToDimensionEvent;
+import net.neoforged.neoforge.event.entity.living.LivingConversionEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingExperienceDropEvent;
@@ -37,8 +41,7 @@ import java.util.*;
 
 public class DungeonEventHandler {
 
-    private final Set<Integer> announcedRecruitmentMilestones = new HashSet<>(); // Fix #9: track milestones
-    private final Set<Integer> announcedTimerMilestones = new HashSet<>();
+    private final Map<String, Long> lastTickFailure = new HashMap<>();
     private long nextWaveCheckAt = 0L;
     private long nextRecruitmentCheckAt = 0L;
     private long nextDungeonTimerCheckAt = 0L;
@@ -51,6 +54,7 @@ public class DungeonEventHandler {
     private long nextWeeklyTickAt = 0L;
     private long nextPruneAt = 0L;
     private long nextManagedCombatCheckAt = 0L;
+    private long nextRescueCheckAt = 0L;
 
     // Wand: track selected dungeon per player
     public static final Map<UUID, String> wandDungeon = new java.util.concurrent.ConcurrentHashMap<>();
@@ -223,6 +227,10 @@ public class DungeonEventHandler {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onEntityJoinLevel(EntityJoinLevelEvent event) {
+        // In single player this also fires for the client's copy of every entity. That copy carries
+        // no tags, so it looked like an intruder and the mobs of a run were invisible to the host.
+        if (event.getLevel().isClientSide()) return;
+
         long now = System.currentTimeMillis();
         Entity entity = event.getEntity();
         if (entity instanceof Player) return;
@@ -238,18 +246,65 @@ public class DungeonEventHandler {
         }
 
         if (!(entity instanceof LivingEntity living)) return;
-        if (isArcadiaManaged(living)) return;
 
-        for (DungeonInstance instance : DungeonManager.getInstance().getActiveInstances().values()) {
+        DungeonManager manager = DungeonManager.getInstance();
+        if (isArcadiaManaged(living)) {
+            // Read back from disk with no run to answer to: a run ended while this mob's chunk was
+            // unloaded, or the server crashed. Left alone it stands there for ever, attached to
+            // nothing, and a boss saved during its spawn protection cannot even be hurt.
+            if (event.loadedFromDisk() && manager.isLeftover(living)) {
+                event.setCanceled(true);
+                ArcadiaDungeon.LOGGER.info("Removed a dungeon mob left over from a run that is over: {} at {}, {}, {}",
+                        living.getType(), (int) living.getX(), (int) living.getY(), (int) living.getZ());
+            }
+            return;
+        }
+
+        for (DungeonInstance instance : manager.getActiveInstances().values()) {
             var config = instance.getConfig();
             if (!config.hasArea()) continue;
             String dimension = living.level().dimension().location().toString();
             if (!config.isInArea(dimension, living.getX(), living.getY(), living.getZ())) continue;
 
+            // Cancelling a mob read from disk deletes it: the chunk's next save does not hold it. So
+            // only what would have despawned on its own goes. Armor stands and villagers in an area
+            // used to disappear for good whenever their chunk loaded during a run.
+            if (event.loadedFromDisk()) {
+                if (wouldDespawnAnyway(living)) event.setCanceled(true);
+                return;
+            }
+
+            if (manager.getCommandRun() == instance
+                    || (instance.bringsOwnMobs(living.getType()) && ManagedEntities.cameFromTheFight(living))) {
+                instance.adoptExtra(living);
+                return;
+            }
+
             event.setCanceled(true);
             ArcadiaDungeon.LOGGER.debug("Blocked unmanaged entity {} inside active dungeon {}", entity.getType(), config.id);
             return;
         }
+    }
+
+    private static boolean wouldDespawnAnyway(LivingEntity living) {
+        return living instanceof Enemy && living instanceof Mob mob
+                && !mob.isPersistenceRequired() && !mob.hasCustomName();
+    }
+
+    /**
+     * A dungeon mob stays what it is. A piglin zombifies after fifteen seconds in the overworld and a
+     * zombie drowns into a drowned, and the new mob belongs to no run: it was refused at the door
+     * while the old one was removed, so the mob simply disappeared, and a boss took its run with it.
+     */
+    @SubscribeEvent
+    public void onMobConversion(LivingConversionEvent.Pre event) {
+        if (isArcadiaManaged(event.getEntity())) event.setCanceled(true);
+    }
+
+    /** A dungeon mob that walks through a portal is out of reach of everyone in the run. */
+    @SubscribeEvent
+    public void onMobDimensionTravel(EntityTravelToDimensionEvent event) {
+        if (isArcadiaManaged(event.getEntity())) event.setCanceled(true);
     }
 
     // === COMMAND BLOCKING ===
@@ -278,65 +333,109 @@ public class DungeonEventHandler {
     @SubscribeEvent
     public void onServerTick(ServerTickEvent.Post event) {
         long now = System.currentTimeMillis();
-        DungeonManager.getInstance().processPendingFails();
-        BossManager.getInstance().tickAllBosses(); // Fix #19: early-exit is inside BossManager now
+        DungeonManager manager = DungeonManager.getInstance();
+        guarded("pending fails", manager::processPendingFails);
+        guarded("boss tick", BossManager.getInstance()::tickAllBosses); // Fix #19: early-exit is inside BossManager now
+
+        // On the tick count, not the clock: the hold lasts sixty ticks however long they take.
+        MinecraftServer tickingServer = manager.getServer();
+        if (tickingServer != null && tickingServer.getTickCount() % 20 == 0) {
+            guarded("chunk hold", manager::holdRunChunks);
+        }
 
         if (now >= nextWaveCheckAt) {
             nextWaveCheckAt = now + 500L;
-            checkWaveStates();
+            guarded("wave check", this::checkWaveStates);
+            guarded("boss check", this::checkBossesStillThere);
         }
         if (now >= nextRecruitmentCheckAt) {
             nextRecruitmentCheckAt = now + 1000L;
-            checkRecruitment();
+            guarded("recruitment check", this::checkRecruitment);
         }
         if (now >= nextDungeonTimerCheckAt) {
             nextDungeonTimerCheckAt = now + 1000L;
-            checkDungeonTimers();
+            guarded("timer check", this::checkDungeonTimers);
+        }
+        if (now >= nextRescueCheckAt) {
+            nextRescueCheckAt = now + 1000L;
+            guarded("mob rescue", () -> checkMobRescue(now));
         }
         if (now >= nextRestrictedEffectsCheckAt) {
             nextRestrictedEffectsCheckAt = now + 5000L;
-            checkRestrictedEffects();
+            guarded("effect check", this::checkRestrictedEffects);
         }
         if (now >= nextAntiFlyCheckAt) {
             nextAntiFlyCheckAt = now + 2000L;
-            checkAntiFly();
+            guarded("flight check", this::checkAntiFly);
         }
         if (now >= nextContainmentCheckAt) {
             nextContainmentCheckAt = now + 5000L;
-            checkPlayerContainment();
+            guarded("containment check", this::checkPlayerContainment);
         }
         if (now >= nextRecruitFreezeAt) {
             nextRecruitFreezeAt = now + 5000L;
-            freezeRecruitingPlayers();
+            guarded("recruitment freeze", this::freezeRecruitingPlayers);
         }
         if (now >= nextAvailabilityCheckAt) {
             nextAvailabilityCheckAt = now + 10000L;
-            DungeonManager.getInstance().checkAvailabilityAnnouncements();
+            guarded("availability check", manager::checkAvailabilityAnnouncements);
         }
         if (now >= nextProgressFlushAt) {
             nextProgressFlushAt = now + 30000L;
-            PlayerProgressManager.getInstance().flushDirty();
+            guarded("progress flush", PlayerProgressManager.getInstance()::flushDirty);
         }
         if (now >= nextWeeklyTickAt) {
             nextWeeklyTickAt = now + 60000L;
-            var server = DungeonManager.getInstance().getServer();
-            if (server != null) WeeklyLeaderboard.getInstance().tick(server);
+            var server = manager.getServer();
+            if (server != null) guarded("weekly leaderboard", () -> WeeklyLeaderboard.getInstance().tick(server));
         }
         if (now >= nextPruneAt) {
             nextPruneAt = now + 300000L;
-            DungeonManager.getInstance().pruneExpiredData();
+            guarded("prune", manager::pruneExpiredData);
         }
         if (now >= nextManagedCombatCheckAt) {
             nextManagedCombatCheckAt = now + 100L;
-            checkManagedCombat(now);
+            guarded("managed combat", () -> checkManagedCombat(now));
+        }
+    }
+
+    /**
+     * An exception on the server tick stops the whole server. One broken dungeon, say a config with a
+     * missing value, must not take every player down with it, so it is logged, once a minute.
+     */
+    private void guarded(String step, Runnable check) {
+        try {
+            check.run();
+        } catch (RuntimeException e) {
+            long now = System.currentTimeMillis();
+            Long last = lastTickFailure.get(step);
+            if (last == null || now - last > 60000L) {
+                lastTickFailure.put(step, now);
+                ArcadiaDungeon.LOGGER.error("Dungeon step '{}' failed, the server keeps running", step, e);
+            }
+        }
+    }
+
+    private void checkBossesStillThere() {
+        for (Map.Entry<String, DungeonInstance> entry : new ArrayList<>(DungeonManager.getInstance().getActiveInstances().entrySet())) {
+            BossManager.getInstance().checkBossesStillThere(entry.getValue(), entry.getKey());
+        }
+    }
+
+    private void checkMobRescue(long now) {
+        MinecraftServer server = DungeonManager.getInstance().getServer();
+        if (server == null) return;
+        for (DungeonInstance instance : DungeonManager.getInstance().getActiveInstances().values()) {
+            MobRescue.check(instance, server, now);
         }
     }
 
     // === ENTITY EVENTS ===
-    @SubscribeEvent
+    // Lowest: a mod that saves the entity at the last moment cancels this event, and then nobody died.
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onEntityDeath(LivingDeathEvent event) {
         LivingEntity entity = event.getEntity();
-        if (entity.getTags().contains("arcadia_boss")) { handleBossDeath(entity); return; }
+        if (entity.getTags().contains("arcadia_boss")) { BossManager.getInstance().onBossEntityDied(entity); return; }
         if (entity.getTags().contains("arcadia_wave_mob")) return;
         if (entity instanceof ServerPlayer player) handlePlayerDeath(player, event);
     }
@@ -371,12 +470,15 @@ public class DungeonEventHandler {
             return;
         }
 
-        if (!entity.getTags().contains("arcadia_boss")) return;
+        if (!entity.getTags().contains("arcadia_boss")) {
+            noteHit(entity, event.getSource().getEntity());
+            return;
+        }
 
         // Fix #7: direct lookup instead of O(D*B) scan
         for (DungeonInstance instance : DungeonManager.getInstance().getActiveInstances().values()) {
             for (BossInstance boss : instance.getActiveBosses().values()) {
-                if (boss.getBossEntity() != entity) continue;
+                if (!boss.matches(entity)) continue;
 
                 if (boss.isTransitioning()) { event.setCanceled(true); return; }
                 if (boss.shouldBlockDamageWhileSummonsAlive()) {
@@ -385,12 +487,14 @@ public class DungeonEventHandler {
                     return;
                 }
 
+                noteHit(entity, event.getSource().getEntity());
+
                 // Reveal boss bar on first hit (optional bosses)
                 boss.revealBossBar();
 
                 // Anti-phase-skip
-                float currentHp = boss.getBossEntity().getHealth();
-                float maxHp = boss.getBossEntity().getMaxHealth();
+                float currentHp = entity.getHealth();
+                float maxHp = entity.getMaxHealth();
                 float resultHp = currentHp - event.getAmount();
                 float floor = getHealthFloorForNextPhase(boss, maxHp);
                 if (floor > 0 && resultHp < floor) {
@@ -410,6 +514,13 @@ public class DungeonEventHandler {
         }
     }
 
+    /** A dungeon mob took a hit from outside its run: the fight is moving, nobody needs rescuing. */
+    private void noteHit(LivingEntity entity, Entity attacker) {
+        if (attacker == null || isArcadiaManaged(attacker) || !isArcadiaManaged(entity)) return;
+        DungeonInstance run = DungeonManager.getInstance().runOf(entity);
+        if (run != null) run.noteProgress();
+    }
+
     private float getHealthFloorForNextPhase(BossInstance boss, float maxHp) {
         var phases = boss.getConfig().phases;
         for (int i = boss.getCurrentPhase() + 1; i < phases.size(); i++) {
@@ -420,7 +531,8 @@ public class DungeonEventHandler {
 
     private void checkManagedCombat(long now) {
         for (DungeonInstance instance : DungeonManager.getInstance().getActiveInstances().values()) {
-            for (BossInstance boss : instance.getActiveBosses().values()) {
+            // A copy: a hit can end the boss on thorns, which takes it out of this map mid-loop.
+            for (BossInstance boss : List.copyOf(instance.getActiveBosses().values())) {
                 LivingEntity bossEntity = boss.getBossEntity();
                 if (bossEntity != null && bossEntity.isAlive()) {
                     CombatTuning.tryExtendedMeleeAttack(bossEntity, now);
@@ -465,12 +577,18 @@ public class DungeonEventHandler {
             wandDungeon.remove(uuid);
             wandPos1.remove(uuid);
             wandPos2.remove(uuid);
+            wandWall.remove(uuid);
+            // The player is saved right after this: give back the flight the run took away, or it
+            // is gone for good, since nobody is left to give it back at the next login.
+            restoreFlight(player);
         }
     }
 
     @SubscribeEvent
     public void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
+
+        DungeonManager.getInstance().onPlayerRespawned(player);
 
         // Fix #16: skip respawn TP if player is pending removal (max deaths reached)
         if (DungeonManager.getInstance().isPendingRemoval(player.getUUID())) return;
@@ -479,78 +597,16 @@ public class DungeonEventHandler {
         if (instance == null) return;
 
         DungeonManager.getInstance().teleportToSpawn(player, instance.getConfig().spawnPoint);
-        player.sendSystemMessage(Messages.get(player, "run.respawn", "lives", instance.getRemainingLives(player.getUUID())));
+        player.sendSystemMessage(Messages.get(player, "run.respawn", "lives", instance.getRemainingLivesLabel(player.getUUID())));
     }
 
     // === HANDLERS ===
-    private void handleBossDeath(LivingEntity entity) {
-        for (Map.Entry<String, DungeonInstance> entry : new ArrayList<>(DungeonManager.getInstance().getActiveInstances().entrySet())) {
-            DungeonInstance instance = entry.getValue();
-            String dungeonId = entry.getKey();
-
-            for (Map.Entry<String, BossInstance> bossEntry : new ArrayList<>(instance.getActiveBosses().entrySet())) {
-                BossInstance boss = bossEntry.getValue();
-                if (boss.getBossEntity() != entity) continue;
-
-                String bossId = bossEntry.getKey();
-
-                for (UUID playerId : instance.getPlayers()) {
-                    ServerPlayer player = DungeonManager.getInstance().getServer().getPlayerList().getPlayer(playerId);
-                    if (player != null) {
-                        instance.giveRewards(player, boss.getConfig().rewards);
-                        String bossLabel = (boss.getConfig().customName == null || boss.getConfig().customName.isEmpty())
-                                ? bossId
-                                : boss.getConfig().customName;
-                        player.sendSystemMessage(Messages.get(player, "boss.defeated", "boss", bossLabel));
-                    }
-                }
-
-                // Fix #2: remove from map BEFORE cleanup to prevent re-entry issues
-                instance.removeBossInstance(bossId);
-                boss.cleanup();
-
-                // Inter-wave boss: let checkWaveStates handle resume when required bosses dead
-                if (instance.isWaitingForInterWaveBoss()) {
-                    // checkWaveStates will detect allRequiredBossesDefeated and resume
-                } else if (instance.hasNextBoss()) {
-                    boolean spawned = BossManager.getInstance().spawnNextBoss(instance);
-                    if (spawned) {
-                        for (UUID playerId : instance.getPlayers()) {
-                            ServerPlayer player = DungeonManager.getInstance().getServer().getPlayerList().getPlayer(playerId);
-                            if (player != null) player.sendSystemMessage(Messages.get(player, "boss.next"));
-                        }
-                    } else if (instance.allRequiredBossesDefeated()) {
-                        if (!instance.hasWaves() || instance.areWavesCompleted()) {
-                            for (BossInstance remaining : new ArrayList<>(instance.getActiveBosses().values())) {
-                                remaining.cleanup();
-                            }
-                            instance.getActiveBosses().clear();
-                            DungeonManager.getInstance().completeDungeon(dungeonId);
-                        }
-                    }
-                } else if (instance.allRequiredBossesDefeated() && !instance.isWaitingForInterWaveBoss()) {
-                    // All required bosses defeated — check if waves done too
-                    if (!instance.hasWaves() || instance.areWavesCompleted()) {
-                        // Cleanup non-required bosses still alive
-                        for (BossInstance remaining : new ArrayList<>(instance.getActiveBosses().values())) {
-                            remaining.cleanup();
-                        }
-                        instance.getActiveBosses().clear();
-                        DungeonManager.getInstance().completeDungeon(dungeonId);
-                    }
-                }
-                return;
-            }
-        }
-    }
-
     private void handlePlayerDeath(ServerPlayer player, LivingDeathEvent event) {
         DungeonInstance instance = DungeonManager.getInstance().getPlayerDungeon(player.getUUID());
         if (instance == null) return;
 
         int deaths = instance.addDeath(player.getUUID());
         int maxDeaths = instance.getConfig().settings.maxDeaths;
-        int remaining = instance.getRemainingLives(player.getUUID());
 
         if (maxDeaths > 0 && deaths >= maxDeaths) {
             player.sendSystemMessage(Messages.get(player, "run.excluded", "max", maxDeaths));
@@ -562,7 +618,7 @@ public class DungeonEventHandler {
             }
             DungeonManager.getInstance().schedulePlayerRemoval(player.getUUID());
         } else {
-            player.sendSystemMessage(Messages.get(player, "run.death", "lives", remaining));
+            player.sendSystemMessage(Messages.get(player, "run.death", "lives", instance.getRemainingLivesLabel(player.getUUID())));
         }
     }
 
@@ -615,9 +671,7 @@ public class DungeonEventHandler {
             // Fix #9: range-based milestone checks (won't miss on lag)
             int[] milestones = {60, 30, 10, 5};
             for (int m : milestones) {
-                int key = Objects.hash(dungeonId, m);
-                if (remaining <= m && remaining > m - 2 && !announcedRecruitmentMilestones.contains(key)) {
-                    announcedRecruitmentMilestones.add(key);
+                if (remaining <= m && remaining > m - 2 && instance.announceOnce(m)) {
                     for (UUID playerId : instance.getPlayers()) {
                         ServerPlayer player = server.getPlayerList().getPlayer(playerId);
                         if (player != null) player.sendSystemMessage(Messages.get(player, "recruit.countdown", "time", m));
@@ -634,7 +688,6 @@ public class DungeonEventHandler {
                         player.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
                     }
                 }
-                announcedRecruitmentMilestones.removeIf(k -> true); // clear all
                 DungeonManager.getInstance().finishRecruitment(dungeonId);
             }
         }
@@ -670,7 +723,7 @@ public class DungeonEventHandler {
             if (!currentWave.isSpawned() && !currentWave.tickDelay()) continue;
 
             if (!currentWave.isSpawned()) {
-                currentWave.spawn(server, instance.getPlayerCount(), instance.getConfig().settings);
+                currentWave.spawn(server, instance);
                 String msg = currentWave.getConfig().startMessage;
                 int waveNumber = currentWave.getConfig().waveNumber;
                 for (UUID playerId : instance.getPlayers()) {
@@ -853,9 +906,9 @@ public class DungeonEventHandler {
                 // Fix #9: range-based checks
                 List<Integer> milestones = instance.getConfig().settings.timerWarnings;
                 for (int m : milestones) {
-                    int key = Objects.hash(dungeonId, "timer", m);
-                    if (remaining <= m && remaining > m - 2 && !announcedTimerMilestones.contains(key)) {
-                        announcedTimerMilestones.add(key);
+                    // Kept per run: these were remembered for the life of the server, so the
+                    // warnings only ever played during a dungeon's first run after a restart.
+                    if (remaining <= m && remaining > m - 2 && instance.announceOnce(-m)) {
                         for (UUID playerId : instance.getPlayers()) {
                             ServerPlayer player = DungeonManager.getInstance().getServer().getPlayerList().getPlayer(playerId);
                             if (player != null) player.sendSystemMessage(Messages.get(player, "run.time_left", "time", DungeonManager.formatTime(m)));

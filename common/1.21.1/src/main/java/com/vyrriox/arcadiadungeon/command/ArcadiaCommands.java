@@ -1091,6 +1091,9 @@ public class ArcadiaCommands {
                         .then(Commands.literal("active")
                                 .executes(ArcadiaCommands::debugActive)
                         )
+                        .then(Commands.literal("validate")
+                                .executes(ArcadiaCommands::debugValidate)
+                        )
                         .then(Commands.literal("spawnboss")
                                 .then(Commands.argument("dungeon", StringArgumentType.word())
                                         .suggests(SUGGEST_DUNGEONS)
@@ -2257,18 +2260,8 @@ public class ArcadiaCommands {
             return 0;
         }
 
-        DungeonInstance instance = DungeonManager.getInstance().startDungeon(dungeonId, player);
-        if (instance != null) {
-            // If recruiting, waves/bosses start after recruitment ends (event handler)
-            if (instance.getState() != DungeonState.RECRUITING) {
-                if (!instance.hasWaves()) {
-                    BossManager.getInstance().spawnNextBoss(instance);
-                }
-                // Waves are started automatically by the event handler
-            }
-            return 1;
-        }
-        return 0;
+        // The manager starts the fight itself, whichever way the run was opened.
+        return DungeonManager.getInstance().startDungeon(dungeonId, player) != null ? 1 : 0;
     }
 
     private static int joinDungeon(CommandContext<CommandSourceStack> ctx) {
@@ -2552,6 +2545,23 @@ public class ArcadiaCommands {
                 ConfigManager.getInstance().getDungeonConfigs().size() + " donjon(s), " +
                 PlayerProgressManager.getInstance().getAll().size() + " joueur(s).")
                 .withStyle(ChatFormatting.AQUA), true);
+        com.vyrriox.arcadiadungeon.config.DungeonValidator.logProblems(ctx.getSource().getServer());
+        return 1;
+    }
+
+    /** Says what is wrong with each dungeon's config, instead of letting a run find out. */
+    private static int debugValidate(CommandContext<CommandSourceStack> ctx) {
+        int total = 0;
+        for (DungeonConfig config : ConfigManager.getInstance().getDungeonConfigs().values()) {
+            for (String problem : com.vyrriox.arcadiadungeon.config.DungeonValidator.check(config, ctx.getSource().getServer())) {
+                total++;
+                ctx.getSource().sendSuccess(() -> Component.literal("[" + config.id + "] " + problem)
+                        .withStyle(ChatFormatting.YELLOW), false);
+            }
+        }
+        int found = total;
+        ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia Debug] " + found + " probleme(s) trouve(s).")
+                .withStyle(found == 0 ? ChatFormatting.GREEN : ChatFormatting.YELLOW), false);
         return 1;
     }
 

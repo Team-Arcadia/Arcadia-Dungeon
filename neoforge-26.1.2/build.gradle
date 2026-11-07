@@ -15,9 +15,19 @@ if (commonDir.isDirectory()) {
 }
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
+// GameTests (run with ./gradlew runGameTestServer). Compiled against main, never packaged.
+// 1.21.5 dropped the @GameTest annotation, so a test here is a function registered in code plus
+// a test_instance file.
+sourceSets {
+    gametest {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
 neoForge {
     version = project.neo_version
-    mods { "arcadia_dungeon" { sourceSet(sourceSets.main) } }
+    mods { "arcadia_dungeon" { sourceSet(sourceSets.main); sourceSet(sourceSets.gametest) } }
 
     runs {
         client {
@@ -28,6 +38,12 @@ neoForge {
             server()
             gameDirectory = file('run/server')
             programArgument '--nogui'
+        }
+        gameTestServer {
+            type = 'gameTestServer'
+            sourceSet = sourceSets.gametest
+            gameDirectory = file('run/gametest')
+            programArguments.addAll '--tests', 'arcadia_dungeon:*'
         }
     }
 }
@@ -76,7 +92,7 @@ tasks.register('deployArcadiaLib') {
     group = 'arcadia'
     description = 'Copies the newest arcadia-lib jar from libs/ into each run directory.'
     def jars = arcadiaLibJars
-    def dirs = ['run/client', 'run/server']
+    def dirs = ['run/client', 'run/server', 'run/gametest']
     def root = projectDir
     inputs.files jars
     outputs.upToDateWhen { false }
@@ -106,4 +122,12 @@ tasks.configureEach {
     if (name in ['runClient', 'runServer', 'runGameTestServer', 'runData']) {
         dependsOn 'deployArcadiaLib'
     }
+}
+
+neoForge.addModdingDependenciesTo(sourceSets.gametest)
+
+configurations {
+    gametestImplementation.extendsFrom implementation
+    gametestRuntimeOnly.extendsFrom runtimeOnly
+    gametestCompileOnly.extendsFrom compileOnly
 }

@@ -21,6 +21,20 @@ if (commonDir.isDirectory()) {
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
+// GameTests (run with ./gradlew runGameTestServer). Compiled against main, never packaged.
+sourceSets {
+    gametest {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
+configurations {
+    gametestImplementation.extendsFrom implementation
+    gametestRuntimeOnly.extendsFrom runtimeOnly
+    gametestCompileOnly.extendsFrom compileOnly
+}
+
 minecraft {
     mappings channel: 'official', version: minecraft_version
     copyIdeResources = true
@@ -34,6 +48,11 @@ minecraft {
             workingDirectory project.file('run/server')
             args '--nogui'
             mods { "arcadia_dungeon" { source sourceSets.main } }
+        }
+        gameTestServer {
+            workingDirectory project.file('run/gametest')
+            property 'forge.enabledGameTestNamespaces', 'arcadia_dungeon'
+            mods { "arcadia_dungeon" { source sourceSets.main; source sourceSets.gametest } }
         }
     }
 }
