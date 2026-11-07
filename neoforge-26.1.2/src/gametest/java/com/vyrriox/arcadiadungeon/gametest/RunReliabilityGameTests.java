@@ -413,8 +413,8 @@ public class RunReliabilityGameTests {
     /**
      * Killing a boss that came with the start of the run leaves the final boss where it is.
      *
-     * <p>{@code castle} has one: a one in ten secret boss at the start, and killing it brought the
-     * Grand Pretre in the middle of the waves, and paused them.</p>
+     * <p>A rare boss at the start of a run is a common way to write a dungeon, and killing it brought
+     * the last boss in the middle of the waves, and paused them.</p>
      */
     public static void killingAnEarlyBossDoesNotBringTheFinalBossEarly(GameTestHelper h) {
         Site site = newSite(h);
@@ -448,7 +448,7 @@ public class RunReliabilityGameTests {
      * <p>In the overworld a piglin turns into a zombified piglin after fifteen seconds. The new mob
      * is not one of the dungeon's, so it was refused at the door while the old one was removed: the
      * boss disappeared and the run waited for it until the timer ran out. Zombies in water do the
-     * same, and {@code cave} has a flooded room.</p>
+     * same in any dungeon with a flooded room.</p>
      */
     public static void aPiglinBossDoesNotConvertAwayFromItsRun(GameTestHelper h) {
         // Next to the test structure, whose chunks tick whatever the dungeon does: a piglin that
@@ -758,8 +758,8 @@ public class RunReliabilityGameTests {
 
     /**
      * A summon protecting its boss gets found: it glows, then it is brought back, and if nobody can
-     * kill it the boss can be hit anyway. In {@code cave} a phase summons blazes in a shaft a hundred
-     * blocks high, and in {@code castle} one summons pillagers that wander off through the rooms.
+     * kill it the boss can be hit anyway. A blaze hovers out of reach in a tall room, and a pillager
+     * wanders off through the rooms.
      */
     public static void aSummonNobodyReachesEndsUpReachableAndThenStopsProtecting(GameTestHelper h) {
         Site site = newSite(h);
@@ -961,8 +961,7 @@ public class RunReliabilityGameTests {
     // === Mobs as configured ===
 
     /**
-     * A pillager without a crossbow never attacks. {@code castle} has them in six of its waves and as
-     * summons, with a projectile cooldown set that nothing was ever going to use.
+     * A pillager without a crossbow never attacks, and a projectile cooldown set on it does nothing.
      */
     public static void aPillagerGetsTheCrossbowItCannotFightWithout(GameTestHelper h) {
         Site site = newSite(h);
