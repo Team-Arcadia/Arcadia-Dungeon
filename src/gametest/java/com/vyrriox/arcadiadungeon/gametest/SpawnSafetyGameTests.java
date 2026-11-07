@@ -6,7 +6,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -54,7 +53,7 @@ public class SpawnSafetyGameTests {
      */
     @GameTest(template = T)
     public static void whatComesBackIsStandableAndNearby(GameTestHelper h) {
-        Pig pig = h.spawn(EntityType.PIG, 1, 2, 1);
+        var pig = h.spawn(EntityType.PIG, 1, 2, 1);
         BlockPos spot = h.absolutePos(new BlockPos(1, 2, 1));
         Vec3 asked = new Vec3(spot.getX() + 0.5, spot.getY(), spot.getZ() + 0.5);
         int horizontal = 4;
@@ -97,7 +96,7 @@ public class SpawnSafetyGameTests {
                 }
             }
         }
-        Pig pig = h.spawn(EntityType.PIG, 1, 2, 1);
+        var pig = h.spawn(EntityType.PIG, 1, 2, 1);
         Vec3 buried = h.absoluteVec(new Vec3(3.5, 3, 3.5));
         Vec3 found = SpawnSafety.findSafeSpawn(pig, buried.x, buried.y, buried.z, 5, 3);
 
@@ -113,7 +112,7 @@ public class SpawnSafetyGameTests {
     /** With nowhere safe in range, the origin comes back rather than null or an exception. */
     @GameTest(template = T)
     public static void nowhereSafeFallsBackToTheOrigin(GameTestHelper h) {
-        Pig pig = h.spawn(EntityType.PIG, 1, 2, 1);
+        var pig = h.spawn(EntityType.PIG, 1, 2, 1);
         // Radius zero leaves the search nothing to explore beyond the origin itself.
         Vec3 asked = h.absoluteVec(new Vec3(6.5, 2, 6.5));
         Vec3 found = SpawnSafety.findSafeSpawn(pig, asked.x, asked.y, asked.z, 0, 0);
