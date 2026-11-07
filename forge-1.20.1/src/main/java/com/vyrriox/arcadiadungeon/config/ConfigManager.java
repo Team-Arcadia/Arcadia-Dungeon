@@ -114,6 +114,17 @@ public class ConfigManager {
             if (boss.spawnPoint == null) boss.spawnPoint = new SpawnPointConfig();
             if (boss.phases == null) boss.phases = new java.util.ArrayList<>();
             if (boss.rewards == null) boss.rewards = new java.util.ArrayList<>();
+            if (boss.customName == null) boss.customName = "";
+            for (PhaseConfig phase : boss.phases) {
+                if (phase.summonMobs == null) phase.summonMobs = new java.util.ArrayList<>();
+                if (phase.playerEffects == null) phase.playerEffects = new java.util.ArrayList<>();
+                if (phase.phaseCommands == null) phase.phaseCommands = new java.util.ArrayList<>();
+                // Written by hand as 50 instead of 0.5: every hit would change phase at once.
+                if (phase.healthThreshold > 1.0) phase.healthThreshold /= 100.0;
+            }
+            // The boss goes through its phases in list order. The add command keeps it sorted, a
+            // file edited by hand may not be, and the boss then jumped straight to the last one.
+            boss.phases.sort((a, b) -> Double.compare(b.healthThreshold, a.healthThreshold));
         }
         for (WaveConfig wave : config.waves) {
             if (wave.mobs == null) wave.mobs = new java.util.ArrayList<>();

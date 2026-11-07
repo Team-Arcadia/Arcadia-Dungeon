@@ -16,12 +16,14 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.*;
 
 public class WaveInstance {
     private final WaveConfig config;
-    private final List<LivingEntity> aliveMobs = new ArrayList<>();
+    private final List<TrackedMob> mobs = new ArrayList<>();
+    private DungeonInstance run;
     private boolean spawned = false;
     private boolean cleared = false;
     private int successfulSpawns = 0;
@@ -41,34 +43,37 @@ public class WaveInstance {
         return now >= nextSpawnAtMillis;
     }
 
-    public boolean spawn(MinecraftServer server) {
-        return spawn(server, 1, null);
-    }
-
-    public boolean spawn(MinecraftServer server, int playerCount, DungeonSettings settings) {
+    public boolean spawn(MinecraftServer server, DungeonInstance run) {
         if (spawned) return false;
         spawned = true;
+        this.run = run;
 
+        int playerCount = run.getPlayerCount();
+        DungeonSettings settings = run.getConfig().settings;
         boolean adaptive = settings != null && settings.difficultyScaling && playerCount > 1;
         double healthScale = adaptive ? 1.0 + (settings.waveHealthMultiplierPerPlayer * (playerCount - 1)) : 1.0;
         double damageScale = adaptive ? 1.0 + (settings.waveDamageMultiplierPerPlayer * (playerCount - 1)) : 1.0;
+        int refused = 0;
 
         for (MobSpawnConfig mobConfig : config.mobs) {
             Optional<EntityType<?>> typeOpt = EntityType.byString(mobConfig.entityType);
             if (typeOpt.isEmpty()) {
-                ArcadiaDungeon.LOGGER.error("Unknown entity type for wave mob: {}", mobConfig.entityType);
+                ArcadiaDungeon.LOGGER.error("Wave {}: unknown entity type {}", config.waveNumber, mobConfig.entityType);
                 continue;
             }
 
             ResourceLocation dimLoc = ResourceLocation.tryParse(mobConfig.spawnPoint.dimension);
             if (dimLoc == null) {
-                ArcadiaDungeon.LOGGER.error("Invalid dimension: {}", mobConfig.spawnPoint.dimension);
+                ArcadiaDungeon.LOGGER.error("Wave {}: invalid dimension {}", config.waveNumber, mobConfig.spawnPoint.dimension);
                 continue;
             }
 
             ResourceKey<Level> dimKey = ResourceKey.create(Registries.DIMENSION, dimLoc);
             ServerLevel level = server.getLevel(dimKey);
-            if (level == null) continue;
+            if (level == null) {
+                ArcadiaDungeon.LOGGER.error("Wave {}: dimension {} does not exist on this server", config.waveNumber, mobConfig.spawnPoint.dimension);
+                continue;
+            }
 
             // Scale mob count based on player count
             double countScale = adaptive ? 1.0 + (settings.waveCountMultiplierPerPlayer * (playerCount - 1)) : 1.0;
@@ -90,8 +95,8 @@ public class WaveInstance {
                     continue;
                 }
 
-                double offsetX = mobConfig.count > 1 ? (level.getRandom().nextDouble() - 0.5) * 3 : 0;
-                double offsetZ = mobConfig.count > 1 ? (level.getRandom().nextDouble() - 0.5) * 3 : 0;
+                double offsetX = scaledCount > 1 ? (level.getRandom().nextDouble() - 0.5) * 3 : 0;
+                double offsetZ = scaledCount > 1 ? (level.getRandom().nextDouble() - 0.5) * 3 : 0;
                 SpawnSafety.placeAtSafeSpawn(
                         living,
                         mobConfig.spawnPoint,
@@ -131,6 +136,9 @@ public class WaveInstance {
                 // Custom attributes
                 BossInstance.applyCustomAttributes(living, mobConfig.customAttributes);
 
+                // Custom attributes can raise the maximum after the health above was set.
+                living.setHealth(living.getMaxHealth());
+
                 // Prevent despawn
                 if (living instanceof Mob mob) {
                     mob.setPersistenceRequired();
@@ -139,28 +147,36 @@ public class WaveInstance {
                 // Tags for tracking and no-loot
                 living.addTag("arcadia_wave_mob");
                 living.addTag("arcadia_wave_" + config.waveNumber);
-                living.addTag("arcadia_managed");
-                living.addTag("arcadia_no_loot");
+                living.addTag(ManagedEntities.MANAGED_TAG);
+                living.addTag(ManagedEntities.NO_LOOT_TAG);
+                living.addTag(run.getRunTag());
 
                 DungeonStats.remember(living);
-                level.addFreshEntity(living);
-                aliveMobs.add(living);
-                successfulSpawns++;
+                // Another mod can cancel any spawn, and a mob that never entered the world can
+                // never be killed. Waiting on it held the wave until the timer ran out.
+                if (level.addFreshEntity(living)) {
+                    mobs.add(new TrackedMob(living, level,
+                            new Vec3(mobConfig.spawnPoint.x, mobConfig.spawnPoint.y, mobConfig.spawnPoint.z)));
+                    successfulSpawns++;
+                } else {
+                    refused++;
+                }
             }
         }
 
+        if (refused > 0) {
+            ArcadiaDungeon.LOGGER.error("Wave {}: {} mob(s) were refused by another mod and did not enter the world",
+                    config.waveNumber, refused);
+        }
         if (successfulSpawns == 0 && !config.mobs.isEmpty()) {
             ArcadiaDungeon.LOGGER.warn("Wave {} failed to spawn any mobs! Check entity types.", config.waveNumber);
             cleared = true;
         }
 
         spawnTimeMillis = System.currentTimeMillis();
+        run.noteProgress();
         ArcadiaDungeon.LOGGER.info("Spawned wave {} with {} mobs", config.waveNumber, successfulSpawns);
         return true;
-    }
-
-    public void checkContainmentArea(com.vyrriox.arcadiadungeon.config.DungeonConfig dungeonConfig) {
-        // Wave mobs are no longer forcibly recentered. Spawn validation handles bad points up front.
     }
 
     public void checkGlowing() {
@@ -170,7 +186,7 @@ public class WaveInstance {
         long elapsed = (System.currentTimeMillis() - spawnTimeMillis) / 1000;
         if (elapsed >= config.glowingDelaySeconds) {
             glowingApplied = true;
-            for (LivingEntity mob : aliveMobs) {
+            for (LivingEntity mob : getAliveMobs()) {
                 if (mob.isAlive()) {
                     mob.setGlowingTag(true);
                 }
@@ -180,11 +196,23 @@ public class WaveInstance {
 
     public boolean isCleared() {
         if (cleared) return true;
-        aliveMobs.removeIf(mob -> !mob.isAlive());
-        if (aliveMobs.isEmpty() && spawned) {
+        if (!spawned) return false;
+        prune();
+        if (mobs.isEmpty()) {
             cleared = true;
         }
         return cleared;
+    }
+
+    /** Forgets the mobs that are dead or gone for good. A mob that is only unloaded stays counted. */
+    private void prune() {
+        long now = System.currentTimeMillis();
+        int before = mobs.size();
+        mobs.removeIf(mob -> {
+            TrackedMob.Presence presence = mob.follow(now);
+            return presence == TrackedMob.Presence.KILLED || presence == TrackedMob.Presence.REMOVED;
+        });
+        if (mobs.size() < before && run != null) run.noteProgress();
     }
 
     public boolean isSpawned() {
@@ -192,24 +220,31 @@ public class WaveInstance {
     }
 
     public int getRemainingMobs() {
-        aliveMobs.removeIf(mob -> !mob.isAlive());
-        return aliveMobs.size();
+        prune();
+        return mobs.size();
     }
 
     public WaveConfig getConfig() {
         return config;
     }
 
+    /** The mobs of this wave that are in the world right now. */
     public List<LivingEntity> getAliveMobs() {
-        return aliveMobs;
+        List<LivingEntity> present = new ArrayList<>(mobs.size());
+        for (TrackedMob mob : mobs) {
+            if (!mob.entity().isRemoved()) present.add(mob.entity());
+        }
+        return present;
+    }
+
+    public List<TrackedMob> getTrackedMobs() {
+        return mobs;
     }
 
     public void cleanup() {
-        for (LivingEntity mob : aliveMobs) {
-            if (mob.isAlive()) {
-                mob.discard();
-            }
+        for (TrackedMob mob : mobs) {
+            mob.discard();
         }
-        aliveMobs.clear();
+        mobs.clear();
     }
 }

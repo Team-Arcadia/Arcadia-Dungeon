@@ -87,6 +87,14 @@ public class DungeonConfig {
         return isInsideArea(areaPos1, areaPos2, dimension, px, py, pz);
     }
 
+    /** Like {@link #isInArea}, with this many blocks of tolerance on every side. */
+    public boolean isNearArea(String dimension, double px, double py, double pz, int margin) {
+        if (areaPos1 == null || areaPos2 == null || !areaPos1.dimension.equals(dimension)) return false;
+        return px >= Math.min(areaPos1.x, areaPos2.x) - margin && px <= Math.max(areaPos1.x, areaPos2.x) + 1 + margin
+                && py >= Math.min(areaPos1.y, areaPos2.y) - margin && py <= Math.max(areaPos1.y, areaPos2.y) + 1 + margin
+                && pz >= Math.min(areaPos1.z, areaPos2.z) - margin && pz <= Math.max(areaPos1.z, areaPos2.z) + 1 + margin;
+    }
+
     public static boolean isInsideArea(AreaPos areaPos1, AreaPos areaPos2, String dimension, double px, double py, double pz) {
         if (areaPos1 == null || areaPos2 == null) return false;
         if (!areaPos1.dimension.equals(dimension)) return false;
