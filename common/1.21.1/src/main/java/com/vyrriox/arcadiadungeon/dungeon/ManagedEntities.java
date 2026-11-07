@@ -3,6 +3,8 @@ package com.vyrriox.arcadiadungeon.dungeon;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.ChunkPos;
 
 import java.util.Comparator;
@@ -32,6 +34,18 @@ public final class ManagedEntities {
 
     public static void hold(ServerLevel level, ChunkPos chunk) {
         level.getChunkSource().addRegionTicket(HOLD, chunk, HOLD_RADIUS, chunk);
+    }
+
+    /**
+     * Whether a mob was brought by something in the fight, as the adds of a modded boss are, rather
+     * than by the world or a player: those are refused at the door of an area, whatever their mod.
+     */
+    public static boolean cameFromTheFight(Entity entity) {
+        if (!(entity instanceof Mob mob)) return true;
+        MobSpawnType reason = mob.getSpawnType();
+        return reason == null || reason == MobSpawnType.MOB_SUMMONED || reason == MobSpawnType.REINFORCEMENT
+                || reason == MobSpawnType.EVENT || reason == MobSpawnType.TRIGGERED
+                || reason == MobSpawnType.JOCKEY || reason == MobSpawnType.CONVERSION;
     }
 
     public static boolean isManaged(Entity entity) {

@@ -52,7 +52,9 @@ public final class SpawnSafety {
             for (int dx = -radius; dx <= radius; dx++) {
                 for (int dz = -radius; dz <= radius; dz++) {
                     if (Math.max(Math.abs(dx), Math.abs(dz)) != radius) continue;
-                    for (int dy = -verticalRadius; dy <= verticalRadius; dy++) {
+                    // 0, +1, -1, +2, -2: the floor a point is buried in comes before the room under it.
+                    for (int step = 0; step <= verticalRadius * 2; step++) {
+                        int dy = step % 2 == 1 ? (step + 1) / 2 : -(step / 2);
                         BlockPos cell = origin.offset(dx, dy, dz);
                         if (blocksWalking(entity.level(), cell)) continue;
                         Vec3 spot = standOn(entity, cell);

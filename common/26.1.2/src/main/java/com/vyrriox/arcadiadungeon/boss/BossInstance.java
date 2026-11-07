@@ -54,6 +54,8 @@ public class BossInstance {
     private final double scaledMaxHealth;
     private final double scaledDamage;
     private double originalBaseSpeed;
+    /** What the boss spawned with, custom attributes included. Its first phase multiplies this. */
+    private double startingDamage;
     private double armorScale = 1.0;
     private long lastSummonMessageTick = 0;
     private int spawnInvulnerabilityTicks = SPAWN_PROTECTION_TICKS;
@@ -167,6 +169,9 @@ public class BossInstance {
         living.setHealth(living.getMaxHealth());
 
         // Read after the custom attributes: this is what phase multipliers multiply.
+        if (living.getAttribute(Attributes.ATTACK_DAMAGE) != null) {
+            startingDamage = living.getAttribute(Attributes.ATTACK_DAMAGE).getBaseValue();
+        }
         if (living.getAttribute(Attributes.MOVEMENT_SPEED) != null) {
             originalBaseSpeed = living.getAttribute(Attributes.MOVEMENT_SPEED).getBaseValue();
         }
@@ -572,7 +577,9 @@ public class BossInstance {
         armorScale = scale;
         if (tracked == null) return;
         LivingEntity bossEntity = tracked.entity();
-        applyPhaseStats(bossEntity);
+        if (bossEntity.getAttribute(Attributes.ATTACK_DAMAGE) != null) {
+            bossEntity.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(startingDamage * scale);
+        }
         DungeonStats.remember(bossEntity);
     }
 
@@ -581,10 +588,12 @@ public class BossInstance {
         boolean inPhase = currentPhase >= 0 && currentPhase < config.phases.size();
         double damageMultiplier = inPhase ? config.phases.get(currentPhase).damageMultiplier : 1.0;
         double speedMultiplier = inPhase ? config.phases.get(currentPhase).speedMultiplier : 1.0;
-        if (currentPhase <= 0) damageMultiplier *= armorScale;
+        // The first phase keeps what the boss spawned with. A later phase starts over from the
+        // configured damage, as it always has.
+        double damage = currentPhase <= 0 ? startingDamage * armorScale : scaledDamage;
 
         if (bossEntity.getAttribute(Attributes.ATTACK_DAMAGE) != null) {
-            bossEntity.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(scaledDamage * damageMultiplier);
+            bossEntity.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(damage * damageMultiplier);
         }
         if (bossEntity.getAttribute(Attributes.MOVEMENT_SPEED) != null && originalBaseSpeed > 0) {
             bossEntity.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(originalBaseSpeed * speedMultiplier);

@@ -45,6 +45,7 @@
   "run.you_abandoned": "&e[Arcadia] Vous avez abandonné %dungeon%&e.",
   "run.command_blocked": "&c[Arcadia] Cette commande est bloquée pendant le donjon !",
   "run.respawn": "&e[Arcadia] Réapparition au début du donjon. (%lives% vie(s) restante(s))",
+  "run.nothing_came": "&e[Arcadia] Rien n'est venu dans ce donjon cette fois : pas de récompense, et pas de temps d'attente.",
   "run.death": "&c[Arcadia] Mort ! %lives% vie(s) restante(s).",
   "run.excluded": "&c[Arcadia] Maximum de morts (%max%) atteint ! Vous êtes exclu du donjon.",
   "run.other_excluded": "&c[Arcadia] %player% a été exclu (trop de morts) !",

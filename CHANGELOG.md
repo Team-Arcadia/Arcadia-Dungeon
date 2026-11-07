@@ -47,7 +47,8 @@ panel protocol in Arcadia Lib.
   from it through open space.
 - **The world lost entities during a run** - An armor stand or a villager in the area of a running
   dungeon was deleted for good when its chunk loaded. Only monsters that would have despawned anyway
-  are refused now, and starting a run no longer clears pets and named mobs.
+  are refused now, and starting a run now clears monsters only: villagers, animals, pets and named
+  mobs stay.
 - **Pillagers never attacked** - A pillager with no main hand configured stood there unarmed, since
   the game hands out its crossbow in a step dungeons skip. It now gets one. Write `minecraft:air` in
   `mainHand` to really leave it empty. Illusioners get their bow the same way.
@@ -88,15 +89,18 @@ panel protocol in Arcadia Lib.
   does not exist, a boss after a wave that does not exist. The same list goes to the log at start
   and on reload. Nothing is refused because of it.
 - **A dungeon says why it cannot start** - One with nothing in it, or monsters on Peaceful difficulty,
-  now refuses with a message. Mobs and bosses that fail to spawn are named in the log.
+  now refuses with a message. Mobs and bosses that fail to spawn are named in the log. A dungeon with
+  no waves whose bosses cannot come, because their mod was removed or an optional one stayed away,
+  ends at once with no reward and no waiting time, instead of keeping its players until the timer.
 - **Game tests on every target** - Forge 1.20.1 and NeoForge 26.1.2 now run them too, and a new one
   plays whole dungeons from the first wave to their completion.
 
 ### Changed
 
 - **Your dungeons do not need any change** - Config files load as they are and the new settings take
-  their default. Two things you may notice in a fight, because they are what the config always said:
-  pillagers now shoot, and a phase whose `requiredAction` is `NONE` no longer makes the boss immune.
+  their default. Three things you may notice in a fight, because they are what the config always said:
+  pillagers now shoot, a phase whose `requiredAction` is `NONE` no longer makes the boss immune, and a
+  mob whose `customAttributes` raise its maximum health now starts with all of it, not at `health`.
 
 ### Correctifs
 
@@ -137,8 +141,8 @@ panel protocol in Arcadia Lib.
   la recherche part de lui à travers l'espace libre.
 - **Le monde perdait des entités pendant une partie** - Un porte-armure ou un villageois dans la zone
   d'un donjon en cours était supprimé pour de bon au chargement de son chunk. Seuls les monstres qui
-  auraient de toute façon disparu sont maintenant refusés, et lancer une partie n'efface plus les
-  familiers ni les mobs nommés.
+  auraient de toute façon disparu sont maintenant refusés, et lancer une partie n'efface plus que les
+  monstres : les villageois, les animaux, les familiers et les mobs nommés restent.
 - **Les pillards n'attaquaient jamais** - Un pillard sans arme configurée restait là sans rien, car le
   jeu donne son arbalète à une étape que les donjons sautent. Il en reçoit une maintenant. Écrivez
   `minecraft:air` dans `mainHand` pour vraiment le laisser sans arme. Les illusionnistes reçoivent
@@ -185,16 +189,19 @@ panel protocol in Arcadia Lib.
   et au rechargement. Rien n'est refusé à cause d'elle.
 - **Un donjon dit pourquoi il ne peut pas démarrer** - S'il ne contient rien, ou des monstres en
   difficulté Paisible, il refuse maintenant avec un message. Les mobs et boss qui n'apparaissent pas
-  sont nommés dans le log.
+  sont nommés dans le log. Un donjon sans vagues dont les boss ne peuvent pas venir, parce que leur mod
+  a été retiré ou qu'un boss optionnel n'est pas venu, se termine aussitôt sans récompense ni temps
+  d'attente, au lieu de garder ses joueurs jusqu'à la fin du temps.
 - **Des game tests sur chaque cible** - Forge 1.20.1 et NeoForge 26.1.2 les exécutent aussi, et un
   nouveau joue des donjons entiers de la première vague jusqu'à la fin.
 
 ### Modifications
 
 - **Vos donjons n'ont besoin d'aucun changement** - Les fichiers de config se chargent tels quels et
-  les nouveaux réglages prennent leur valeur par défaut. Deux choses peuvent se remarquer en combat,
-  parce que c'est ce que la config a toujours dit : les pillards tirent maintenant, et une phase dont
-  le `requiredAction` est `NONE` ne rend plus le boss immunisé.
+  les nouveaux réglages prennent leur valeur par défaut. Trois choses peuvent se remarquer en combat,
+  parce que c'est ce que la config a toujours dit : les pillards tirent maintenant, une phase dont le
+  `requiredAction` est `NONE` ne rend plus le boss immunisé, et un mob dont les `customAttributes`
+  augmentent la vie maximale commence avec toute sa vie, plus à `health`.
 
 ---
 

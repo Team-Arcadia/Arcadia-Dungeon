@@ -352,11 +352,18 @@ public class DungeonManager {
             }
         }
 
-        // With no waves to wait for, the fight starts now. Every boss may have been optional and
-        // rolled to stay away, and then there is nothing left to do.
-        if (!instance.hasWaves() && !BossManager.getInstance().spawnNextBoss(instance)
-                && instance.allRequiredBossesDefeated()) {
-            completeDungeon(config.id);
+        // With no waves to wait for, the fight starts now, unless a required boss of the start stands
+        // first: the next one comes when it dies.
+        if (!instance.hasWaves() && instance.allRequiredBossesDefeated()
+                && !BossManager.getInstance().spawnNextBoss(instance) && instance.getActiveBosses().isEmpty()) {
+            // Every boss was optional and rolled to stay away, or none can spawn, for instance because
+            // its mod was removed. Nobody fought anything, so the run ends with no reward and no timer.
+            ArcadiaDungeon.LOGGER.warn("Dungeon {}: nothing came, the run ends without a reward. Check debug validate.", config.id);
+            for (UUID playerId : new ArrayList<>(instance.getPlayers())) {
+                ServerPlayer player = server.getPlayerList().getPlayer(playerId);
+                if (player != null) player.sendSystemMessage(Messages.get(player, "run.nothing_came"));
+            }
+            forceReset(config.id);
         }
     }
 
@@ -878,8 +885,10 @@ public class DungeonManager {
 
         int cleared = 0;
         for (net.minecraft.world.entity.Mob mob : mobs) {
-            // Somebody's pet and a named mob somebody placed are not what this is here to clear.
-            if (!ManagedEntities.isManaged(mob) && (mob.hasCustomName() || isOwned(mob))) continue;
+            // Monsters and what past runs left. Villagers, animals, somebody's pet and a named mob
+            // somebody placed are part of the world.
+            if (!ManagedEntities.isManaged(mob) && (!(mob instanceof net.minecraft.world.entity.monster.Enemy)
+                    || mob.hasCustomName() || isOwned(mob))) continue;
             mob.discard();
             cleared++;
         }

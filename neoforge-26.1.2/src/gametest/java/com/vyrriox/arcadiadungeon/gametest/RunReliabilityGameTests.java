@@ -1266,6 +1266,153 @@ public class RunReliabilityGameTests {
         h.succeed();
     }
 
+    /** With no waves, a required boss of the start stands first, and the next one comes after it. */
+    public static void aRequiredStartBossComesBeforeTheNextOne(GameTestHelper h) {
+        Site site = newSite(h);
+        DungeonConfig config = dungeon(h, site);
+        config.recruitmentDurationSeconds = 600;
+        BossConfig first = boss(h, "first", "minecraft:zombie", site.entrance().offset(4, 0, 0));
+        first.spawnAtStart = true;
+        config.bosses.add(first);
+        config.bosses.add(boss(h, "second", "minecraft:zombie", site.entrance().offset(-4, 0, 0)));
+        ServerPlayer player = playerAt(h, site.entrance());
+        DungeonInstance instance = start(h, player, config);
+        DungeonManager.getInstance().finishRecruitment(config.id);
+        boolean firstThere = instance.getActiveBosses().containsKey("first");
+        boolean secondEarly = instance.getActiveBosses().containsKey("second");
+        RunTestKit.kill(h, instance.getActiveBosses().get("first").getBossEntity());
+        boolean secondAfter = instance.getActiveBosses().containsKey("second");
+        end(h, player, config);
+        if (!firstThere) h.fail("the boss of the start did not come");
+        if (secondEarly) h.fail("the next boss came with the first one");
+        if (!secondAfter) h.fail("the next boss did not come after the first one died");
+        h.succeed();
+    }
+
+    /** The armor scaling multiplies the damage a boss was given, not the one it was configured with. */
+    public static void customDamageSurvivesTheArmorScaling(GameTestHelper h) {
+        Site site = newSite(h);
+        DungeonConfig config = dungeon(h, site);
+        config.settings.difficultyScaling = true;
+        BossConfig strong = boss(h, "strong", HARMLESS, site.entrance().offset(4, 0, 0));
+        strong.entityType = "minecraft:zombie";
+        strong.customAttributes.put("minecraft:generic.attack_damage", 40.0);
+        config.bosses.add(strong);
+        ServerPlayer player = playerAt(h, site.entrance());
+        listPlayer(h, player, true);
+        DungeonInstance instance = start(h, player, config);
+        double damage = instance.getActiveBosses().get("strong").getBossEntity().getAttribute(Attributes.ATTACK_DAMAGE).getBaseValue();
+        listPlayer(h, player, false);
+        end(h, player, config);
+        if (Math.abs(damage - 40.0) > 1.0E-6) h.fail("a boss given 40 damage hits for " + damage);
+        h.succeed();
+    }
+
+    /** A boss that cannot come, its mod removed say, is no reason to hand out the rewards. */
+    public static void aBossThatCannotComeGivesNoReward(GameTestHelper h) {
+        Site site = newSite(h);
+        DungeonConfig config = dungeon(h, site);
+        config.availableEverySeconds = 3600;
+        config.bosses.add(boss(h, "gone", "somemod:gone", site.entrance().offset(4, 0, 0)));
+        config.completionRewards.add(new RewardConfig("minecraft:diamond", 3, 1.0));
+        ServerPlayer player = playerAt(h, site.entrance());
+        listPlayer(h, player, true);
+        ConfigManager.getInstance().saveDungeon(config);
+        DungeonManager.getInstance().startDungeon(config.id, player);
+        boolean over = DungeonManager.getInstance().getInstance(config.id) == null;
+        int rewards = player.getInventory().countItem(Items.DIAMOND);
+        long timer = DungeonManager.getInstance().getAvailabilityRemainingSeconds(config.id);
+        listPlayer(h, player, false);
+        end(h, player, config);
+        if (!over) h.fail("the run waits for a boss that cannot come");
+        if (rewards != 0) h.fail("the run paid its rewards with nothing to fight");
+        if (timer != 0) h.fail("a run with nothing in it put the dungeon on its timer");
+        h.succeed();
+    }
+
+    /** A modded boss that takes itself out at zero health is dead, not missing. */
+    public static void aBossDiscardedAtZeroHealthIsDefeated(GameTestHelper h) {
+        Site site = newSite(h);
+        DungeonConfig config = dungeon(h, site);
+        config.bosses.add(boss(h, "faded", HARMLESS, site.entrance().offset(4, 0, 0)));
+        ServerPlayer player = playerAt(h, site.entrance());
+        DungeonInstance instance = start(h, player, config);
+        LivingEntity entity = instance.getActiveBosses().get("faded").getBossEntity();
+        entity.setHealth(0);
+        entity.discard();
+        long[] deadline = {0L};
+        AtomicReference<String> problem = new AtomicReference<>();
+
+        h.startSequence()
+                .thenExecute(() -> deadline[0] = System.currentTimeMillis() + 60_000)
+                .thenWaitUntil(() -> {
+                    if (DungeonManager.getInstance().getInstance(config.id) == null) return;
+                    if (System.currentTimeMillis() > deadline[0]) {
+                        problem.set("the run is still waiting for a boss that died");
+                        return;
+                    }
+                    throw RunTestKit.waiting(h, "the run is still going");
+                })
+                .thenExecute(() -> {
+                    String why = problem.get();
+                    end(h, player, config);
+                    if (why != null) h.fail(why);
+                })
+                .thenSucceed();
+    }
+
+    /** A point buried in a floor goes on top of it, not into the room below. */
+    public static void aPointInsideAFloorGoesOnTopOfIt(GameTestHelper h) {
+        ServerLevel level = h.getLevel();
+        Site site = newSite(h);
+        BlockPos floor = site.entrance().offset(0, 20, 0);
+        for (int dx = -6; dx <= 6; dx++) {
+            for (int dz = -6; dz <= 6; dz++) {
+                block(level, floor.offset(dx, 0, dz), Blocks.STONE);
+                block(level, floor.offset(dx, -4, dz), Blocks.STONE);
+                for (int dy = -3; dy <= -1; dy++) block(level, floor.offset(dx, dy, dz), Blocks.AIR);
+                for (int dy = 1; dy <= 3; dy++) block(level, floor.offset(dx, dy, dz), Blocks.AIR);
+            }
+        }
+        LivingEntity zombie = RunTestKit.create(h, EntityType.ZOMBIE);
+        Vec3 found = SpawnSafety.findSafeSpawn(zombie, floor.getX() + 0.5, floor.getY(), floor.getZ() + 0.5, 4, 4);
+        if (found.y != floor.getY() + 1) {
+            h.fail("a point in a floor came out at height " + (found.y - floor.getY()) + " instead of on top of it");
+        }
+        h.succeed();
+    }
+
+    /** Starting a run clears monsters. Villagers and named mobs are part of the world. */
+    public static void startingARunOnlyClearsMonsters(GameTestHelper h) {
+        Site site = newSite(h);
+        DungeonConfig config = dungeon(h, site);
+        area(h, config, site.entrance(), 24);
+        config.waves.add(wave(h, 1, "minecraft:zombie", 1, site.entrance().offset(8, 0, 0)));
+        ServerPlayer player = playerAt(h, site.entrance());
+        whenLoaded(h, site.entrance(), () -> {
+            LivingEntity villager = RunTestKit.create(h, EntityType.VILLAGER);
+            LivingEntity monster = RunTestKit.create(h, EntityType.ZOMBIE);
+            LivingEntity named = RunTestKit.create(h, EntityType.ZOMBIE);
+            named.setCustomName(net.minecraft.network.chat.Component.literal("Named"));
+            int x = 0;
+            for (LivingEntity entity : List.of(villager, monster, named)) {
+                entity.setPos(site.entrance().getX() + 0.5 + x++, site.entrance().getY(), site.entrance().getZ() + 0.5);
+                h.getLevel().addFreshEntity(entity);
+            }
+            start(h, player, config);
+            boolean villagerStayed = villager.isAlive();
+            boolean monsterGone = !monster.isAlive();
+            boolean namedStayed = named.isAlive();
+            villager.discard();
+            named.discard();
+            end(h, player, config);
+            if (!villagerStayed) h.fail("a villager was removed by the start of a run");
+            if (!monsterGone) h.fail("a monster stayed in the area at the start of a run");
+            if (!namedStayed) h.fail("a named mob was removed by the start of a run");
+            h.succeed();
+        });
+    }
+
     /** Puts a fake player in the player list, for what looks players up by id, or takes it out. */
     @SuppressWarnings("unchecked")
     private static void listPlayer(GameTestHelper h, ServerPlayer player, boolean listed) {

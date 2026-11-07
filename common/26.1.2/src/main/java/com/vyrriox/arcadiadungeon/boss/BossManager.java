@@ -286,6 +286,8 @@ public class BossManager {
      */
     public void checkBossesStillThere(DungeonInstance instance, String dungeonId) {
         for (Map.Entry<String, BossInstance> entry : new ArrayList<>(instance.getActiveBosses().entrySet())) {
+            // The boss before this one may have just ended the run.
+            if (DungeonManager.getInstance().getInstance(dungeonId) != instance) return;
             BossInstance boss = entry.getValue();
             TrackedMob.Presence presence = boss.presence();
             if (presence == TrackedMob.Presence.KILLED) {

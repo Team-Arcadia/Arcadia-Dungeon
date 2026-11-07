@@ -45,6 +45,7 @@
   "run.you_abandoned": "&e[Arcadia] You abandoned %dungeon%&e.",
   "run.command_blocked": "&c[Arcadia] This command is blocked during the dungeon!",
   "run.respawn": "&e[Arcadia] Respawned at the start of the dungeon. (%lives% life/lives left)",
+  "run.nothing_came": "&e[Arcadia] Nothing came to this dungeon this time: no reward, and no waiting time.",
   "run.death": "&c[Arcadia] You died! %lives% life/lives left.",
   "run.excluded": "&c[Arcadia] Death limit (%max%) reached! You are out of the dungeon.",
   "run.other_excluded": "&c[Arcadia] %player% is out (too many deaths)!",

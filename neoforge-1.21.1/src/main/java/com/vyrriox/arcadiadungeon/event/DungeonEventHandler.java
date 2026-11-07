@@ -274,7 +274,8 @@ public class DungeonEventHandler {
                 return;
             }
 
-            if (manager.getCommandRun() == instance || instance.bringsOwnMobs(living.getType())) {
+            if (manager.getCommandRun() == instance
+                    || (instance.bringsOwnMobs(living.getType()) && ManagedEntities.cameFromTheFight(living))) {
                 instance.adoptExtra(living);
                 return;
             }

@@ -59,7 +59,10 @@ public final class TrackedMob {
         if (entity.isRemoved()) {
             Entity.RemovalReason reason = entity.getRemovalReason();
             if (reason == Entity.RemovalReason.KILLED) return Presence.KILLED;
-            if (reason == Entity.RemovalReason.DISCARDED) return Presence.REMOVED;
+            // Some modded bosses take themselves out at zero health instead of dying.
+            if (reason == Entity.RemovalReason.DISCARDED) {
+                return entity.isDeadOrDying() ? Presence.KILLED : Presence.REMOVED;
+            }
 
             LivingEntity found = findAgain();
             if (found == null) {

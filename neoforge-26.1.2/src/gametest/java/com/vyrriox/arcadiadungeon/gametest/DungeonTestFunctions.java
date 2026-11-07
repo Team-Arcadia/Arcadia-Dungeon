@@ -71,6 +71,12 @@ public final class DungeonTestFunctions {
         r.register(id("an_empty_dungeon_refuses_to_start"), RunReliabilityGameTests::anEmptyDungeonRefusesToStart);
         r.register(id("a_dungeon_with_only_an_absent_optional_boss_ends"), RunReliabilityGameTests::aDungeonWithOnlyAnAbsentOptionalBossEnds);
         r.register(id("a_chunk_load_keeps_only_what_the_run_needs"), RunReliabilityGameTests::aChunkLoadKeepsOnlyWhatTheRunNeeds);
+        r.register(id("a_required_start_boss_comes_before_the_next_one"), RunReliabilityGameTests::aRequiredStartBossComesBeforeTheNextOne);
+        r.register(id("custom_damage_survives_the_armor_scaling"), RunReliabilityGameTests::customDamageSurvivesTheArmorScaling);
+        r.register(id("a_boss_that_cannot_come_gives_no_reward"), RunReliabilityGameTests::aBossThatCannotComeGivesNoReward);
+        r.register(id("a_boss_discarded_at_zero_health_is_defeated"), RunReliabilityGameTests::aBossDiscardedAtZeroHealthIsDefeated);
+        r.register(id("a_point_inside_a_floor_goes_on_top_of_it"), RunReliabilityGameTests::aPointInsideAFloorGoesOnTopOfIt);
+        r.register(id("starting_a_run_only_clears_monsters"), RunReliabilityGameTests::startingARunOnlyClearsMonsters);
         r.register(id("every_dungeon_plays_from_start_to_finish"), FullRunGameTests::everyDungeonPlaysFromStartToFinish);
         r.register(id("what_comes_back_is_standable_and_nearby"), SpawnSafetyGameTests::whatComesBackIsStandableAndNearby);
         r.register(id("a_spawn_inside_stone_is_moved_out"), SpawnSafetyGameTests::aSpawnInsideStoneIsMovedOut);
