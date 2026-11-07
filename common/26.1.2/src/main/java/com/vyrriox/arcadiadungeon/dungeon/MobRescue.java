@@ -111,7 +111,8 @@ public final class MobRescue {
     /** Sends a mob home once it has been outside the area or inside a wall for a while. */
     private static boolean isOutOfBounds(DungeonInstance run, TrackedMob mob, long now) {
         LivingEntity entity = mob.entity();
-        if (!isOutsideArea(run.getConfig(), entity) && !entity.isInWall()) {
+        boolean lost = isOutsideArea(run.getConfig(), entity) && startedInsideArea(run.getConfig(), mob, entity);
+        if (!lost && !entity.isInWall()) {
             mob.setTroubleSince(0L);
             return false;
         }
@@ -129,6 +130,15 @@ public final class MobRescue {
         // A few blocks of tolerance: spiders climb, and a mob pushed against the edge is still fighting.
         String dimension = entity.level().dimension().identifier().toString();
         return !config.isNearArea(dimension, entity.getX(), entity.getY(), entity.getZ(), AREA_MARGIN);
+    }
+
+    /**
+     * A dungeon may spawn its mobs outside the area on purpose, so they walk in. Sending one of those
+     * home every few seconds would keep it from ever arriving: only a mob that belongs inside is lost.
+     */
+    private static boolean startedInsideArea(DungeonConfig config, TrackedMob mob, LivingEntity entity) {
+        String dimension = entity.level().dimension().identifier().toString();
+        return config.isNearArea(dimension, mob.home().x, mob.home().y, mob.home().z, AREA_MARGIN);
     }
 
     private static ServerPlayer nearestPlayer(DungeonInstance run, MinecraftServer server, LivingEntity entity) {
