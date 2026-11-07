@@ -212,7 +212,7 @@ public class RunReliabilityGameTests {
      * itself cleared without a blow struck, then did the same with every wave after it.</p>
      */
     @GameTest(template = T, batch = BATCH, timeoutTicks = BUDGET)
-    public static void aWaveNobodyIsNearIsNotClearedByItsChunkUnloading(GameTestHelper h) {
+    public static void aWaveNobodyIsNearIsNotCleared(GameTestHelper h) {
         Site site = newSite(h);
         DungeonConfig config = dungeon(h, site);
         config.waves.add(wave(h, 1, HARMLESS, 1, site.fight()));
@@ -408,7 +408,7 @@ public class RunReliabilityGameTests {
 
     /** A dungeon with bosses and no waves spawns its boss, with or without a recruitment. */
     @GameTest(template = T, batch = BATCH, timeoutTicks = BUDGET)
-    public static void aDungeonWithoutWavesSpawnsItsBossAfterRecruitment(GameTestHelper h) {
+    public static void aDungeonWithoutWavesSpawnsItsBoss(GameTestHelper h) {
         Site site = newSite(h);
         DungeonConfig config = dungeon(h, site);
         config.recruitmentDurationSeconds = 600;
@@ -499,7 +499,7 @@ public class RunReliabilityGameTests {
      * {@code die}, and several modded bosses copy that.</p>
      */
     @GameTest(template = T, batch = BATCH, timeoutTicks = BUDGET)
-    public static void aBossRemovedWithoutDeathEventStillCompletesTheRun(GameTestHelper h) {
+    public static void aBossRemovedWithoutDeathEndsTheFight(GameTestHelper h) {
         Site site = newSite(h);
         DungeonConfig config = dungeon(h, site);
         config.bosses.add(boss(h, "silent", "minecraft:zombie", site.entrance().offset(4, 0, 0)));
@@ -807,7 +807,7 @@ public class RunReliabilityGameTests {
      * wanders off through the rooms.
      */
     @GameTest(template = T, batch = BATCH, timeoutTicks = BUDGET)
-    public static void aSummonNobodyReachesEndsUpReachableAndThenStopsProtecting(GameTestHelper h) {
+    public static void aSummonNobodyReachesStopsProtecting(GameTestHelper h) {
         Site site = newSite(h);
         DungeonConfig config = dungeon(h, site);
         area(h, config, site.entrance(), 64);
@@ -1265,7 +1265,7 @@ public class RunReliabilityGameTests {
      * replaced after waiting too long for it does not come back as a second boss.
      */
     @GameTest(template = T, batch = BATCH, timeoutTicks = BUDGET)
-    public static void aChunkLoadKeepsTheRunsMobsAndDropsWhatItReplaced(GameTestHelper h) {
+    public static void aChunkLoadKeepsOnlyWhatTheRunNeeds(GameTestHelper h) {
         Site site = newSite(h);
         DungeonConfig config = dungeon(h, site);
         config.bosses.add(boss(h, "real", "minecraft:zombie", site.entrance().offset(4, 0, 0)));

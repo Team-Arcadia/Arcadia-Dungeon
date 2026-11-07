@@ -33,16 +33,16 @@ public final class DungeonTestFunctions {
     }
 
     private static void registerAll(RegisterEvent.RegisterHelper<Consumer<GameTestHelper>> r) {
-        r.register(id("a_wave_nobody_is_near_is_not_cleared_by_its_chunk_unloading"), RunReliabilityGameTests::aWaveNobodyIsNearIsNotClearedByItsChunkUnloading);
+        r.register(id("a_wave_nobody_is_near_is_not_cleared"), RunReliabilityGameTests::aWaveNobodyIsNearIsNotCleared);
         r.register(id("a_boss_nobody_is_near_can_be_hit_later"), RunReliabilityGameTests::aBossNobodyIsNearCanBeHitLater);
         r.register(id("a_wave_mob_another_mod_refused_does_not_hold_the_wave"), RunReliabilityGameTests::aWaveMobAnotherModRefusedDoesNotHoldTheWave);
         r.register(id("a_summon_another_mod_refused_does_not_protect_the_boss"), RunReliabilityGameTests::aSummonAnotherModRefusedDoesNotProtectTheBoss);
         r.register(id("summons_only_protect_the_boss_when_the_phase_says_so"), RunReliabilityGameTests::summonsOnlyProtectTheBossWhenThePhaseSaysSo);
         r.register(id("kill_summons_still_protects_the_boss"), RunReliabilityGameTests::killSummonsStillProtectsTheBoss);
-        r.register(id("a_dungeon_without_waves_spawns_its_boss_after_recruitment"), RunReliabilityGameTests::aDungeonWithoutWavesSpawnsItsBossAfterRecruitment);
+        r.register(id("a_dungeon_without_waves_spawns_its_boss"), RunReliabilityGameTests::aDungeonWithoutWavesSpawnsItsBoss);
         r.register(id("killing_an_early_boss_does_not_bring_the_final_boss_early"), RunReliabilityGameTests::killingAnEarlyBossDoesNotBringTheFinalBossEarly);
         r.register(id("a_piglin_boss_does_not_convert_away_from_its_run"), RunReliabilityGameTests::aPiglinBossDoesNotConvertAwayFromItsRun);
-        r.register(id("a_boss_removed_without_death_event_still_completes_the_run"), RunReliabilityGameTests::aBossRemovedWithoutDeathEventStillCompletesTheRun);
+        r.register(id("a_boss_removed_without_death_ends_the_fight"), RunReliabilityGameTests::aBossRemovedWithoutDeathEndsTheFight);
         r.register(id("a_boss_removed_by_another_mod_comes_back"), RunReliabilityGameTests::aBossRemovedByAnotherModComesBack);
         r.register(id("entities_loaded_from_disk_survive_a_run"), RunReliabilityGameTests::entitiesLoadedFromDiskSurviveARun);
         r.register(id("a_leftover_from_an_ended_run_is_removed_when_it_loads"), RunReliabilityGameTests::aLeftoverFromAnEndedRunIsRemovedWhenItLoads);
@@ -52,7 +52,7 @@ public final class DungeonTestFunctions {
         r.register(id("a_mob_spawned_outside_the_area_is_left_to_walk_in"), RunReliabilityGameTests::aMobSpawnedOutsideTheAreaIsLeftToWalkIn);
         r.register(id("a_wave_nobody_touches_is_brought_to_the_players_in_steps"), RunReliabilityGameTests::aWaveNobodyTouchesIsBroughtToThePlayersInSteps);
         r.register(id("an_optional_boss_is_not_brought_to_the_players"), RunReliabilityGameTests::anOptionalBossIsNotBroughtToThePlayers);
-        r.register(id("a_summon_nobody_reaches_ends_up_reachable_and_then_stops_protecting"), RunReliabilityGameTests::aSummonNobodyReachesEndsUpReachableAndThenStopsProtecting);
+        r.register(id("a_summon_nobody_reaches_stops_protecting"), RunReliabilityGameTests::aSummonNobodyReachesStopsProtecting);
         r.register(id("the_summon_limit_can_be_turned_off"), RunReliabilityGameTests::theSummonLimitCanBeTurnedOff);
         r.register(id("a_boss_back_from_disk_is_the_same_boss"), RunReliabilityGameTests::aBossBackFromDiskIsTheSameBoss);
         r.register(id("a_wave_mob_back_from_disk_still_counts"), RunReliabilityGameTests::aWaveMobBackFromDiskStillCounts);
@@ -70,7 +70,7 @@ public final class DungeonTestFunctions {
         r.register(id("a_player_in_a_run_cannot_start_another"), RunReliabilityGameTests::aPlayerInARunCannotStartAnother);
         r.register(id("an_empty_dungeon_refuses_to_start"), RunReliabilityGameTests::anEmptyDungeonRefusesToStart);
         r.register(id("a_dungeon_with_only_an_absent_optional_boss_ends"), RunReliabilityGameTests::aDungeonWithOnlyAnAbsentOptionalBossEnds);
-        r.register(id("a_chunk_load_keeps_the_runs_mobs_and_drops_what_it_replaced"), RunReliabilityGameTests::aChunkLoadKeepsTheRunsMobsAndDropsWhatItReplaced);
+        r.register(id("a_chunk_load_keeps_only_what_the_run_needs"), RunReliabilityGameTests::aChunkLoadKeepsOnlyWhatTheRunNeeds);
         r.register(id("every_dungeon_plays_from_start_to_finish"), FullRunGameTests::everyDungeonPlaysFromStartToFinish);
         r.register(id("what_comes_back_is_standable_and_nearby"), SpawnSafetyGameTests::whatComesBackIsStandableAndNearby);
         r.register(id("a_spawn_inside_stone_is_moved_out"), SpawnSafetyGameTests::aSpawnInsideStoneIsMovedOut);

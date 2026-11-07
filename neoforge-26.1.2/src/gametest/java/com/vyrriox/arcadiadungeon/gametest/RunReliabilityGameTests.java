@@ -206,7 +206,7 @@ public class RunReliabilityGameTests {
      * ticks later, the unload removed the Java object, and the wave read that as a kill: it announced
      * itself cleared without a blow struck, then did the same with every wave after it.</p>
      */
-    public static void aWaveNobodyIsNearIsNotClearedByItsChunkUnloading(GameTestHelper h) {
+    public static void aWaveNobodyIsNearIsNotCleared(GameTestHelper h) {
         Site site = newSite(h);
         DungeonConfig config = dungeon(h, site);
         config.waves.add(wave(h, 1, HARMLESS, 1, site.fight()));
@@ -396,7 +396,7 @@ public class RunReliabilityGameTests {
     // === The order of a run ===
 
     /** A dungeon with bosses and no waves spawns its boss, with or without a recruitment. */
-    public static void aDungeonWithoutWavesSpawnsItsBossAfterRecruitment(GameTestHelper h) {
+    public static void aDungeonWithoutWavesSpawnsItsBoss(GameTestHelper h) {
         Site site = newSite(h);
         DungeonConfig config = dungeon(h, site);
         config.recruitmentDurationSeconds = 600;
@@ -484,7 +484,7 @@ public class RunReliabilityGameTests {
      * <p>The ender dragon works this way: {@code tickDeath} removes it and nothing calls
      * {@code die}, and several modded bosses copy that.</p>
      */
-    public static void aBossRemovedWithoutDeathEventStillCompletesTheRun(GameTestHelper h) {
+    public static void aBossRemovedWithoutDeathEndsTheFight(GameTestHelper h) {
         Site site = newSite(h);
         DungeonConfig config = dungeon(h, site);
         config.bosses.add(boss(h, "silent", "minecraft:zombie", site.entrance().offset(4, 0, 0)));
@@ -782,7 +782,7 @@ public class RunReliabilityGameTests {
      * kill it the boss can be hit anyway. A blaze hovers out of reach in a tall room, and a pillager
      * wanders off through the rooms.
      */
-    public static void aSummonNobodyReachesEndsUpReachableAndThenStopsProtecting(GameTestHelper h) {
+    public static void aSummonNobodyReachesStopsProtecting(GameTestHelper h) {
         Site site = newSite(h);
         DungeonConfig config = dungeon(h, site);
         area(h, config, site.entrance(), 64);
@@ -1222,7 +1222,7 @@ public class RunReliabilityGameTests {
      * What a chunk load may and may not bring back into a run: its own mobs stay, and a boss it
      * replaced after waiting too long for it does not come back as a second boss.
      */
-    public static void aChunkLoadKeepsTheRunsMobsAndDropsWhatItReplaced(GameTestHelper h) {
+    public static void aChunkLoadKeepsOnlyWhatTheRunNeeds(GameTestHelper h) {
         Site site = newSite(h);
         DungeonConfig config = dungeon(h, site);
         config.bosses.add(boss(h, "real", "minecraft:zombie", site.entrance().offset(4, 0, 0)));

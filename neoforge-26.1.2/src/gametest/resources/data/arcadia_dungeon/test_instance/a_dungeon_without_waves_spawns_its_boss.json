@@ -1,6 +1,6 @@
 {
   "type": "minecraft:function",
-  "function": "arcadia_dungeon:a_dungeon_without_waves_spawns_its_boss_after_recruitment",
+  "function": "arcadia_dungeon:a_dungeon_without_waves_spawns_its_boss",
   "structure": "arcadia_dungeon:floor",
   "environment": "minecraft:default",
   "max_ticks": 4000000
