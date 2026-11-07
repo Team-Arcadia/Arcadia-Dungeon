@@ -5,15 +5,21 @@ import com.vyrriox.arcadiadungeon.ArcadiaDungeon;
 import com.vyrriox.arcadiadungeon.config.BossConfig;
 import com.vyrriox.arcadiadungeon.dungeon.DungeonInstance;
 import com.vyrriox.arcadiadungeon.dungeon.DungeonManager;
+import com.vyrriox.arcadiadungeon.dungeon.DungeonState;
+import com.vyrriox.arcadiadungeon.dungeon.TrackedMob;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.Level;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class BossManager {
@@ -80,7 +86,7 @@ public class BossManager {
                 continue;
             }
 
-            BossInstance bossInstance = new BossInstance(bossConfig, level, instance.getPlayerCount());
+            BossInstance bossInstance = new BossInstance(bossConfig, level, instance);
             if (!bossInstance.spawn()) {
                 instance.incrementBossIndex();
                 continue;
@@ -104,6 +110,7 @@ public class BossManager {
                 }
             }
 
+            bossInstance.enterFirstPhase();
             return true;
         }
 
@@ -130,10 +137,7 @@ public class BossManager {
         // Scale: 0 armor = x1.0, 10 armor = x1.2, 20 armor = x1.5, 30+ armor = x1.8
         double armorMultiplier = 1.0 + (Math.min(avgArmor, 30) / 30.0) * 0.8;
 
-        if (boss.getBossEntity().getAttribute(Attributes.ATTACK_DAMAGE) != null) {
-            double currentDamage = boss.getBossEntity().getAttribute(Attributes.ATTACK_DAMAGE).getBaseValue();
-            boss.getBossEntity().getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(currentDamage * armorMultiplier);
-        }
+        boss.setArmorScale(armorMultiplier);
 
         ArcadiaDungeon.LOGGER.info("Boss damage adapted: avg armor={}, multiplier=x{}",
                 String.format("%.1f", avgArmor), String.format("%.2f", armorMultiplier));
@@ -167,12 +171,18 @@ public class BossManager {
             }
 
             ResourceLocation dimLoc = ResourceLocation.tryParse(bossConfig.spawnPoint.dimension);
-            if (dimLoc == null) continue;
+            if (dimLoc == null) {
+                ArcadiaDungeon.LOGGER.error("Boss {}: invalid dimension {}", bossConfig.id, bossConfig.spawnPoint.dimension);
+                continue;
+            }
             ResourceKey<Level> dimKey = ResourceKey.create(Registries.DIMENSION, dimLoc);
             ServerLevel level = server.getLevel(dimKey);
-            if (level == null) continue;
+            if (level == null) {
+                ArcadiaDungeon.LOGGER.error("Boss {}: dimension {} does not exist on this server", bossConfig.id, bossConfig.spawnPoint.dimension);
+                continue;
+            }
 
-            BossInstance bossInstance = new BossInstance(bossConfig, level, instance.getPlayerCount());
+            BossInstance bossInstance = new BossInstance(bossConfig, level, instance);
             if (!bossInstance.spawn()) continue;
 
             if (instance.getConfig().settings.difficultyScaling) {
@@ -191,6 +201,7 @@ public class BossManager {
                     if (player != null) player.sendSystemMessage(spawnComponent);
                 }
             }
+            bossInstance.enterFirstPhase();
         }
         return spawned;
     }
@@ -198,9 +209,127 @@ public class BossManager {
     public void tickAllBosses() {
         for (DungeonInstance instance : DungeonManager.getInstance().getActiveInstances().values()) {
             if (instance.getActiveBosses().isEmpty()) continue; // Fix #19: skip when no bosses
-            for (BossInstance boss : instance.getActiveBosses().values()) {
+            // A copy: a phase command or thorns can end a boss in the middle of this loop.
+            for (BossInstance boss : List.copyOf(instance.getActiveBosses().values())) {
                 boss.tick(instance.getPlayers());
             }
         }
+    }
+
+    /** A boss entity died. Finds its run by id, since the object may have changed along the way. */
+    public void onBossEntityDied(LivingEntity entity) {
+        for (Map.Entry<String, DungeonInstance> entry : new ArrayList<>(DungeonManager.getInstance().getActiveInstances().entrySet())) {
+            DungeonInstance instance = entry.getValue();
+            for (Map.Entry<String, BossInstance> bossEntry : new ArrayList<>(instance.getActiveBosses().entrySet())) {
+                if (!bossEntry.getValue().matches(entity)) continue;
+                onBossDefeated(instance, entry.getKey(), bossEntry.getKey(), bossEntry.getValue());
+                return;
+            }
+        }
+    }
+
+    private void onBossDefeated(DungeonInstance instance, String dungeonId, String bossId, BossInstance boss) {
+        MinecraftServer server = DungeonManager.getInstance().getServer();
+        for (UUID playerId : instance.getPlayers()) {
+            ServerPlayer player = server.getPlayerList().getPlayer(playerId);
+            if (player != null) {
+                instance.giveRewards(player, boss.getConfig().rewards);
+                String bossLabel = (boss.getConfig().customName == null || boss.getConfig().customName.isEmpty())
+                        ? bossId
+                        : boss.getConfig().customName;
+                player.sendSystemMessage(Messages.get(player, "boss.defeated", "boss", bossLabel));
+            }
+        }
+
+        // Fix #2: remove from map BEFORE cleanup to prevent re-entry issues
+        instance.removeBossInstance(bossId);
+        boss.cleanup();
+        instance.noteProgress();
+        continueAfterBoss(instance, dungeonId);
+    }
+
+    private void continueAfterBoss(DungeonInstance instance, String dungeonId) {
+        MinecraftServer server = DungeonManager.getInstance().getServer();
+
+        // Inter-wave boss: the wave check sees the required bosses are dead and resumes.
+        if (instance.isWaitingForInterWaveBoss()) return;
+
+        // The bosses meant for the end wait for the end. A boss that came with the start of the run
+        // used to bring the final boss as soon as it died, in the middle of the waves.
+        if (instance.hasWaves() && !instance.areWavesCompleted()) {
+            if (instance.allRequiredBossesDefeated()) instance.setState(DungeonState.ACTIVE);
+            return;
+        }
+
+        if (instance.hasNextBoss() && spawnNextBoss(instance)) {
+            for (UUID playerId : instance.getPlayers()) {
+                ServerPlayer player = server.getPlayerList().getPlayer(playerId);
+                if (player != null) player.sendSystemMessage(Messages.get(player, "boss.next"));
+            }
+            return;
+        }
+
+        if (instance.allRequiredBossesDefeated()) {
+            // Cleanup non-required bosses still alive
+            for (BossInstance remaining : new ArrayList<>(instance.getActiveBosses().values())) {
+                remaining.cleanup();
+            }
+            instance.getActiveBosses().clear();
+            DungeonManager.getInstance().completeDungeon(dungeonId);
+        }
+    }
+
+    /**
+     * Notices a boss that left the world without a death event. The ender dragon and some modded
+     * bosses die that way, and another mod can simply remove a mob. Both left the run waiting for a
+     * boss that was gone until the timer ran out.
+     */
+    public void checkBossesStillThere(DungeonInstance instance, String dungeonId) {
+        for (Map.Entry<String, BossInstance> entry : new ArrayList<>(instance.getActiveBosses().entrySet())) {
+            // The boss before this one may have just ended the run.
+            if (DungeonManager.getInstance().getInstance(dungeonId) != instance) return;
+            BossInstance boss = entry.getValue();
+            TrackedMob.Presence presence = boss.presence();
+            if (presence == TrackedMob.Presence.KILLED) {
+                // Only once it has really left: a modded boss can sit at zero health while it changes
+                // form, and a boss that truly died this way is removed within a second.
+                if (boss.getBossEntity().isRemoved()) {
+                    onBossDefeated(instance, dungeonId, entry.getKey(), boss);
+                }
+            } else if (presence == TrackedMob.Presence.REMOVED) {
+                onBossRemoved(instance, dungeonId, entry.getKey(), boss);
+            }
+        }
+    }
+
+    private void onBossRemoved(DungeonInstance instance, String dungeonId, String bossId, BossInstance boss) {
+        if (!boss.getConfig().requiredKill) {
+            ArcadiaDungeon.LOGGER.warn("Optional boss {} of {} left the world, the run goes on without it", bossId, dungeonId);
+            instance.removeBossInstance(bossId);
+            boss.cleanup();
+            continueAfterBoss(instance, dungeonId);
+            return;
+        }
+        if (boss.canRestore()) {
+            boolean back = boss.restore();
+            ArcadiaDungeon.LOGGER.warn("Boss {} of {} was removed from the world by something else: {}",
+                    bossId, dungeonId, back ? "brought it back" : "could not bring it back yet");
+            return;
+        }
+        // Peaceful difficulty, spawn-animals=false or a mod that removes this type of mob: no run can
+        // be won here. Saying so beats a boss bar over nothing until the timer runs out.
+        ArcadiaDungeon.LOGGER.error("Boss {} of {} cannot stay in the world (entity type {}). Failing the run. "
+                        + "Check the difficulty, spawn-animals and spawn-npcs, and mods that remove mobs.",
+                bossId, dungeonId, boss.getConfig().entityType);
+        MinecraftServer server = DungeonManager.getInstance().getServer();
+        for (UUID playerId : instance.getPlayers()) {
+            ServerPlayer player = server.getPlayerList().getPlayer(playerId);
+            if (player != null) {
+                player.sendSystemMessage(Messages.get(player, "boss.lost", "boss", boss.getConfig().customName));
+            }
+        }
+        instance.removeBossInstance(bossId);
+        boss.cleanup();
+        DungeonManager.getInstance().scheduleFailDungeon(dungeonId);
     }
 }

@@ -25,5 +25,10 @@ public class DungeonSettings {
             "tp", "teleport"
     ));
 
+    /** Brings back mobs nobody can reach: out of the area, inside a wall, or left alone for minutes. */
+    public boolean rescueStuckMobs = true;
+    /** Seconds a boss stays immune while its summons stand. 0 keeps it immune until they are dead. */
+    public int summonLockMaxSeconds = 180;
+
     public DungeonSettings() {}
 }

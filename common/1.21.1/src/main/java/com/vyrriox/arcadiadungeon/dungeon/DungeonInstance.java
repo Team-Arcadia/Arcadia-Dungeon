@@ -8,10 +8,13 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 public class DungeonInstance {
     private final DungeonConfig config;
@@ -27,6 +30,15 @@ public class DungeonInstance {
     private boolean wavesCompleted = false;
     private final Map<UUID, Integer> playerDeaths = new LinkedHashMap<>();
     private boolean waitingForInterWaveBoss = false;
+
+    /** Stamped on every mob of this run, so a mob read back from disk can say which run it is from. */
+    private final String runTag = "arcadia_run_" + UUID.randomUUID();
+    private long lastProgressMillis = System.currentTimeMillis();
+    private final Set<Integer> announcedMilestones = new HashSet<>();
+    /** Mobs this run let into its area without spawning them itself, removed when it ends. */
+    private final List<LivingEntity> extras = new ArrayList<>();
+    /** Mod ids of the mobs this dungeon is made of, minecraft excluded. */
+    private Set<String> ownNamespaces;
 
     public DungeonInstance(DungeonConfig config, MinecraftServer server) {
         this.config = config;
@@ -98,7 +110,71 @@ public class DungeonInstance {
     }
 
     public long getElapsedSeconds() {
-        return (System.currentTimeMillis() - startTime) / 1000;
+        // No start time yet during recruitment: this used to read as fifty years.
+        return startTime == 0 ? 0 : (System.currentTimeMillis() - startTime) / 1000;
+    }
+
+    public String getRunTag() {
+        return runTag;
+    }
+
+    /** Something happened in the fight: a mob spawned, took a hit from a player, or died. */
+    public void noteProgress() {
+        lastProgressMillis = System.currentTimeMillis();
+    }
+
+    public long getLastProgressMillis() {
+        return lastProgressMillis;
+    }
+
+    /** True the first time this milestone comes up in this run. */
+    public boolean announceOnce(int milestone) {
+        return announcedMilestones.add(milestone);
+    }
+
+    /** Every mob the run is waiting on right now: its bosses, their summons, and the current wave. */
+    public void forEachTracked(Consumer<TrackedMob> action) {
+        for (BossInstance boss : List.copyOf(activeBosses.values())) {
+            if (boss.getTracked() != null) action.accept(boss.getTracked());
+            boss.getTrackedSummons().forEach(action);
+        }
+        WaveInstance wave = getCurrentWave();
+        if (wave != null) wave.getTrackedMobs().forEach(action);
+    }
+
+    /**
+     * A modded boss usually spawns adds or parts of itself, of its own mod, by itself. Refusing them
+     * at the door of the area breaks the boss without a word, so they are let in.
+     */
+    public boolean bringsOwnMobs(EntityType<?> type) {
+        if (ownNamespaces == null) {
+            ownNamespaces = new HashSet<>();
+            for (var boss : config.bosses) {
+                addNamespace(boss.entityType);
+                for (var phase : boss.phases) {
+                    for (var summon : phase.summonMobs) addNamespace(summon.entityType);
+                }
+            }
+            for (WaveConfig wave : config.waves) {
+                for (var mob : wave.mobs) addNamespace(mob.entityType);
+            }
+        }
+        if (ownNamespaces.isEmpty()) return false;
+        return ownNamespaces.contains(BuiltInRegistries.ENTITY_TYPE.getKey(type).getNamespace());
+    }
+
+    private void addNamespace(String entityType) {
+        int separator = entityType == null ? -1 : entityType.indexOf(':');
+        if (separator > 0 && !"minecraft".equals(entityType.substring(0, separator))) {
+            ownNamespaces.add(entityType.substring(0, separator));
+        }
+    }
+
+    /** Takes in a mob the run did not spawn, so it leaves with the run. */
+    public void adoptExtra(LivingEntity living) {
+        living.addTag(ManagedEntities.MANAGED_TAG);
+        living.addTag(runTag);
+        extras.add(living);
     }
 
     public boolean isTimedOut() {
@@ -223,11 +299,26 @@ public class DungeonInstance {
         return Math.max(0, max - getDeaths(playerId));
     }
 
+    /** The lives to show a player. With no limit there is no number: this used to say 2147483647. */
+    public String getRemainingLivesLabel(UUID playerId) {
+        return config.settings.maxDeaths <= 0 ? "\u221E" : String.valueOf(getRemainingLives(playerId));
+    }
+
     // === REWARDS ===
 
     public void giveRewards(ServerPlayer player, List<RewardConfig> rewards) {
+        // Items given to a dead player are lost with the inventory it drops: the rewards wait for
+        // the respawn. This hit whoever was on the death screen when a teammate finished the boss.
+        if (player.isDeadOrDying()) {
+            DungeonManager.getInstance().deferRewards(player.getUUID(), rewards);
+            return;
+        }
+        grantRewards(server, player, rewards);
+    }
+
+    public static void grantRewards(MinecraftServer server, ServerPlayer player, List<RewardConfig> rewards) {
         for (RewardConfig reward : rewards) {
-            if (level_random() <= reward.chance) {
+            if (server.overworld().getRandom().nextDouble() <= reward.chance) {
                 if (reward.item != null && !reward.item.isEmpty()) {
                     ResourceLocation loc = ResourceLocation.tryParse(reward.item);
                     if (loc != null) {
@@ -255,10 +346,6 @@ public class DungeonInstance {
         }
     }
 
-    private double level_random() {
-        return server.overworld().getRandom().nextDouble();
-    }
-
     // === UTILS ===
 
     public String getPlayerNames(MinecraftServer server) {
@@ -281,5 +368,9 @@ public class DungeonInstance {
         for (WaveInstance wave : waveInstances) {
             wave.cleanup();
         }
+        for (LivingEntity extra : extras) {
+            if (extra.isAlive()) extra.discard();
+        }
+        extras.clear();
     }
 }

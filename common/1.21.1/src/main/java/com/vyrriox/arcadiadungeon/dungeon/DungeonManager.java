@@ -3,13 +3,19 @@ package com.vyrriox.arcadiadungeon.dungeon;
 import com.vyrriox.arcadiadungeon.config.Messages;
 import com.vyrriox.arcadiadungeon.ArcadiaDungeon;
 import com.vyrriox.arcadiadungeon.boss.BossInstance;
+import com.vyrriox.arcadiadungeon.boss.BossManager;
 import com.vyrriox.arcadiadungeon.config.BossConfig;
 import com.vyrriox.arcadiadungeon.config.ConfigManager;
 import com.vyrriox.arcadiadungeon.config.DungeonConfig;
+import com.vyrriox.arcadiadungeon.config.RewardConfig;
 import com.vyrriox.arcadiadungeon.config.SpawnPointConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.Difficulty;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.Level;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
@@ -40,6 +46,11 @@ public class DungeonManager {
     private final Map<UUID, String> playerToDungeon = new ConcurrentHashMap<>();
     // Dungeons pending fail (to avoid reentrant modification)
     private final Set<String> pendingFails = ConcurrentHashMap.newKeySet();
+    // Players who were dead when the run sent them home, waiting for their respawn
+    private final Set<UUID> returnOnRespawn = ConcurrentHashMap.newKeySet();
+    private final Map<UUID, List<RewardConfig>> rewardsOnRespawn = new ConcurrentHashMap<>();
+    // Set while a run executes one of its own commands, so what the command summons is let in
+    private DungeonInstance commandRun = null;
 
     private DungeonManager() {}
 
@@ -58,6 +69,10 @@ public class DungeonManager {
             playerReturnPoints.clear();
             allowedBeneficialEffects.clear();
             playerToDungeon.clear();
+            pendingFails.clear();
+            pendingPlayerRemovals.clear();
+            returnOnRespawn.clear();
+            rewardsOnRespawn.clear();
         } else {
             PlayerProgressManager.getInstance().loadAll();
             DungeonTimerStore.load(playerCooldowns, dungeonAvailability);
@@ -110,6 +125,25 @@ public class DungeonManager {
 
         if (activeInstances.containsKey(dungeonId)) {
             initiator.sendSystemMessage(Messages.get(initiator, "error.already_running"));
+            return null;
+        }
+
+        // Joining already refuses this. A player left in two runs is pulled back by both of them.
+        if (getPlayerDungeon(initiator.getUUID()) != null) {
+            initiator.sendSystemMessage(Messages.get(initiator, "error.already_in_dungeon"));
+            return null;
+        }
+
+        if (config.bosses.isEmpty() && config.waves.isEmpty()) {
+            initiator.sendSystemMessage(Messages.get(initiator, "error.empty"));
+            return null;
+        }
+
+        // On peaceful every monster is removed on its first tick, persistent or not, so the run
+        // would announce its waves as cleared and its boss would never be there.
+        if (server.overworld().getDifficulty() == Difficulty.PEACEFUL && hasMonsters(config)) {
+            initiator.sendSystemMessage(Messages.get(initiator, "error.peaceful"));
+            ArcadiaDungeon.LOGGER.warn("Refused to start {}: the server is on peaceful and this dungeon spawns monsters", dungeonId);
             return null;
         }
 
@@ -173,7 +207,7 @@ public class DungeonManager {
             MutableComponent leaveBtn2 = leaveButton(initiator);
             initiator.sendSystemMessage(recruitMsg.append(leaveBtn2));
         } else {
-            instance.startDungeon();
+            beginRun(instance);
             if (config.announceStart) {
                 broadcast(config.startMessage, "announce.start",
                         "player", initiator.getName().getString(), "dungeon", config.name, "id", config.id);
@@ -270,6 +304,28 @@ public class DungeonManager {
             return;
         }
 
+        beginRun(instance);
+
+        for (UUID playerId : instance.getPlayers()) {
+            ServerPlayer player = server.getPlayerList().getPlayer(playerId);
+            if (player != null) {
+                player.sendSystemMessage(Messages.get(player, "start.begins", "count", instance.getPlayerCount()));
+            }
+        }
+
+        if (config.announceStart) {
+            broadcast(null, "start.gates_closing", "dungeon", config.name, "count", instance.getPlayerCount());
+        }
+    }
+
+    /**
+     * What starts a run, with or without a recruitment before it. The two paths used to do different
+     * things: without recruitment the bosses meant for the start never came, and with one a dungeon
+     * that has no waves never spawned its boss at all.
+     */
+    private void beginRun(DungeonInstance instance) {
+        DungeonConfig config = instance.getConfig();
+
         // Kick parasites from dungeon area before starting
         kickParasites(instance);
 
@@ -288,22 +344,86 @@ public class DungeonManager {
             ResourceKey<Level> dimKey = ResourceKey.create(Registries.DIMENSION, dimLoc);
             ServerLevel level = server.getLevel(dimKey);
             if (level == null) continue;
-            BossInstance bossInstance = new BossInstance(bossConfig, level, instance.getPlayerCount());
+            BossInstance bossInstance = new BossInstance(bossConfig, level, instance);
             if (bossInstance.spawn()) {
                 instance.addBossInstance(bossConfig.id, bossInstance);
                 instance.setState(DungeonState.ACTIVE);
+                bossInstance.enterFirstPhase();
             }
         }
 
-        for (UUID playerId : instance.getPlayers()) {
-            ServerPlayer player = server.getPlayerList().getPlayer(playerId);
-            if (player != null) {
-                player.sendSystemMessage(Messages.get(player, "start.begins", "count", instance.getPlayerCount()));
+        // With no waves to wait for, the fight starts now, unless a required boss of the start stands
+        // first: the next one comes when it dies.
+        if (!instance.hasWaves() && instance.allRequiredBossesDefeated()
+                && !BossManager.getInstance().spawnNextBoss(instance) && instance.getActiveBosses().isEmpty()) {
+            // Every boss was optional and rolled to stay away, or none can spawn, for instance because
+            // its mod was removed. Nobody fought anything, so the run ends with no reward and no timer.
+            ArcadiaDungeon.LOGGER.warn("Dungeon {}: nothing came, the run ends without a reward. Check debug validate.", config.id);
+            for (UUID playerId : new ArrayList<>(instance.getPlayers())) {
+                ServerPlayer player = server.getPlayerList().getPlayer(playerId);
+                if (player != null) player.sendSystemMessage(Messages.get(player, "run.nothing_came"));
+            }
+            forceReset(config.id);
+        }
+    }
+
+    private static boolean hasMonsters(DungeonConfig config) {
+        for (BossConfig boss : config.bosses) {
+            if (isMonster(boss.entityType)) return true;
+        }
+        for (var wave : config.waves) {
+            for (var mob : wave.mobs) {
+                if (isMonster(mob.entityType)) return true;
             }
         }
+        return false;
+    }
 
-        if (config.announceStart) {
-            broadcast(null, "start.gates_closing", "dungeon", config.name, "count", instance.getPlayerCount());
+    private static boolean isMonster(String entityType) {
+        return EntityType.byString(entityType).map(type -> type.getCategory() == MobCategory.MONSTER).orElse(false);
+    }
+
+    /** The run this mob was spawned by, or null when that run is over. */
+    public DungeonInstance runOf(Entity entity) {
+        for (DungeonInstance instance : activeInstances.values()) {
+            if (entity.getTags().contains(instance.getRunTag())) return instance;
+        }
+        return null;
+    }
+
+    /**
+     * True for a dungeon mob read back from disk that no run has a use for: its run is over, or it is
+     * a boss the run gave up waiting for and replaced.
+     */
+    public boolean isLeftover(Entity entity) {
+        DungeonInstance run = runOf(entity);
+        if (run == null) return true;
+        if (!entity.getTags().contains("arcadia_boss")) return false;
+        for (BossInstance boss : run.getActiveBosses().values()) {
+            if (boss.matches(entity)) return false;
+        }
+        return true;
+    }
+
+    public DungeonInstance getCommandRun() {
+        return commandRun;
+    }
+
+    /** Runs a command of the dungeon's config. What it summons in the area belongs to the run. */
+    public void runOwnCommand(DungeonInstance run, String command) {
+        DungeonInstance previous = commandRun;
+        commandRun = run;
+        try {
+            server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), command);
+        } finally {
+            commandRun = previous;
+        }
+    }
+
+    /** Renews the hold on the chunks of every mob the runs are waiting on. */
+    public void holdRunChunks() {
+        for (DungeonInstance instance : activeInstances.values()) {
+            instance.forEachTracked(TrackedMob::holdChunk);
         }
     }
 
@@ -363,6 +483,9 @@ public class DungeonManager {
         if (instance == null) return;
 
         DungeonConfig config = instance.getConfig();
+        // A run that never started costs nothing: whoever opens and leaves a recruitment does not get
+        // to close a daily dungeon for everyone.
+        boolean started = instance.getState() != DungeonState.RECRUITING;
         instance.setState(DungeonState.FAILED);
 
         // Capture player names BEFORE teleporting them back
@@ -378,7 +501,7 @@ public class DungeonManager {
             }
         }
 
-        if (config.availableEverySeconds > 0) {
+        if (started && config.availableEverySeconds > 0) {
             dungeonAvailability.put(dungeonId, System.currentTimeMillis());
             availabilityAnnounced.remove(dungeonId);
         }
@@ -507,7 +630,7 @@ public class DungeonManager {
 
         if (instance.getPlayers().isEmpty()) {
             DungeonConfig cfg = instance.getConfig();
-            if (cfg.announceCompletion && !playerName.isEmpty()) {
+            if (cfg.announceCompletion && !playerName.isEmpty() && instance.getState() != DungeonState.RECRUITING) {
                 broadcast(cfg.failMessage, "announce.fail",
                         "player", playerName, "dungeon", cfg.name, "id", cfg.id);
             }
@@ -614,10 +737,26 @@ public class DungeonManager {
     }
 
     public void teleportBack(ServerPlayer player) {
+        // A dead player cannot be moved: it would respawn at its bed with the way back used up.
+        if (player.isDeadOrDying()) {
+            if (playerReturnPoints.containsKey(player.getUUID())) returnOnRespawn.add(player.getUUID());
+            return;
+        }
         SpawnPointConfig returnPoint = playerReturnPoints.remove(player.getUUID());
         if (returnPoint != null) {
             teleportToSpawn(player, returnPoint);
         }
+    }
+
+    public void deferRewards(UUID playerId, List<RewardConfig> rewards) {
+        rewardsOnRespawn.computeIfAbsent(playerId, id -> new ArrayList<>()).addAll(rewards);
+    }
+
+    /** What was waiting for this player to come back from the death screen. */
+    public void onPlayerRespawned(ServerPlayer player) {
+        if (returnOnRespawn.remove(player.getUUID())) teleportBack(player);
+        List<RewardConfig> rewards = rewardsOnRespawn.remove(player.getUUID());
+        if (rewards != null) DungeonInstance.grantRewards(server, player, rewards);
     }
 
     public void teleportToSpawn(ServerPlayer player, SpawnPointConfig spawn) {
@@ -695,7 +834,7 @@ public class DungeonManager {
         });
 
         // Prune return points for players not in any dungeon
-        playerReturnPoints.entrySet().removeIf(e -> getPlayerDungeon(e.getKey()) == null);
+        playerReturnPoints.entrySet().removeIf(e -> getPlayerDungeon(e.getKey()) == null && !returnOnRespawn.contains(e.getKey()));
     }
 
     private void kickParasites(DungeonInstance instance) {
@@ -746,6 +885,10 @@ public class DungeonManager {
 
         int cleared = 0;
         for (net.minecraft.world.entity.Mob mob : mobs) {
+            // Monsters and what past runs left. Villagers, animals, somebody's pet and a named mob
+            // somebody placed are part of the world.
+            if (!ManagedEntities.isManaged(mob) && (!(mob instanceof net.minecraft.world.entity.monster.Enemy)
+                    || mob.hasCustomName() || isOwned(mob))) continue;
             mob.discard();
             cleared++;
         }
@@ -753,6 +896,10 @@ public class DungeonManager {
         if (cleared > 0) {
             ArcadiaDungeon.LOGGER.info("Cleared {} mobs from dungeon area {}", cleared, config.id);
         }
+    }
+
+    private static boolean isOwned(net.minecraft.world.entity.Mob mob) {
+        return mob instanceof net.minecraft.world.entity.OwnableEntity pet && pet.getOwnerUUID() != null;
     }
 
     public void broadcastClickableJoin(DungeonConfig config, String playerName, long secondsLeft) {
