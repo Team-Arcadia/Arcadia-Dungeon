@@ -30,7 +30,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -52,7 +51,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * <p><b>Time.</b> A run checks its waves on the wall clock and this server ticks as fast as it can,
  * so the budgets are generous tick counts and the waits are in milliseconds. Each test gets its own
- * stretch of the flat world so their areas never touch.</p>
+ * floor in the sky so their areas never touch.</p>
  *
  * @author vyrriox
  */
@@ -64,12 +63,15 @@ public class RunReliabilityGameTests {
     private static final String BATCH = "reliability";
     private static final int BUDGET = 4_000_000;
     /**
-     * What these tests fight when the mob has to stay alive for a while. The flat world has villages,
-     * and their golems kill monsters, which reads exactly like the bug these tests look for.
+     * What these tests fight when the mob has to stay alive for a while. A zombie burns in the sun of
+     * these open floors, and its death reads exactly like the bug these tests look for.
      */
     private static final String HARMLESS = "minecraft:pig";
     /** Far past any view distance, so nothing but the dungeon holds the chunk there. */
     private static final int FAR = 2048;
+
+    private static final int SITE_Y = 200;
+    private static final int FLOOR_RADIUS = 7;
 
     private static final AtomicInteger NEXT_SITE = new AtomicInteger(1);
 
@@ -87,17 +89,32 @@ public class RunReliabilityGameTests {
 
     private record Site(BlockPos entrance, BlockPos fight) {}
 
-    /** A patch of the flat world for this test alone: an entrance, and a fight far away from it. */
+    /**
+     * A floor for this test alone: an entrance, and a fight far away from it.
+     *
+     * <p>In the sky, because the test world differs between targets: flat with villages on one, real
+     * terrain with hills, water and lava on another. A site in that world fails for reasons that have
+     * nothing to do with the mod: a golem kills the mob, a wall suffocates it, lava burns the boss.
+     * Each floor sits in the middle of one chunk, so building it loads no more than that.</p>
+     */
     private static Site newSite(GameTestHelper h) {
-        ServerLevel level = h.getLevel();
-        int x = 8000 + NEXT_SITE.getAndIncrement() * 8192;
-        int z = 8000;
-        // getHeight answers the bottom of the world for a chunk that is not loaded.
-        level.getChunk(x >> 4, z >> 4);
-        level.getChunk((x + FAR) >> 4, z >> 4);
-        int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
-        int fightY = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x + FAR, z);
-        return new Site(new BlockPos(x, y, z), new BlockPos(x + FAR, fightY, z));
+        int x = 8008 + NEXT_SITE.getAndIncrement() * 8192;
+        int z = 8008;
+        Site site = new Site(new BlockPos(x, SITE_Y, z), new BlockPos(x + FAR, SITE_Y, z));
+        buildFloor(h.getLevel(), site.entrance());
+        buildFloor(h.getLevel(), site.fight());
+        return site;
+    }
+
+    private static void buildFloor(ServerLevel level, BlockPos center) {
+        for (int dx = -FLOOR_RADIUS; dx <= FLOOR_RADIUS; dx++) {
+            for (int dz = -FLOOR_RADIUS; dz <= FLOOR_RADIUS; dz++) {
+                block(level, center.offset(dx, -1, dz), Blocks.STONE);
+                if (Math.abs(dx) == FLOOR_RADIUS || Math.abs(dz) == FLOOR_RADIUS) {
+                    for (int dy = 0; dy <= 2; dy++) block(level, center.offset(dx, dy, dz), Blocks.STONE);
+                }
+            }
+        }
     }
 
     private static SpawnPointConfig point(GameTestHelper h, BlockPos pos) {
@@ -433,7 +450,7 @@ public class RunReliabilityGameTests {
         Site site = newSite(h);
         DungeonConfig config = dungeon(h, site);
         config.recruitmentDurationSeconds = 600;
-        config.waves.add(wave(h, 1, "minecraft:zombie", 1, site.entrance().offset(8, 0, 0)));
+        config.waves.add(wave(h, 1, "minecraft:zombie", 1, site.entrance().offset(6, 0, 0)));
         BossConfig early = boss(h, "early", "minecraft:zombie", site.entrance().offset(4, 0, 0));
         early.spawnAtStart = true;
         early.optional = true;
@@ -465,29 +482,29 @@ public class RunReliabilityGameTests {
      */
     @GameTest(template = T, batch = BATCH, timeoutTicks = BUDGET)
     public static void aPiglinBossDoesNotConvertAwayFromItsRun(GameTestHelper h) {
-        // Next to the test structure, whose chunks tick whatever the dungeon does: a piglin that
-        // does not tick never zombifies, and this test would pass for the wrong reason.
-        BlockPos here = h.absolutePos(new BlockPos(1, 2, 1));
-        Site site = new Site(here, here);
+        Site site = newSite(h);
         DungeonConfig config = dungeon(h, site);
-        area(h, config, here, 24);
-        config.bosses.add(boss(h, "piglin", "minecraft:piglin", here));
-        ServerPlayer player = playerAt(h, here);
-        DungeonInstance instance = start(h, player, config);
-        BossManager.getInstance().spawnNextBoss(instance);
-        BossInstance boss = instance.getActiveBosses().get("piglin");
-        long startTick = h.getTick();
+        area(h, config, site.entrance(), 24);
+        config.bosses.add(boss(h, "piglin", "minecraft:piglin", site.entrance().offset(4, 0, 0)));
+        ServerPlayer player = playerAt(h, site.entrance());
+        // A forced chunk ticks whatever the dungeon does: a piglin that does not tick never
+        // zombifies, and this test would pass for the wrong reason.
+        whenLoaded(h, site.entrance(), () -> {
+            DungeonInstance instance = start(h, player, config);
+            BossInstance boss = instance.getActiveBosses().get("piglin");
+            long startTick = h.getTick();
 
-        h.startSequence()
-                .thenWaitUntil(() -> {
-                    if (h.getTick() < startTick + 450) throw RunTestKit.waiting(h, "waiting for the conversion time");
-                })
-                .thenExecute(() -> {
-                    boolean alive = boss.isBossAlive();
-                    end(h, player, config);
-                    if (!alive) h.fail("the boss vanished when it should have zombified");
-                })
-                .thenSucceed();
+            h.startSequence()
+                    .thenWaitUntil(() -> {
+                        if (h.getTick() < startTick + 450) throw RunTestKit.waiting(h, "waiting for the conversion time");
+                    })
+                    .thenExecute(() -> {
+                        boolean alive = boss.isBossAlive();
+                        end(h, player, config);
+                        if (!alive) h.fail("the boss vanished when it should have zombified");
+                    })
+                    .thenSucceed();
+        });
     }
 
     // === A boss that leaves the world some other way ===
@@ -583,7 +600,7 @@ public class RunReliabilityGameTests {
         Site site = newSite(h);
         DungeonConfig config = dungeon(h, site);
         area(h, config, site.entrance(), 24);
-        config.waves.add(wave(h, 1, "minecraft:zombie", 1, site.entrance().offset(8, 0, 0)));
+        config.waves.add(wave(h, 1, "minecraft:zombie", 1, site.entrance().offset(6, 0, 0)));
         ServerPlayer player = playerAt(h, site.entrance());
         start(h, player, config);
 
@@ -729,8 +746,7 @@ public class RunReliabilityGameTests {
         ServerPlayer player = playerAt(h, site.entrance());
         DungeonInstance instance = start(h, player, config);
         LivingEntity mob = firstMobOf(h, instance);
-        // Cleared by hand: the flat world has villages, and inside a house wall the mob would be
-        // moved for a good reason.
+        // Off the floor of the site, so it gets its own ground to stand on.
         BlockPos walkedTo = outside.offset(-12, 0, 0);
         h.getLevel().getChunk(walkedTo);
         for (int dx = -1; dx <= 1; dx++) {
@@ -1436,7 +1452,7 @@ public class RunReliabilityGameTests {
         Site site = newSite(h);
         DungeonConfig config = dungeon(h, site);
         area(h, config, site.entrance(), 24);
-        config.waves.add(wave(h, 1, "minecraft:zombie", 1, site.entrance().offset(8, 0, 0)));
+        config.waves.add(wave(h, 1, "minecraft:zombie", 1, site.entrance().offset(6, 0, 0)));
         ServerPlayer player = playerAt(h, site.entrance());
         whenLoaded(h, site.entrance(), () -> {
             LivingEntity villager = RunTestKit.create(h, EntityType.VILLAGER);
