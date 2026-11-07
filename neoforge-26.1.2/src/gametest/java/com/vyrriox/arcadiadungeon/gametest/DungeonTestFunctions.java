@@ -49,6 +49,7 @@ public final class DungeonTestFunctions {
         r.register(id("a_mob_stays_in_a_carpeted_room"), RunReliabilityGameTests::aMobStaysInACarpetedRoom);
         r.register(id("a_mob_that_left_the_area_is_brought_back"), RunReliabilityGameTests::aMobThatLeftTheAreaIsBroughtBack);
         r.register(id("the_rescue_can_be_turned_off"), RunReliabilityGameTests::theRescueCanBeTurnedOff);
+        r.register(id("a_mob_spawned_outside_the_area_is_left_to_walk_in"), RunReliabilityGameTests::aMobSpawnedOutsideTheAreaIsLeftToWalkIn);
         r.register(id("a_wave_nobody_touches_is_brought_to_the_players_in_steps"), RunReliabilityGameTests::aWaveNobodyTouchesIsBroughtToThePlayersInSteps);
         r.register(id("an_optional_boss_is_not_brought_to_the_players"), RunReliabilityGameTests::anOptionalBossIsNotBroughtToThePlayers);
         r.register(id("a_summon_nobody_reaches_ends_up_reachable_and_then_stops_protecting"), RunReliabilityGameTests::aSummonNobodyReachesEndsUpReachableAndThenStopsProtecting);

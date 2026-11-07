@@ -718,6 +718,28 @@ public class RunReliabilityGameTests {
         h.succeed();
     }
 
+    /** A mob a dungeon spawns outside its area on purpose is left to walk in. */
+    @GameTest(template = T, batch = BATCH, timeoutTicks = BUDGET)
+    public static void aMobSpawnedOutsideTheAreaIsLeftToWalkIn(GameTestHelper h) {
+        Site site = newSite(h);
+        DungeonConfig config = dungeon(h, site);
+        area(h, config, site.entrance(), 16);
+        BlockPos outside = site.entrance().offset(40, 0, 0);
+        config.waves.add(wave(h, 1, "minecraft:zombie", 1, outside));
+        ServerPlayer player = playerAt(h, site.entrance());
+        DungeonInstance instance = start(h, player, config);
+        LivingEntity mob = firstMobOf(h, instance);
+        mob.teleportTo(outside.getX() - 11.5, outside.getY(), outside.getZ() + 0.5);
+
+        long now = System.currentTimeMillis();
+        MobRescue.check(instance, h.getLevel().getServer(), now);
+        MobRescue.check(instance, h.getLevel().getServer(), now + 6000);
+        boolean sentBack = mob.distanceToSqr(Vec3.atCenterOf(outside)) < 6 * 6;
+        end(h, player, config);
+        if (sentBack) h.fail("a mob on its way into the area was sent back where it spawned");
+        h.succeed();
+    }
+
     /**
      * A wave left alone goes back to where it started, then comes to the players. A walk through a
      * maze must never pull mobs out of their room, so nothing moves in the first two minutes.
