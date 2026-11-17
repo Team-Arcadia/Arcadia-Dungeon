@@ -84,5 +84,10 @@ public final class DungeonTestFunctions {
         r.register(id("nowhere_safe_falls_back_to_the_origin"), SpawnSafetyGameTests::nowhereSafeFallsBackToTheOrigin);
         r.register(id("the_clamp_holds_whichever_corner_came_first"), SpawnSafetyGameTests::theClampHoldsWhicheverCornerCameFirst);
         r.register(id("apoint_inside_keeps_its_place"), SpawnSafetyGameTests::apointInsideKeepsItsPlace);
+        r.register(id("a_locked_item_cannot_be_used_during_a_run"), OffCourseGameTests::aLockedItemCannotBeUsedDuringARun);
+        r.register(id("the_chorus_totem_is_locked_by_default"), OffCourseGameTests::theChorusTotemIsLockedByDefault);
+        r.register(id("the_closed_holes_off_the_course_are_found"), OffCourseGameTests::theClosedHolesOffTheCourseAreFound);
+        r.register(id("a_scan_without_area_or_course_point_is_refused"), OffCourseGameTests::aScanWithoutAreaOrCoursePointIsRefused);
+        r.register(id("holes_are_filled_and_undone_by_the_commands"), OffCourseGameTests::holesAreFilledAndUndoneByTheCommands);
     }
 }
