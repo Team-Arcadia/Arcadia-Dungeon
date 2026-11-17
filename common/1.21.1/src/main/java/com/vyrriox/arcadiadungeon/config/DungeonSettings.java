@@ -29,6 +29,15 @@ public class DungeonSettings {
     public boolean rescueStuckMobs = true;
     /** Seconds a boss stays immune while its summons stand. 0 keeps it immune until they are dead. */
     public int summonLockMaxSeconds = 180;
+    /**
+     * Items kept on cooldown for the whole run, so they can neither be used nor save anyone. The
+     * chorus totem of Artifacts throws a dying player up to twenty blocks away, which in a dungeon
+     * means inside the walls or under the floor; a chorus fruit does the same on a smaller scale.
+     */
+    public List<String> lockedItems = new ArrayList<>(List.of(
+            "artifacts:chorus_totem",
+            "minecraft:chorus_fruit"
+    ));
 
     public DungeonSettings() {}
 }

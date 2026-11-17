@@ -11,6 +11,43 @@ panel protocol in Arcadia Lib.
 
 ---
 
+## [2.0.3] - 2026-11-17
+
+### Fixed
+
+- **The chorus totem threw players off the course** - The chorus totem of Artifacts saves a dying
+  player by throwing them up to twenty blocks away, which in a dungeon can mean inside a wall or under
+  the floor, with no way out. It no longer triggers during a run, and the chorus fruit can no longer
+  be eaten there: both stay on cooldown until the player leaves the run. The list is
+  `settings.lockedItems`; an item from a mod that is not installed is skipped.
+
+### Added
+
+- **`/arcadia_dungeon admin holes scan|fill|undo <dungeon>`** - Finds the closed spaces of the area
+  that cannot be walked to from the course, lists the biggest, and fills their air with invisible
+  barriers. Doors, slabs, fences and scripted walls count as open, anything open to the outside of the
+  area is left alone, and blocks an entity stands in are skipped. `undo` takes the barriers away
+  again. Fill and undo wait until nobody is running the dungeon.
+
+### Correctifs
+
+- **Le totem chorus envoyait les joueurs hors du parcours** - Le totem chorus d'Artifacts sauve un
+  joueur mourant en le projetant jusqu'à vingt blocs plus loin, ce qui dans un donjon peut vouloir
+  dire dans un mur ou sous le sol, sans issue. Il ne se déclenche plus pendant une partie, et le fruit
+  de chorus ne peut plus y être mangé : les deux restent en recharge jusqu'à ce que le joueur quitte
+  la partie. La liste est `settings.lockedItems` ; un objet d'un mod absent est ignoré.
+
+### Ajouts
+
+- **`/arcadia_dungeon admin holes scan|fill|undo <donjon>`** - Trouve les espaces fermés de la zone
+  qu'on ne peut pas atteindre à pied depuis le parcours, liste les plus gros et remplit leur air de
+  barrières invisibles. Portes, dalles, barrières et murs scriptés comptent comme ouverts, tout ce qui
+  donne sur l'extérieur de la zone est laissé tel quel, et les blocs occupés par une entité sont
+  sautés. `undo` retire ces barrières. Le remplissage et l'annulation attendent que plus personne ne
+  joue le donjon.
+
+---
+
 ## [2.0.2] - 2026-11-07
 
 ### Fixed

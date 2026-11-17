@@ -345,6 +345,10 @@ public class DungeonEventHandler {
         if (tickingServer != null && tickingServer.getTickCount() % 20 == 0) {
             guarded("chunk hold", manager::holdRunChunks);
         }
+        if (tickingServer != null && tickingServer.getTickCount() % RunItemLock.RENEW_TICKS == 0) {
+            guarded("item lock", () -> RunItemLock.tick(tickingServer));
+        }
+        guarded("course holes", CourseHoles::tick);
 
         if (now >= nextWaveCheckAt) {
             nextWaveCheckAt = now + 500L;

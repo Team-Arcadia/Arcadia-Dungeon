@@ -128,3 +128,27 @@ search for its uses when adding one, not only for its assignment.
 **Fix:** Load the chunk before reading its height, use mobs golems ignore when one has to stay alive, start time budgets in the scenario's first step, and wait with isPositionEntityTicking before looking entities up.
 
 **Prevention:** In a game test, never read getHeight on a chunk you did not load, never let a monster wait in the open, and start any wall clock budget inside the sequence.
+
+## [2026-11-17 03:12] — A chorus totem saved a dying player and dropped them off the course
+
+**Context:** A player died in the first dungeon on a production server while wearing the Artifacts chorus totem
+
+**Error:** The player survived the killing blow and landed inside the dungeon area but outside the course, in a closed gap of the build, with no death counted
+
+**Root cause:** Artifacts injects at the head of LivingEntity.checkTotemDeathProtection and teleports up to 22 blocks at random, so die() never runs and no LivingDeathEvent is posted: the death handler, even at LOWEST with receiveCanceled, never sees it
+
+**Fix:** Items listed in settings.lockedItems (chorus totem, chorus fruit) stay on item cooldown during a run; Artifacts skips a totem whose item is on cooldown. Added /arcadia_dungeon admin holes scan|fill|undo to plug closed pockets off the course with barriers
+
+**Prevention:** Before relying on a death event to catch a death save, read how the other mod hooks in: a mixin on checkTotemDeathProtection bypasses every event; an item cooldown is the hook vanilla and most mods respect
+
+## [2026-11-17 03:12] — Forge 1.20.1 game tests ran out of memory on the Debian box
+
+**Context:** Running forge-1.20.1 runGameTestServer through mc-dev-loop on the 8 GB Debian machine
+
+**Error:** java.lang.OutOfMemoryError: Java heap space in the reliability batch, Gradle still ended BUILD SUCCESSFUL and loop.py printed OK with no test result line
+
+**Root cause:** The game test server JVM has no -Xmx and gets a quarter of the RAM (about 1.9 GB); about fifty far sites of real terrain generated at once do not fit
+
+**Fix:** Ran the game tests with JAVA_TOOL_OPTIONS=-Xmx3g (the Gradle daemon keeps its own -Xmx3G): 56 of 56 passed
+
+**Prevention:** On this machine run the game tests of every target with JAVA_TOOL_OPTIONS=-Xmx3g, and read the 'N tests passed' line before trusting an OK verdict
