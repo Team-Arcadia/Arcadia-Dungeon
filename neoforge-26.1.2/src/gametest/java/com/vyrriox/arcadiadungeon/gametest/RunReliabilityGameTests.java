@@ -57,6 +57,8 @@ public class RunReliabilityGameTests {
     private static final String T = "floor";
     private static final String BATCH = "reliability";
     private static final int BUDGET = 4_000_000;
+    /** Wait budget of a step, in game ticks (60 s at 20 TPS), so a server stall does not use it up. */
+    private static final int DEADLINE_TICKS = 1200;
     /**
      * What these tests fight when the mob has to stay alive for a while. A zombie burns in the sun of
      * these open floors, and its death reads exactly like the bug these tests look for.
@@ -234,13 +236,13 @@ public class RunReliabilityGameTests {
         long[] until = {0L};
 
         h.startSequence()
-                .thenExecute(() -> until[0] = System.currentTimeMillis() + 60_000)
+                .thenExecute(() -> until[0] = h.getTick() + DEADLINE_TICKS)
                 .thenWaitUntil(() -> {
                     if (first.isCleared() || DungeonManager.getInstance().getInstance(config.id) == null) {
                         problem.set("the wave counts as cleared although no mob was killed");
                         return;
                     }
-                    if (System.currentTimeMillis() > until[0]) {
+                    if (h.getTick() > until[0]) {
                         problem.set("the mob never came into the world");
                         return;
                     }
@@ -286,13 +288,13 @@ public class RunReliabilityGameTests {
         AtomicReference<String> problem = new AtomicReference<>();
 
         h.startSequence()
-                .thenExecute(() -> deadline[0] = System.currentTimeMillis() + 60_000)
+                .thenExecute(() -> deadline[0] = h.getTick() + DEADLINE_TICKS)
                 .thenWaitUntil(() -> {
                     if (boss == null || !boss.isBossAlive()) {
                         problem.set("the run lost track of the boss");
                         return;
                     }
-                    if (System.currentTimeMillis() > deadline[0]) {
+                    if (h.getTick() > deadline[0]) {
                         problem.set("the boss is still invulnerable");
                         return;
                     }
@@ -328,10 +330,10 @@ public class RunReliabilityGameTests {
         AtomicReference<String> problem = new AtomicReference<>();
 
         h.startSequence()
-                .thenExecute(() -> deadline[0] = System.currentTimeMillis() + 60_000)
+                .thenExecute(() -> deadline[0] = h.getTick() + DEADLINE_TICKS)
                 .thenWaitUntil(() -> {
                     if (instance.getCurrentWaveIndex() >= 1) return;
-                    if (System.currentTimeMillis() > deadline[0]) {
+                    if (h.getTick() > deadline[0]) {
                         problem.set("the wave is still waiting for mobs that never entered the world");
                         return;
                     }
@@ -513,10 +515,10 @@ public class RunReliabilityGameTests {
         AtomicReference<String> problem = new AtomicReference<>();
 
         h.startSequence()
-                .thenExecute(() -> deadline[0] = System.currentTimeMillis() + 60_000)
+                .thenExecute(() -> deadline[0] = h.getTick() + DEADLINE_TICKS)
                 .thenWaitUntil(() -> {
                     if (DungeonManager.getInstance().getInstance(config.id) == null) return;
-                    if (System.currentTimeMillis() > deadline[0]) {
+                    if (h.getTick() > deadline[0]) {
                         problem.set("the boss is gone and the run is still waiting for it");
                         return;
                     }
@@ -548,11 +550,11 @@ public class RunReliabilityGameTests {
         h.startSequence()
                 .thenExecuteAfter(5, () -> {
                     before.discard();
-                    deadline[0] = System.currentTimeMillis() + 60_000;
+                    deadline[0] = h.getTick() + DEADLINE_TICKS;
                 })
                 .thenWaitUntil(() -> {
                     if (boss.isBossAlive() && !boss.getBossEntity().getUUID().equals(beforeId)) return;
-                    if (System.currentTimeMillis() > deadline[0]) {
+                    if (h.getTick() > deadline[0]) {
                         problem.set("the boss was removed and the run is still waiting for it");
                         return;
                     }
@@ -1360,10 +1362,10 @@ public class RunReliabilityGameTests {
         AtomicReference<String> problem = new AtomicReference<>();
 
         h.startSequence()
-                .thenExecute(() -> deadline[0] = System.currentTimeMillis() + 60_000)
+                .thenExecute(() -> deadline[0] = h.getTick() + DEADLINE_TICKS)
                 .thenWaitUntil(() -> {
                     if (DungeonManager.getInstance().getInstance(config.id) == null) return;
-                    if (System.currentTimeMillis() > deadline[0]) {
+                    if (h.getTick() > deadline[0]) {
                         problem.set("the run is still waiting for a boss that died");
                         return;
                     }
