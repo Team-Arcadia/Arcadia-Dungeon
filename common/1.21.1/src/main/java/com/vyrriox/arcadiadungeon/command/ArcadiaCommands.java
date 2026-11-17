@@ -155,6 +155,28 @@ public class ArcadiaCommands {
                         )
                 )
 
+                // === HOLES OFF THE COURSE ===
+                .then(Commands.literal("holes")
+                        .then(Commands.literal("scan")
+                                .then(Commands.argument("dungeon", StringArgumentType.word())
+                                        .suggests(SUGGEST_DUNGEONS)
+                                        .executes(ctx -> holes(ctx, HolesAction.SCAN))
+                                )
+                        )
+                        .then(Commands.literal("fill")
+                                .then(Commands.argument("dungeon", StringArgumentType.word())
+                                        .suggests(SUGGEST_DUNGEONS)
+                                        .executes(ctx -> holes(ctx, HolesAction.FILL))
+                                )
+                        )
+                        .then(Commands.literal("undo")
+                                .then(Commands.argument("dungeon", StringArgumentType.word())
+                                        .suggests(SUGGEST_DUNGEONS)
+                                        .executes(ctx -> holes(ctx, HolesAction.UNDO))
+                                )
+                        )
+                )
+
                 // === COOLDOWN ===
                 .then(Commands.literal("cooldown")
                         .then(Commands.argument("dungeon", StringArgumentType.word())
@@ -4118,6 +4140,98 @@ public class ArcadiaCommands {
         ConfigManager.getInstance().saveDungeon(config);
         ctx.getSource().sendSuccess(() -> Component.literal("[Arcadia] Zone du donjon " + config.name + " supprimee.")
                 .withStyle(ChatFormatting.GREEN), true);
+        return 1;
+    }
+
+    private enum HolesAction { SCAN, FILL, UNDO }
+
+    /**
+     * Finds the holes of a dungeon, the closed spaces of its area off the course, and fills them
+     * with barriers or takes those barriers away again. See {@link CourseHoles}.
+     */
+    private static int holes(CommandContext<CommandSourceStack> ctx, HolesAction action) {
+        String id = StringArgumentType.getString(ctx, "dungeon");
+        DungeonConfig config = ConfigManager.getInstance().getDungeon(id);
+        CommandSourceStack source = ctx.getSource();
+        if (config == null) {
+            source.sendFailure(Component.literal("[Arcadia] Donjon introuvable: " + id));
+            return 0;
+        }
+        if (CourseHoles.busy()) {
+            source.sendFailure(Component.literal("[Arcadia] Un remplissage est deja en cours, patientez."));
+            return 0;
+        }
+        if (action != HolesAction.SCAN && DungeonManager.getInstance().getInstance(config.id) != null) {
+            source.sendFailure(Component.literal("[Arcadia] Une partie de " + config.name + " est en cours: reessayez quand elle sera finie."));
+            return 0;
+        }
+        java.nio.file.Path undoFile = ConfigManager.getInstance().getConfigDir().resolve("holes").resolve(config.id + ".bin");
+
+        if (action == HolesAction.UNDO) {
+            try {
+                boolean started = CourseHoles.startUndo(source.getServer(), undoFile, removed ->
+                        source.sendSuccess(() -> Component.literal("[Arcadia] " + removed + " barrieres retirees dans " + config.name + ".")
+                                .withStyle(ChatFormatting.GREEN), true));
+                if (!started) {
+                    source.sendFailure(Component.literal("[Arcadia] Rien a annuler pour " + config.name + "."));
+                    return 0;
+                }
+            } catch (java.io.IOException e) {
+                source.sendFailure(Component.literal("[Arcadia] Annulation impossible: " + e.getMessage()));
+                return 0;
+            }
+            source.sendSuccess(() -> Component.literal("[Arcadia] Retrait des barrieres en cours...").withStyle(ChatFormatting.YELLOW), false);
+            return 1;
+        }
+
+        CourseHoles.Scan scan;
+        try {
+            scan = CourseHoles.scan(source.getServer(), config);
+        } catch (CourseHoles.Refused refused) {
+            String why = switch (refused.reason) {
+                case "no_area" -> "ce donjon n'a pas de zone (setdungeonarea pos1/pos2).";
+                case "no_level" -> "la dimension de la zone n'est pas chargee.";
+                case "too_big" -> "la zone depasse " + CourseHoles.MAX_CELLS + " blocs.";
+                case "no_course_point" -> "aucun point du donjon (spawn, vagues, boss) n'est dans la zone.";
+                default -> refused.reason;
+            };
+            source.sendFailure(Component.literal("[Arcadia] Recherche impossible: " + why));
+            return 0;
+        }
+
+        source.sendSuccess(() -> Component.literal("[Arcadia] " + config.name + ": zone " + scan.sizeX + "x" + scan.sizeY + "x" + scan.sizeZ
+                + ", " + scan.seeds + " point(s) de depart, " + scan.courseCells + " blocs de parcours, "
+                + scan.outsideCells + " ouverts sur l'exterieur (non touches).").withStyle(ChatFormatting.AQUA), false);
+        if (scan.pockets.isEmpty()) {
+            source.sendSuccess(() -> Component.literal("[Arcadia] Aucun trou ferme hors parcours.").withStyle(ChatFormatting.GREEN), false);
+            return 1;
+        }
+        source.sendSuccess(() -> Component.literal("[Arcadia] " + scan.pockets.size() + " trou(s) ferme(s) hors parcours, "
+                + scan.fillable + " blocs d'air a boucher:").withStyle(ChatFormatting.YELLOW), false);
+        for (int k = 0; k < Math.min(CourseHoles.POCKETS_SHOWN, scan.pockets.size()); k++) {
+            CourseHoles.Pocket pocket = scan.pockets.get(k);
+            String line = " - " + pocket.cells() + " blocs vers " + pocket.first().getX() + " " + pocket.first().getY() + " " + pocket.first().getZ();
+            source.sendSuccess(() -> Component.literal(line).withStyle(ChatFormatting.GRAY), false);
+        }
+
+        if (action == HolesAction.SCAN) {
+            source.sendSuccess(() -> Component.literal("[Arcadia] Pour les boucher avec des barrieres invisibles: /arcadia_dungeon admin holes fill "
+                    + config.id + " (annulable avec holes undo).").withStyle(ChatFormatting.GRAY), false);
+            return 1;
+        }
+        if (scan.fillable == 0) {
+            source.sendSuccess(() -> Component.literal("[Arcadia] Rien a boucher: ces trous ne contiennent pas d'air libre.").withStyle(ChatFormatting.GREEN), false);
+            return 1;
+        }
+        try {
+            CourseHoles.startFill(scan, undoFile, placed ->
+                    source.sendSuccess(() -> Component.literal("[Arcadia] " + placed + " barrieres posees dans " + config.name
+                            + ". Annuler: /arcadia_dungeon admin holes undo " + config.id).withStyle(ChatFormatting.GREEN), true));
+        } catch (java.io.IOException e) {
+            source.sendFailure(Component.literal("[Arcadia] Remplissage impossible: " + e.getMessage()));
+            return 0;
+        }
+        source.sendSuccess(() -> Component.literal("[Arcadia] Remplissage en cours...").withStyle(ChatFormatting.YELLOW), false);
         return 1;
     }
 
